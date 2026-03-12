@@ -1,0 +1,41 @@
+#!/bin/sh
+# configure script for rtui — detects ncurses on Linux and macOS
+
+PKG_NCURSES_CFLAGS=""
+PKG_NCURSES_LIBS=""
+
+# 1. Try pkg-config first (works on most Linux distros and modern macOS with pkgconf)
+if command -v pkg-config > /dev/null 2>&1; then
+  if pkg-config --exists ncurses 2>/dev/null; then
+    PKG_NCURSES_CFLAGS=$(pkg-config --cflags ncurses)
+    PKG_NCURSES_LIBS=$(pkg-config --libs ncurses)
+    echo "Found ncurses via pkg-config: ${PKG_NCURSES_LIBS}"
+  fi
+fi
+
+# 2. Fallback: macOS Homebrew paths (Apple ships a broken ncurses, brew provides a full one)
+if [ -z "$PKG_NCURSES_LIBS" ]; then
+  for brew_prefix in "/opt/homebrew" "/usr/local"; do
+    ncurses_dir="${brew_prefix}/opt/ncurses"
+    if [ -f "${ncurses_dir}/lib/libncurses.dylib" ] || [ -f "${ncurses_dir}/lib/libncurses.a" ]; then
+      PKG_NCURSES_CFLAGS="-I${ncurses_dir}/include"
+      PKG_NCURSES_LIBS="-L${ncurses_dir}/lib -lncurses"
+      echo "Found ncurses via Homebrew at ${ncurses_dir}"
+      break
+    fi
+  done
+fi
+
+# 3. Last resort: assume -lncurses is on the default library path (standard Linux)
+if [ -z "$PKG_NCURSES_LIBS" ]; then
+  PKG_NCURSES_LIBS="-lncurses"
+  echo "Using default ncurses (-lncurses)"
+fi
+
+# Substitute placeholders in Makevars.in -> Makevars
+sed \
+  -e "s|@PKG_NCURSES_CFLAGS@|${PKG_NCURSES_CFLAGS}|" \
+  -e "s|@PKG_NCURSES_LIBS@|${PKG_NCURSES_LIBS}|" \
+  src/Makevars.in > src/Makevars
+
+echo "Created src/Makevars"

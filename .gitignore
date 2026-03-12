@@ -47,3 +47,9 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# Compiled objects and shared library
+src/*.o
+src/**/*.o
+src/*.so
+src/*.dll

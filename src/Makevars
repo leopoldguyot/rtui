@@ -1,0 +1,99 @@
+CXX_STD = CXX17
+
+# Include paths: Rcpp headers, FTXUI headers, and src/ itself for our own headers
+PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS) \
+  -I"../inst/include" \
+  -I"ftxui/include" \
+  -I"ftxui" \
+  -I"."
+
+PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) -lncursesw
+
+PKG_CXXFLAGS += -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600
+
+# FTXUI source files (no tests, no fuzzers)
+FTXUI_COMPONENT_SRC = \
+  ftxui/ftxui/component/animation.cpp \
+  ftxui/ftxui/component/button.cpp \
+  ftxui/ftxui/component/catch_event.cpp \
+  ftxui/ftxui/component/checkbox.cpp \
+  ftxui/ftxui/component/collapsible.cpp \
+  ftxui/ftxui/component/component.cpp \
+  ftxui/ftxui/component/component_options.cpp \
+  ftxui/ftxui/component/container.cpp \
+  ftxui/ftxui/component/dropdown.cpp \
+  ftxui/ftxui/component/event.cpp \
+  ftxui/ftxui/component/hoverable.cpp \
+  ftxui/ftxui/component/input.cpp \
+  ftxui/ftxui/component/loop.cpp \
+  ftxui/ftxui/component/maybe.cpp \
+  ftxui/ftxui/component/menu.cpp \
+  ftxui/ftxui/component/modal.cpp \
+  ftxui/ftxui/component/radiobox.cpp \
+  ftxui/ftxui/component/renderer.cpp \
+  ftxui/ftxui/component/resizable_split.cpp \
+  ftxui/ftxui/component/screen_interactive.cpp \
+  ftxui/ftxui/component/slider.cpp \
+  ftxui/ftxui/component/terminal_input_parser.cpp \
+  ftxui/ftxui/component/util.cpp \
+  ftxui/ftxui/component/window.cpp
+
+FTXUI_DOM_SRC = \
+  ftxui/ftxui/dom/automerge.cpp \
+  ftxui/ftxui/dom/blink.cpp \
+  ftxui/ftxui/dom/bold.cpp \
+  ftxui/ftxui/dom/border.cpp \
+  ftxui/ftxui/dom/box_helper.cpp \
+  ftxui/ftxui/dom/canvas.cpp \
+  ftxui/ftxui/dom/clear_under.cpp \
+  ftxui/ftxui/dom/color.cpp \
+  ftxui/ftxui/dom/composite_decorator.cpp \
+  ftxui/ftxui/dom/dbox.cpp \
+  ftxui/ftxui/dom/dim.cpp \
+  ftxui/ftxui/dom/flex.cpp \
+  ftxui/ftxui/dom/flexbox.cpp \
+  ftxui/ftxui/dom/flexbox_config.cpp \
+  ftxui/ftxui/dom/flexbox_helper.cpp \
+  ftxui/ftxui/dom/focus.cpp \
+  ftxui/ftxui/dom/frame.cpp \
+  ftxui/ftxui/dom/gauge.cpp \
+  ftxui/ftxui/dom/graph.cpp \
+  ftxui/ftxui/dom/gridbox.cpp \
+  ftxui/ftxui/dom/hbox.cpp \
+  ftxui/ftxui/dom/hyperlink.cpp \
+  ftxui/ftxui/dom/inverted.cpp \
+  ftxui/ftxui/dom/italic.cpp \
+  ftxui/ftxui/dom/linear_gradient.cpp \
+  ftxui/ftxui/dom/node.cpp \
+  ftxui/ftxui/dom/node_decorator.cpp \
+  ftxui/ftxui/dom/paragraph.cpp \
+  ftxui/ftxui/dom/reflect.cpp \
+  ftxui/ftxui/dom/scroll_indicator.cpp \
+  ftxui/ftxui/dom/selection.cpp \
+  ftxui/ftxui/dom/selection_style.cpp \
+  ftxui/ftxui/dom/separator.cpp \
+  ftxui/ftxui/dom/size.cpp \
+  ftxui/ftxui/dom/spinner.cpp \
+  ftxui/ftxui/dom/strikethrough.cpp \
+  ftxui/ftxui/dom/table.cpp \
+  ftxui/ftxui/dom/text.cpp \
+  ftxui/ftxui/dom/underlined.cpp \
+  ftxui/ftxui/dom/underlined_double.cpp \
+  ftxui/ftxui/dom/util.cpp \
+  ftxui/ftxui/dom/vbox.cpp
+
+FTXUI_SCREEN_SRC = \
+  ftxui/ftxui/screen/box.cpp \
+  ftxui/ftxui/screen/color.cpp \
+  ftxui/ftxui/screen/color_info.cpp \
+  ftxui/ftxui/screen/image.cpp \
+  ftxui/ftxui/screen/screen.cpp \
+  ftxui/ftxui/screen/string.cpp \
+  ftxui/ftxui/screen/terminal.cpp
+
+SOURCES = RcppExports.cpp bridge.cpp ui_tree.cpp \
+  $(FTXUI_COMPONENT_SRC) \
+  $(FTXUI_DOM_SRC) \
+  $(FTXUI_SCREEN_SRC)
+
+OBJECTS = $(SOURCES:.cpp=.o)

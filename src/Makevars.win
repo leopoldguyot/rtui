@@ -1,0 +1,13 @@
+# rtui is not supported on Windows.
+# FTXUI requires ncurses, which is not available on Windows.
+# Please use Linux or macOS.
+
+PKG_LIBS = -lncurses
+
+all:
+	@echo ""
+	@echo "ERROR: rtui does not support Windows."
+	@echo "FTXUI requires a POSIX terminal (ncurses) which is unavailable on Windows."
+	@echo "Please install rtui on Linux or macOS."
+	@echo ""
+	@exit 1
