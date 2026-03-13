@@ -44,11 +44,18 @@ app <- tui_app(
   state = list(counter = 0L),
   ui = tui_vbox(
     tui_render_text("counter"),
-    tui_input_button("Increment", id = "inc")
+    tui_hbox(
+        tui_input_button("Increment", id = "inc"),
+        tui_input_button("Decrement", id = "dec")
+    )
   ),
   handlers = list(
     inc = function(state) {
       state$counter <- state$counter + 1L
+      state
+    },
+    dec = function(state) {
+      state$counter <- state$counter - 1L
       state
     }
   )
