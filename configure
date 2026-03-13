@@ -1,6 +1,9 @@
 #!/bin/sh
 # configure script for rtui — detects ncurses on Linux and macOS
 
+# Get the directory where this script is located
+SRCDIR=$(cd "$(dirname "$0")" && pwd)
+
 PKG_NCURSES_CFLAGS=""
 PKG_NCURSES_LIBS=""
 
@@ -36,6 +39,6 @@ fi
 sed \
   -e "s|@PKG_NCURSES_CFLAGS@|${PKG_NCURSES_CFLAGS}|" \
   -e "s|@PKG_NCURSES_LIBS@|${PKG_NCURSES_LIBS}|" \
-  src/Makevars.in > src/Makevars
+  "${SRCDIR}/src/Makevars.in" > "${SRCDIR}/src/Makevars"
 
-echo "Created src/Makevars"
+echo "Created ${SRCDIR}/src/Makevars"
