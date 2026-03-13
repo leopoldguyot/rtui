@@ -1,13 +1,5 @@
-# rtui is not supported on Windows.
-# FTXUI requires ncurses, which is not available on Windows.
-# Please use Linux or macOS.
+include Makevars.in
 
-PKG_LIBS = -lncurses
-
-all:
-	@echo ""
-	@echo "ERROR: rtui does not support Windows."
-	@echo "FTXUI requires a POSIX terminal (ncurses) which is unavailable on Windows."
-	@echo "Please install rtui on Linux or macOS."
-	@echo ""
-	@exit 1
+# These feature-test macros are POSIX-specific and can interfere with Windows
+# headers under Rtools; keep the Windows flags minimal.
+PKG_CXXFLAGS := $(filter-out -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600,$(PKG_CXXFLAGS))

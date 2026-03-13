@@ -6,22 +6,13 @@ A declarative Terminal User Interface (TUI) framework for R, backed by [FTXUI](h
 
 ### Prerequisites
 
-You need a C++17-capable compiler and the `ncurses` development library.
+You need a C++17-capable compiler toolchain.
 
-**Debian / Ubuntu:**
-```bash
-sudo apt install libncurses-dev
-```
+**Linux:** install your distro's standard C/C++ build tools (`gcc`/`g++`, `make`).
 
-**Fedora / RHEL:**
-```bash
-sudo dnf install ncurses-devel
-```
+**macOS:** install Xcode Command Line Tools (`xcode-select --install`).
 
-**macOS (Homebrew):**
-```bash
-brew install ncurses
-```
+**Windows:** install [Rtools](https://cran.r-project.org/bin/windows/Rtools/) and run in a modern terminal (Windows Terminal, PowerShell, or a recent cmd.exe with VT enabled).
 
 You also need the `Rcpp` R package:
 ```r
