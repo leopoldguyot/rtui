@@ -1,5 +1,1 @@
-include Makevars.in
-
-# These feature-test macros are POSIX-specific and can interfere with Windows
-# headers under Rtools; keep the Windows flags minimal.
-PKG_CXXFLAGS := $(filter-out -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600,$(PKG_CXXFLAGS))
+include Makevars

@@ -9,8 +9,6 @@ PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS) \
 
 PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS)
 
-PKG_CXXFLAGS += -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600
-
 # FTXUI source files (no tests, no fuzzers)
 FTXUI_COMPONENT_SRC = \
   ftxui/ftxui/component/animation.cpp \
@@ -91,9 +89,7 @@ FTXUI_SCREEN_SRC = \
   ftxui/ftxui/screen/string.cpp \
   ftxui/ftxui/screen/terminal.cpp
 
-SOURCES = RcppExports.cpp bridge.cpp ui_tree.cpp \
-  $(FTXUI_COMPONENT_SRC) \
-  $(FTXUI_DOM_SRC) \
-  $(FTXUI_SCREEN_SRC)
-
-OBJECTS = $(SOURCES:.cpp=.o)
+override OBJECTS = RcppExports.o bridge.o ui_tree.o \
+  $(FTXUI_COMPONENT_SRC:.cpp=.o) \
+  $(FTXUI_DOM_SRC:.cpp=.o) \
+  $(FTXUI_SCREEN_SRC:.cpp=.o)

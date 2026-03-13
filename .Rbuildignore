@@ -1,3 +1,4 @@
 ^\.copilot$
 ^notes\.md$
 ^\.github$
+^src/.*\.(o|so|dll|a)$
