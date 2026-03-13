@@ -1,5 +1,6 @@
 #!/bin/sh
 # configure script for rtui — detects ncurses on Linux and macOS
+set -e
 
 # Get the directory where this script is located
 SRCDIR=$(cd "$(dirname "$0")" && pwd)
@@ -36,9 +37,17 @@ if [ -z "$PKG_NCURSES_LIBS" ]; then
 fi
 
 # Substitute placeholders in Makevars.in -> Makevars
+MAKEVARS_IN="${SRCDIR}/src/Makevars.in"
+MAKEVARS_OUT="${SRCDIR}/src/Makevars"
+
+if [ ! -f "${MAKEVARS_IN}" ]; then
+  echo "ERROR: Missing ${MAKEVARS_IN}. This file must be included in the source package." >&2
+  exit 1
+fi
+
 sed \
   -e "s|@PKG_NCURSES_CFLAGS@|${PKG_NCURSES_CFLAGS}|" \
   -e "s|@PKG_NCURSES_LIBS@|${PKG_NCURSES_LIBS}|" \
-  "${SRCDIR}/src/Makevars.in" > "${SRCDIR}/src/Makevars"
+  "${MAKEVARS_IN}" > "${MAKEVARS_OUT}"
 
-echo "Created ${SRCDIR}/src/Makevars"
+echo "Created ${MAKEVARS_OUT}"
