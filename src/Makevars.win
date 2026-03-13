@@ -1,1 +1,4 @@
 include Makevars
+
+# FTXUI's Windows backend requires wide-char console APIs.
+PKG_CPPFLAGS += -DUNICODE -D_UNICODE
