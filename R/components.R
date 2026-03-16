@@ -1,63 +1,72 @@
 #' Text output component
 #'
-#' Displays the value of a state key as text. The display updates automatically
-#' whenever the state changes.
+#' Displays the value of an `output` key as text. The display updates
+#' automatically whenever the server updates that output key.
 #'
-#' @param key A character string naming the state key whose value to display.
+#' @param key An `output$<key>` or `output[["key"]]` reference.
 #'
-#' @return A `rtui_component` list node of type `"text"`.
+#' @return A `rtuiComponent` list node of type `"text"`.
 #'
 #' @export
-tui_render_text <- function(key) {
-  if (!is.character(key) || length(key) != 1L)
-    stop("`key` must be a single character string.")
+tuiRenderText <- function(key) {
+  keyExpr <- substitute(key)
+  outputKey <- .rtuiExtractMemberId(keyExpr, "output")
+  if (is.null(outputKey))
+    stop(
+      "`key` must be an `output$<key>` or `output[[\"key\"]]` reference."
+    )
+
+  key <- outputKey
   structure(
     list(type = "text", key = key),
-    class = "rtui_component"
+    class = "rtuiComponent"
   )
 }
 
 #' Button component
 #'
-#' A focusable button that, when activated (Enter key), calls the handler
-#' identified by `id`.
+#' A focusable button. When activated (Enter key), it increments `input$id`
+#' and triggers a server update.
 #'
 #' @param label A character string shown as the button label.
-#' @param id A character string matching a key in the `handlers` list passed
-#'   to [tui_app()].
+#' @param id A character string used as the input key (`input$<id>`).
 #'
-#' @return A `rtui_component` list node of type `"button"`.
+#' @return A `rtuiComponent` list node of type `"button"`.
 #'
 #' @export
-tui_input_button <- function(label, id) {
+tuiInputButton <- function(label, id) {
   if (!is.character(label) || length(label) != 1L)
     stop("`label` must be a single character string.")
   if (!is.character(id) || length(id) != 1L)
     stop("`id` must be a single character string.")
   structure(
     list(type = "button", label = label, id = id),
-    class = "rtui_component"
+    class = "rtuiComponent"
   )
 }
 
 #' Text input component
 #'
-#' A focusable single-line text input. The typed value is stored in the state
-#' under the given `id` key and is accessible inside handlers.
+#' A focusable single-line text input. The typed value is stored automatically
+#' in `input$<id>` and triggers a server update on change. The input starts
+#' with `value`.
 #'
-#' @param id A character string used as the state key for the input's value.
+#' @param id A character string used as the input key (`input$<id>`).
 #' @param placeholder A character string shown when the input is empty.
+#' @param value A character string used as the initial/default input value.
 #'
-#' @return A `rtui_component` list node of type `"input"`.
+#' @return A `rtuiComponent` list node of type `"input"`.
 #'
 #' @export
-tui_input_text <- function(id, placeholder = "") {
+tuiInputText <- function(id, placeholder = "", value = "") {
   if (!is.character(id) || length(id) != 1L)
     stop("`id` must be a single character string.")
   if (!is.character(placeholder) || length(placeholder) != 1L)
     stop("`placeholder` must be a single character string.")
+  if (!is.character(value) || length(value) != 1L)
+    stop("`value` must be a single character string.")
   structure(
-    list(type = "input", id = id, placeholder = placeholder),
-    class = "rtui_component"
+    list(type = "input", id = id, placeholder = placeholder, value = value),
+    class = "rtuiComponent"
   )
 }

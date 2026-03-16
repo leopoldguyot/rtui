@@ -11,17 +11,17 @@
 using namespace ftxui;
 
 // [[Rcpp::export]]
-void run_tui_app(
-    Rcpp::List ui_list,
-    Rcpp::List state_list,
+void runTuiApp(
+    Rcpp::List uiList,
+    Rcpp::List stateList,
     Rcpp::List handlers
 ) {
   // Shared state — all component lambdas capture this by shared_ptr.
   auto state = std::make_shared<AppState>();
-  state->values = state_list;
+  state->values = stateList;
 
   // Build the FTXUI component tree from the R UI list tree.
-  Component root = build_component(ui_list, state, handlers);
+  Component root = build_component(uiList, state, handlers);
 
   // Wrap root in a CatchEvent component that handles Ctrl+Q / Escape to quit.
   auto screen = ScreenInteractive::Fullscreen();

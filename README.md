@@ -35,40 +35,33 @@ remotes::install_github("leopoldguyot/rtui")
 ```r
 library(rtui)
 
-app <- tui_app(
-  state = list(counter = 0L),
-  ui = tui_vbox(
-    tui_render_text("counter"),
-    tui_hbox(
-        tui_input_button("Increment", id = "inc"),
-        tui_input_button("Decrement", id = "dec")
+app <- tuiApp(
+  ui = tuiColumn(
+    tuiRenderText(output$counter),
+    tuiRow(
+      tuiInputButton("Increment", id = "inc"),
+      tuiInputButton("Decrement", id = "dec")
     )
   ),
-  handlers = list(
-    inc = function(state) {
-      state$counter <- state$counter + 1L
-      state
-    },
-    dec = function(state) {
-      state$counter <- state$counter - 1L
-      state
-    }
-  )
+  server = function(input, output) {
+    output$counter <- input$inc - input$dec
+  }
 )
 
-tui_run(app)  # press Escape or Ctrl+Q to quit
+tuiRun(app)  # press Escape or Ctrl+Q to quit
 ```
 
 ## API
 
 | Function | Description |
 |---|---|
-| `tui_app(state, ui, handlers)` | Define a TUI application |
-| `tui_run(app)` | Start the app (blocking) |
-| `tui_vbox(...)` | Stack components vertically |
-| `tui_hbox(...)` | Place components side by side |
-| `tui_render_text(key)` | Display a state value as text |
-| `tui_input_button(label, id)` | Button that triggers a handler |
-| `tui_input_text(id, placeholder)` | Single-line text input |
+| `tuiApp(ui, server)` | Define a TUI application |
+| `tuiRun(app)` | Start the app (blocking) |
+| `tuiColumn(...)` | Stack components vertically |
+| `tuiRow(...)` | Place components side by side |
+| `tuiRenderText(output$someValue)` | Display an output value as text |
+| `tuiInputButton(label, id)` | Button that triggers a handler |
+| `tuiInputText(id, placeholder, value)` | Single-line text input |
+| `tuiObserveEvent(input$someButton, expr, runAtInit = FALSE)` | Run code only when a specific input event triggers the server |
 
 Navigate with **Tab** / **arrow keys**, activate buttons with **Enter**.

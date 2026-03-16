@@ -4,18 +4,18 @@
 #'
 #' @param ... Child components built with layout or component functions.
 #'
-#' @return A `rtui_component` list node of type `"vbox"`.
+#' @return A `rtuiComponent` list node of type `"vbox"`.
 #'
 #' @export
-tui_vbox <- function(...) {
+tuiColumn <- function(...) {
   children <- list(...)
   lapply(children, function(c) {
-    if (!inherits(c, "rtui_component"))
-      stop("All children must be rtui components.")
+    if (!inherits(c, "rtuiComponent"))
+      stop("All children must be rtuiComponent objects.")
   })
   structure(
     list(type = "vbox", children = children),
-    class = "rtui_component"
+    class = "rtuiComponent"
   )
 }
 
@@ -25,17 +25,17 @@ tui_vbox <- function(...) {
 #'
 #' @param ... Child components built with layout or component functions.
 #'
-#' @return A `rtui_component` list node of type `"hbox"`.
+#' @return A `rtuiComponent` list node of type `"hbox"`.
 #'
 #' @export
-tui_hbox <- function(...) {
+tuiRow <- function(...) {
   children <- list(...)
   lapply(children, function(c) {
-    if (!inherits(c, "rtui_component"))
-      stop("All children must be rtui components.")
+    if (!inherits(c, "rtuiComponent"))
+      stop("All children must be rtuiComponent objects.")
   })
   structure(
     list(type = "hbox", children = children),
-    class = "rtui_component"
+    class = "rtuiComponent"
   )
 }

@@ -4,8 +4,8 @@ Version: 0.0.0.9000
 Authors@R:
     person("Léopold", "Guyot", , "leopold.guyot@uclouvain.be", role = c("aut", "cre"))
 Description: A declarative terminal user interface (TUI) framework for R,
-    backed by the FTXUI C++ library via Rcpp. Define apps with a state,
-    a UI component tree, and event handlers.
+    backed by the FTXUI C++ library via Rcpp. Define apps with a UI
+    component tree, a server function, and reactive input/output updates.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

@@ -7,8 +7,9 @@
 #include <functional>
 
 // Shared mutable state passed by reference into all component callbacks.
-// When a handler fires, it replaces *state and FTXUI re-renders automatically
-// because the renderer lambda captures state by reference.
+// Expected structure:
+// - values$input:  list of input values keyed by component id
+// - values$output: list of output values keyed by render key
 struct AppState {
   Rcpp::List values;
 };
