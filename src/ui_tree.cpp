@@ -54,11 +54,11 @@ std::string value_to_string(SEXP val) {
 
 SEXP get_output_value(
     const std::shared_ptr<AppState>& state,
-    const std::string& key
+    const std::string& output_id
 ) {
   Rcpp::List output_values = get_sublist_or_empty(state->values, "output");
-  if (output_values.containsElementNamed(key.c_str())) {
-    return output_values[key];
+  if (output_values.containsElementNamed(output_id.c_str())) {
+    return output_values[output_id];
   }
   return R_NilValue;
 }
@@ -140,12 +140,12 @@ ftxui::Component build_component(
       return Container::Horizontal(comps);
   }
 
-  // ── Text output (reads a key from state$output) ──────────────────────────
+  // ── Output text / numeric (reads from state$output) ──────────────────────
 
-  if (type == "text") {
-    std::string key = Rcpp::as<std::string>(node["key"]);
-    return Renderer([state, key] {
-      SEXP val = get_output_value(state, key);
+  if (type == "outputText" || type == "outputNumeric") {
+    std::string output_id = Rcpp::as<std::string>(node["outputId"]);
+    return Renderer([state, output_id] {
+      SEXP val = get_output_value(state, output_id);
       return text(value_to_string(val));
     });
   }

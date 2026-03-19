@@ -8,16 +8,16 @@ tuiApp(ui, server)
 }
 \arguments{
 \item{ui}{A UI component tree built with \code{\link[=tuiColumn]{tuiColumn()}}, \code{\link[=tuiRow]{tuiRow()}},
-\code{\link[=tuiRenderText]{tuiRenderText()}}, \code{\link[=tuiInputButton]{tuiInputButton()}}, or \code{\link[=tuiInputText]{tuiInputText()}}.}
+\code{\link[=tuiOutputText]{tuiOutputText()}}, \code{\link[=tuiOutputNumeric]{tuiOutputNumeric()}}, \code{\link[=tuiInputButton]{tuiInputButton()}}, or
+\code{\link[=tuiInputText]{tuiInputText()}}.}
 
 \item{server}{A function called as \code{server(input, output)}. Both \code{input}
 and \code{output} are environments:
 \itemize{
 \item \verb{input$<id>} is updated automatically from buttons and text inputs.
-\item assign to \verb{output$<key>} to update values displayed by
-\code{\link[=tuiRenderText]{tuiRenderText()}}.
-\item use \code{\link[=tuiObserveEvent]{tuiObserveEvent()}} to run updates only for specific input events,
-optionally with \code{runAtInit = TRUE}.
+\item assign rendered outputs with \verb{output$<name> <- tuiRenderText(...)} or
+\verb{output$<name> <- tuiRenderNumeric(...)}.
+\item use \code{\link[=tuiObserveEvent]{tuiObserveEvent()}} / \code{\link[=tuiReactiveEvent]{tuiReactiveEvent()}} for event-based updates.
 }}
 }
 \value{
@@ -31,11 +31,11 @@ Shiny's conceptual model.
 \examples{
 app <- tuiApp(
   ui = tuiColumn(
-    tuiRenderText(output$counter),
+    tuiOutputNumeric("counter"),
     tuiInputButton("Increment", id = "inc")
   ),
   server = function(input, output) {
-    output$counter <- input$inc
+    output$counter <- tuiRenderNumeric(input$inc)
   }
 )
 

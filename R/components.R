@@ -1,29 +1,42 @@
 #' Text output component
 #'
-#' Displays the value of an `output` key as text. The display updates
-#' automatically whenever the server updates that output key.
+#' Displays the value of `output$<outputId>` as text.
 #'
-#' @param key An `output$<key>` or `output[["key"]]` reference.
+#' @param outputId A single character string naming the output id.
 #'
-#' @return A `rtuiComponent` list node of type `"text"`.
+#' @return A `rtuiComponent` list node of type `"outputText"`.
 #'
 #' @export
-tuiRenderText <- function(key) {
-  keyExpr <- substitute(key)
-  outputKey <- .rtuiExtractMemberId(keyExpr, "output")
-  if (is.null(outputKey))
-    stop(
-      "`key` must be an `output$<key>` or `output[[\"key\"]]` reference."
-    )
+tuiOutputText <- function(outputId) {
+  if (!is.character(outputId) || length(outputId) != 1L || is.na(outputId))
+    stop("`outputId` must be a single character string.")
 
-  key <- outputKey
   structure(
-    list(type = "text", key = key),
+    list(type = "outputText", outputId = outputId),
     class = "rtuiComponent"
   )
 }
 
-#' Button component
+#' Numeric output component
+#'
+#' Displays the value of `output$<outputId>` as numeric text.
+#'
+#' @param outputId A single character string naming the output id.
+#'
+#' @return A `rtuiComponent` list node of type `"outputNumeric"`.
+#'
+#' @export
+tuiOutputNumeric <- function(outputId) {
+  if (!is.character(outputId) || length(outputId) != 1L || is.na(outputId))
+    stop("`outputId` must be a single character string.")
+
+  structure(
+    list(type = "outputNumeric", outputId = outputId),
+    class = "rtuiComponent"
+  )
+}
+
+#' Button input component
 #'
 #' A focusable button. When activated (Enter key), it increments `input$id`
 #' and triggers a server update.
@@ -35,10 +48,11 @@ tuiRenderText <- function(key) {
 #'
 #' @export
 tuiInputButton <- function(label, id) {
-  if (!is.character(label) || length(label) != 1L)
+  if (!is.character(label) || length(label) != 1L || is.na(label))
     stop("`label` must be a single character string.")
-  if (!is.character(id) || length(id) != 1L)
+  if (!is.character(id) || length(id) != 1L || is.na(id))
     stop("`id` must be a single character string.")
+
   structure(
     list(type = "button", label = label, id = id),
     class = "rtuiComponent"
@@ -59,12 +73,13 @@ tuiInputButton <- function(label, id) {
 #'
 #' @export
 tuiInputText <- function(id, placeholder = "", value = "") {
-  if (!is.character(id) || length(id) != 1L)
+  if (!is.character(id) || length(id) != 1L || is.na(id))
     stop("`id` must be a single character string.")
-  if (!is.character(placeholder) || length(placeholder) != 1L)
+  if (!is.character(placeholder) || length(placeholder) != 1L || is.na(placeholder))
     stop("`placeholder` must be a single character string.")
-  if (!is.character(value) || length(value) != 1L)
+  if (!is.character(value) || length(value) != 1L || is.na(value))
     stop("`value` must be a single character string.")
+
   structure(
     list(type = "input", id = id, placeholder = placeholder, value = value),
     class = "rtuiComponent"

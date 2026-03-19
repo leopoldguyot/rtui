@@ -9,7 +9,7 @@
 // Shared mutable state passed by reference into all component callbacks.
 // Expected structure:
 // - values$input:  list of input values keyed by component id
-// - values$output: list of output values keyed by render key
+// - values$output: list of output values keyed by output id
 struct AppState {
   Rcpp::List values;
 };

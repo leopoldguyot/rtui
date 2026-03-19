@@ -2,7 +2,7 @@
 % Please edit documentation in R/components.R
 \name{tuiInputButton}
 \alias{tuiInputButton}
-\title{Button component}
+\title{Button input component}
 \usage{
 tuiInputButton(label, id)
 }
