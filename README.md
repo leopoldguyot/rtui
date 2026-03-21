@@ -85,3 +85,9 @@ tuiRun(app)  # press Escape or Ctrl+Q to quit
 | `tuiObserveEvent(event, expr, runAtInit = FALSE)` | Run code only when an input/reactive event invalidates during the cycle |
 
 Navigate with **Tab** / **arrow keys**, activate buttons with **Enter**.
+
+## Vignettes
+
+- `getting-started`: quick onboarding and minimal app pattern.
+- `explained-example`: a full app walkthrough with step-by-step reactive flow.
+- `reactivity-reference`: concise reference of the graph-based reactivity model.

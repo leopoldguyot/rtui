@@ -2,3 +2,8 @@
 ^notes\.md$
 ^\.github$
 ^src/.*\.(o|so|dll|a)$
+^doc$
+^Meta$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$

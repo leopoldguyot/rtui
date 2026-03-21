@@ -15,5 +15,10 @@ LinkingTo: Rcpp
 Imports:
     Rcpp
 Suggests:
+    knitr,
+    rmarkdown,
     testthat (>= 3.0.0)
+VignetteBuilder:
+    knitr
 Config/testthat/edition: 3
+URL: https://leopoldguyot.github.io/rtui/
