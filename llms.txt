@@ -1,0 +1,167 @@
+# rtui
+
+A declarative Terminal User Interface (TUI) framework for R, backed by
+[FTXUI](https://github.com/ArthurSonzogni/FTXUI) via Rcpp.
+
+## Installation
+
+### Prerequisites
+
+You need a C++17-capable compiler toolchain.
+
+**Linux:** install your distro’s standard C/C++ build tools
+(`gcc`/`g++`, `make`).
+
+**macOS:** install Xcode Command Line Tools (`xcode-select --install`).
+
+**Windows:** install
+[Rtools](https://cran.r-project.org/bin/windows/Rtools/) and run in a
+modern terminal (Windows Terminal, PowerShell, or a recent cmd.exe with
+VT enabled).
+
+You also need the `Rcpp` R package:
+
+``` r
+install.packages("Rcpp")
+```
+
+### Install from GitHub
+
+``` r
+# install.packages("remotes")
+remotes::install_github("leopoldguyot/rtui")
+```
+
+## Quick start
+
+``` r
+library(rtui)
+
+app <- tuiApp(
+  ui = tuiColumn(
+    tuiOutputNumeric("counter"),
+    tuiOutputText("name"),
+    tuiRow(
+      tuiInputButton("Increment", id = "inc"),
+      tuiInputButton("Decrement", id = "dec"),
+      tuiInputButton("Apply name", id = "applyName")
+    ),
+    tuiInputText(id = "nameInput", value = "John")
+  ),
+  server = function(input, output) {
+    counter <- tuiReactive(input$inc - input$dec)
+    appliedName <- tuiReactiveEvent(input$applyName, runAtInit = TRUE, {
+      input$nameInput
+    })
+
+    tuiObserveEvent(counter(), {
+      currentName <- tuiIsolate(appliedName())
+      message("counter changed while name is ", currentName)
+    })
+
+    output$counter <- tuiRenderNumeric(counter(), digits = 0)
+    output$name <- tuiRenderText(paste("Your name is:", appliedName()))
+  }
+)
+
+tuiRun(app)  # press Escape or Ctrl+Q to quit
+```
+
+## API
+
+| Function                                                        | Description                                                                                    |
+|-----------------------------------------------------------------|------------------------------------------------------------------------------------------------|
+| `tuiApp(ui, server)`                                            | Define a TUI application                                                                       |
+| `tuiRun(app)`                                                   | Start the app (blocking)                                                                       |
+| `tuiColumn(...)`                                                | Stack components vertically                                                                    |
+| `tuiRow(...)`                                                   | Place components side by side                                                                  |
+| `tuiOutputText("id")` / `tuiOutputNumeric("id")`                | Display `output$id` in the UI                                                                  |
+| `tuiInputButton(label, id)`                                     | Button that triggers a handler                                                                 |
+| `tuiInputText(id, placeholder, value)`                          | Single-line text input                                                                         |
+| `tuiRenderText(expr)` / `tuiRenderNumeric(expr, digits = NULL)` | Build renderers assigned to `output$...`                                                       |
+| `tuiReactive(expr)` / `tuiReactiveVal(value)`                   | Define graph-tracked reactive expressions and mutable values (auto invalidation of dependents) |
+| `tuiReactiveEvent(event, expr, runAtInit = FALSE)`              | Event-scoped reactive expression that re-runs when its event source invalidates                |
+| `tuiReq(...)`                                                   | Stop current reactive/render evaluation when required values are falsy                         |
+| `tuiIsolate(expr)`                                              | Read reactive values without registering graph dependencies                                    |
+| `tuiObserve(expr)`                                              | Run code every server cycle                                                                    |
+| `tuiObserveEvent(event, expr, runAtInit = FALSE)`               | Run code only when an input/reactive event invalidates during the cycle                        |
+
+Navigate with **Tab** / **arrow keys**, activate buttons with **Enter**.
+
+## Vignettes
+
+- `getting-started`: quick onboarding and minimal app pattern.
+- `explained-example`: a full app walkthrough with step-by-step reactive
+  flow.
+- `reactivity-reference`: concise reference of the graph-based
+  reactivity model.
+
+# Package index
+
+## All functions
+
+- [`tuiApp()`](https://leopoldguyot.github.io/rtui/reference/tuiApp.md)
+  : Create a TUI application
+
+- [`tuiColumn()`](https://leopoldguyot.github.io/rtui/reference/tuiColumn.md)
+  : Vertical box layout
+
+- [`tuiInputButton()`](https://leopoldguyot.github.io/rtui/reference/tuiInputButton.md)
+  : Button input component
+
+- [`tuiInputText()`](https://leopoldguyot.github.io/rtui/reference/tuiInputText.md)
+  : Text input component
+
+- [`tuiIsolate()`](https://leopoldguyot.github.io/rtui/reference/tuiIsolate.md)
+  : Evaluate an expression in isolation
+
+- [`tuiObserve()`](https://leopoldguyot.github.io/rtui/reference/tuiObserve.md)
+  : Observe reactive values
+
+- [`tuiObserveEvent()`](https://leopoldguyot.github.io/rtui/reference/tuiObserveEvent.md)
+  : Observe selected input/reactive events
+
+- [`tuiOutputNumeric()`](https://leopoldguyot.github.io/rtui/reference/tuiOutputNumeric.md)
+  : Numeric output component
+
+- [`tuiOutputText()`](https://leopoldguyot.github.io/rtui/reference/tuiOutputText.md)
+  : Text output component
+
+- [`tuiReactive()`](https://leopoldguyot.github.io/rtui/reference/tuiReactive.md)
+  : Create a reactive expression
+
+- [`tuiReactiveEvent()`](https://leopoldguyot.github.io/rtui/reference/tuiReactiveEvent.md)
+  : Create an event-driven reactive expression
+
+- [`tuiReactiveVal()`](https://leopoldguyot.github.io/rtui/reference/tuiReactiveVal.md)
+  : Create a mutable reactive value
+
+- [`tuiRenderNumeric()`](https://leopoldguyot.github.io/rtui/reference/tuiRenderNumeric.md)
+  :
+
+  Create a numeric renderer for `output$...`
+
+- [`tuiRenderText()`](https://leopoldguyot.github.io/rtui/reference/tuiRenderText.md)
+  :
+
+  Create a text renderer for `output$...`
+
+- [`tuiReq()`](https://leopoldguyot.github.io/rtui/reference/tuiReq.md)
+  : Require values to be available/truthy in reactive code
+
+- [`tuiRow()`](https://leopoldguyot.github.io/rtui/reference/tuiRow.md)
+  : Horizontal box layout
+
+- [`tuiRun()`](https://leopoldguyot.github.io/rtui/reference/tuiRun.md)
+  : Run a TUI application
+
+# Articles
+
+### All vignettes
+
+- [An explained example
+  app](https://leopoldguyot.github.io/rtui/articles/explained-example.md):
+- [Getting started with
+  rtui](https://leopoldguyot.github.io/rtui/articles/getting-started.md):
+- [Reactivity
+  reference](https://leopoldguyot.github.io/rtui/articles/reactivity-reference.md):
