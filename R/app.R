@@ -48,6 +48,95 @@
   value
 }
 
+.rtuiReqTruth <- function(x) {
+  if (is.null(x)) {
+    return(FALSE)
+  }
+
+  if (inherits(x, "try-error")) {
+    return(FALSE)
+  }
+
+  if (is.logical(x)) {
+    if (length(x) == 0L || anyNA(x)) {
+      return(FALSE)
+    }
+    return(any(x))
+  }
+
+  if (is.character(x)) {
+    if (length(x) == 0L || anyNA(x)) {
+      return(FALSE)
+    }
+    return(any(nzchar(x)))
+  }
+
+  if (is.numeric(x) || is.integer(x) || is.complex(x)) {
+    if (length(x) == 0L || anyNA(x)) {
+      return(FALSE)
+    }
+    return(any(x != 0))
+  }
+
+  if (is.raw(x)) {
+    return(length(x) > 0L)
+  }
+
+  if (inherits(x, "data.frame")) {
+    return(nrow(x) > 0L)
+  }
+
+  if (is.list(x)) {
+    return(length(x) > 0L)
+  }
+
+  if (is.factor(x)) {
+    if (length(x) == 0L || anyNA(x)) {
+      return(FALSE)
+    }
+    return(any(nzchar(as.character(x))))
+  }
+
+  if (length(x) == 0L) {
+    return(FALSE)
+  }
+
+  TRUE
+}
+
+.rtuiReqAbort <- function(message = NULL) {
+  condition <- structure(
+    list(message = message),
+    class = c("rtui_req_error", "error", "condition")
+  )
+  stop(condition)
+}
+
+.rtuiReqDefaultValue <- function() {
+  structure(list(), class = "rtuiReqDefault")
+}
+
+.rtuiReqPropagation <- function(error) {
+  structure(list(error = error), class = "rtuiReqPropagation")
+}
+
+.rtuiHandleReqCondition <- function(runtime, reactiveId, err, cacheKey = NULL) {
+  current <- .rtuiReactiveStoreEnsure(runtime, reactiveId, hasValue = FALSE)
+  if (isTRUE(current$hasValue)) {
+    current$dirty <- FALSE
+    assign(reactiveId, current, envir = runtime$reactiveState)
+    .rtuiSetReactiveChanged(runtime, reactiveId, FALSE)
+    if (!is.null(cacheKey)) {
+      assign(cacheKey, current$value, envir = runtime$currentReactiveCache)
+    }
+    return(current$value)
+  }
+
+  .rtuiReactiveStoreMarkDirty(runtime, reactiveId, dirty = FALSE)
+  .rtuiSetReactiveChanged(runtime, reactiveId, FALSE)
+  .rtuiReqPropagation(err)
+}
+
 .rtuiNextReactiveId <- function(prefix) {
   runtime <- .rtuiCurrentRuntime()
   runtime$reactiveIndex <- runtime$reactiveIndex + 1L
@@ -429,7 +518,15 @@
   }
 
   if (identical(eventSpec$type, "reactive")) {
-    .rtuiWithCaptureEnabled(runtime, eventSpec$object())
+    eventValue <- tryCatch(
+      .rtuiWithCaptureEnabled(runtime, eventSpec$object()),
+      rtui_req_error = function(err) {
+        .rtuiReqDefaultValue()
+      }
+    )
+    if (inherits(eventValue, "rtuiReqDefault")) {
+      return(FALSE)
+    }
     reactiveChanged <- .rtuiGetReactiveChanged(runtime, eventSpec$reactiveId)
     if (isInitRun) {
       return(isTRUE(runAtInit))
@@ -473,10 +570,20 @@
   evalEnv$input <- runtime$currentInput
   evalEnv$output <- runtime$currentOutput
 
-  rendered <- eval(value$expr, envir = evalEnv)
-  rendered <- .rtuiEvalMaybeReactive(rendered)
+  rendered <- tryCatch(
+    {
+      evaluated <- eval(value$expr, envir = evalEnv)
+      .rtuiEvalMaybeReactive(evaluated)
+    },
+    rtui_req_error = function(err) {
+      .rtuiReqDefaultValue()
+    }
+  )
 
   if (identical(value$kind, "text")) {
+    if (inherits(rendered, "rtuiReqDefault")) {
+      return("")
+    }
     if (is.null(rendered) || length(rendered) == 0L) {
       return("")
     }
@@ -484,6 +591,9 @@
   }
 
   if (identical(value$kind, "numeric")) {
+    if (inherits(rendered, "rtuiReqDefault")) {
+      return("NA")
+    }
     numericValue <- suppressWarnings(as.numeric(rendered))
     if (length(numericValue) == 0L) {
       return("NA")
@@ -802,8 +912,21 @@ tuiReactive <- function(expr) {
       .rtuiGraphEndEvaluation(runtime, reactiveId, success)
     }, add = TRUE)
 
-    value <- eval(exprSub, envir = exprEnv)
+    value <- tryCatch(
+      eval(exprSub, envir = exprEnv),
+      rtui_req_error = function(err) {
+        .rtuiHandleReqCondition(runtime, reactiveId, err, cacheKey = cacheKey)
+      }
+    )
+    if (inherits(value, "rtuiReqPropagation")) {
+      success <- TRUE
+      stop(value$error)
+    }
     value <- .rtuiEvalMaybeReactive(value)
+    if (inherits(value, "rtuiReqPropagation")) {
+      success <- TRUE
+      stop(value$error)
+    }
     value <- .rtuiUpdateReactiveState(runtime, reactiveId, value)
 
     success <- TRUE
@@ -922,8 +1045,21 @@ tuiReactiveEvent <- function(event, expr, runAtInit = FALSE) {
       }, add = TRUE)
 
       .rtuiGraphMapSet(runtime$currentEvalDeps, reactiveId, dependencyIds)
-      value <- .rtuiWithCaptureSuspended(runtime, eval(exprSub, envir = exprEnv))
+      value <- tryCatch(
+        .rtuiWithCaptureSuspended(runtime, eval(exprSub, envir = exprEnv)),
+        rtui_req_error = function(err) {
+          .rtuiHandleReqCondition(runtime, reactiveId, err, cacheKey = cacheKey)
+        }
+      )
+      if (inherits(value, "rtuiReqPropagation")) {
+        success <- TRUE
+        stop(value$error)
+      }
       value <- .rtuiEvalMaybeReactive(value)
+      if (inherits(value, "rtuiReqPropagation")) {
+        success <- TRUE
+        stop(value$error)
+      }
       value <- .rtuiUpdateReactiveState(runtime, reactiveId, value)
       success <- TRUE
       assign(cacheKey, value, envir = runtime$currentReactiveCache)
@@ -953,7 +1089,12 @@ tuiReactiveEvent <- function(event, expr, runAtInit = FALSE) {
 #'
 #' @export
 tuiObserve <- function(expr) {
-  eval.parent(substitute(expr))
+  tryCatch(
+    eval.parent(substitute(expr)),
+    rtui_req_error = function(err) {
+      invisible(NULL)
+    }
+  )
   invisible(NULL)
 }
 
@@ -1003,10 +1144,45 @@ tuiObserveEvent <- function(event, expr, runAtInit = FALSE) {
 
   eventSpec <- .rtuiResolveEventSpec(substitute(event), parent.frame())
   if (.rtuiShouldTriggerEvent(eventSpec, runAtInit = runAtInit)) {
-    eval.parent(substitute(expr))
+    tryCatch(
+      eval.parent(substitute(expr)),
+      rtui_req_error = function(err) {
+        invisible(NULL)
+      }
+    )
   }
 
   invisible(NULL)
+}
+
+#' Require values to be available/truthy in reactive code
+#'
+#' Stops the current reactive/render evaluation when any supplied value is not
+#' considered available (falsy), similarly to `shiny::req()`.
+#'
+#' @param ... Values to validate.
+#' @param cancelOutput Ignored for now. Present for API compatibility.
+#'
+#' @return Invisibly returns the first supplied value when all values are truthy.
+#'
+#' @export
+tuiReq <- function(..., cancelOutput = FALSE) {
+  if (!is.logical(cancelOutput) || length(cancelOutput) != 1L || is.na(cancelOutput)) {
+    stop("`cancelOutput` must be TRUE or FALSE.")
+  }
+
+  values <- list(...)
+  if (length(values) == 0L) {
+    .rtuiReqAbort()
+  }
+
+  for (value in values) {
+    if (!isTRUE(.rtuiReqTruth(value))) {
+      .rtuiReqAbort()
+    }
+  }
+
+  invisible(values[[1L]])
 }
 
 #' Create a text renderer for `output$...`

@@ -79,6 +79,7 @@ tuiRun(app)  # press Escape or Ctrl+Q to quit
 | `tuiRenderText(expr)` / `tuiRenderNumeric(expr, digits = NULL)` | Build renderers assigned to `output$...` |
 | `tuiReactive(expr)` / `tuiReactiveVal(value)` | Define graph-tracked reactive expressions and mutable values (auto invalidation of dependents) |
 | `tuiReactiveEvent(event, expr, runAtInit = FALSE)` | Event-scoped reactive expression that re-runs when its event source invalidates |
+| `tuiReq(...)` | Stop current reactive/render evaluation when required values are falsy |
 | `tuiIsolate(expr)` | Read reactive values without registering graph dependencies |
 | `tuiObserve(expr)` | Run code every server cycle |
 | `tuiObserveEvent(event, expr, runAtInit = FALSE)` | Run code only when an input/reactive event invalidates during the cycle |
