@@ -1,6 +1,6 @@
 Package: rtui
 Title: TUI Framework for R
-Version: 0.0.0.9000
+Version: 0.0.1
 Authors@R:
     person("Léopold", "Guyot", , "leopold.guyot@uclouvain.be", role = c("aut", "cre"))
 Description: A declarative terminal user interface (TUI) framework for R,
