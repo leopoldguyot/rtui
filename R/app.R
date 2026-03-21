@@ -61,16 +61,270 @@
   NULL
 }
 
-.rtuiReactiveStoreSet <- function(runtime, reactiveId, value, hasValue = TRUE) {
+.rtuiReactiveStoreSet <- function(runtime, reactiveId, value, hasValue = TRUE, dirty = FALSE) {
   assign(
     reactiveId,
-    list(value = value, hasValue = hasValue),
+    list(value = value, hasValue = hasValue, dirty = isTRUE(dirty)),
     envir = runtime$reactiveState
   )
 }
 
+.rtuiReactiveStoreEnsure <- function(
+    runtime,
+    reactiveId,
+    value = NULL,
+    hasValue = FALSE,
+    dirty = !isTRUE(hasValue)
+) {
+  current <- .rtuiReactiveStoreGet(runtime, reactiveId)
+  if (is.null(current)) {
+    .rtuiReactiveStoreSet(
+      runtime,
+      reactiveId,
+      value = value,
+      hasValue = hasValue,
+      dirty = dirty
+    )
+    return(.rtuiReactiveStoreGet(runtime, reactiveId))
+  }
+
+  if (is.null(current$dirty)) {
+    current$dirty <- !isTRUE(current$hasValue)
+    assign(reactiveId, current, envir = runtime$reactiveState)
+  }
+  current
+}
+
+.rtuiReactiveStoreMarkDirty <- function(runtime, reactiveId, dirty = TRUE) {
+  current <- .rtuiReactiveStoreEnsure(runtime, reactiveId)
+  current$dirty <- isTRUE(dirty)
+  assign(reactiveId, current, envir = runtime$reactiveState)
+}
+
+.rtuiReactiveCacheKey <- function(nodeType, reactiveId) {
+  paste0(nodeType, ":", reactiveId)
+}
+
+.rtuiDropReactiveCache <- function(runtime, reactiveId) {
+  cachePrefixes <- c("reactive", "reactiveVal", "reactiveEvent")
+  for (prefix in cachePrefixes) {
+    cacheKey <- .rtuiReactiveCacheKey(prefix, reactiveId)
+    if (exists(cacheKey, envir = runtime$currentReactiveCache, inherits = FALSE)) {
+      rm(list = cacheKey, envir = runtime$currentReactiveCache)
+    }
+  }
+}
+
+.rtuiGraphMapGet <- function(mapEnv, key) {
+  if (!exists(key, envir = mapEnv, inherits = FALSE)) {
+    return(character())
+  }
+
+  value <- get(key, envir = mapEnv, inherits = FALSE)
+  if (is.null(value) || length(value) == 0L) {
+    return(character())
+  }
+  unique(as.character(value))
+}
+
+.rtuiGraphMapSet <- function(mapEnv, key, values) {
+  normalized <- unique(as.character(values))
+  if (length(normalized) == 0L) {
+    if (exists(key, envir = mapEnv, inherits = FALSE)) {
+      rm(list = key, envir = mapEnv)
+    }
+    return(invisible(NULL))
+  }
+
+  assign(key, normalized, envir = mapEnv)
+  invisible(NULL)
+}
+
+.rtuiInputNodeId <- function(inputId) {
+  paste0("input:", inputId)
+}
+
+.rtuiGraphEnsureRuntime <- function(runtime) {
+  if (is.null(runtime$graphDependencies) || !is.environment(runtime$graphDependencies)) {
+    runtime$graphDependencies <- new.env(parent = emptyenv())
+  }
+  if (is.null(runtime$graphDependents) || !is.environment(runtime$graphDependents)) {
+    runtime$graphDependents <- new.env(parent = emptyenv())
+  }
+  if (is.null(runtime$graphNodeTypes) || !is.environment(runtime$graphNodeTypes)) {
+    runtime$graphNodeTypes <- new.env(parent = emptyenv())
+  }
+  if (is.null(runtime$currentEvalDeps) || !is.environment(runtime$currentEvalDeps)) {
+    runtime$currentEvalDeps <- new.env(parent = emptyenv())
+  }
+  if (is.null(runtime$graphEvalStack)) {
+    runtime$graphEvalStack <- character()
+  }
+  if (is.null(runtime$currentRunId) || length(runtime$currentRunId) == 0L) {
+    runtime$currentRunId <- 0L
+  }
+  if (is.null(runtime$currentInputState) || !is.list(runtime$currentInputState)) {
+    runtime$currentInputState <- list()
+  }
+  if (is.null(runtime$currentCaptureDepth) || length(runtime$currentCaptureDepth) == 0L) {
+    runtime$currentCaptureDepth <- 0L
+  }
+}
+
+.rtuiGraphSetNodeType <- function(runtime, nodeId, nodeType) {
+  assign(nodeId, nodeType, envir = runtime$graphNodeTypes)
+}
+
+.rtuiGraphNodeType <- function(runtime, nodeId) {
+  if (!exists(nodeId, envir = runtime$graphNodeTypes, inherits = FALSE)) {
+    return("reactive")
+  }
+  get(nodeId, envir = runtime$graphNodeTypes, inherits = FALSE)
+}
+
+.rtuiGraphEnsureReactiveNode <- function(
+    runtime,
+    reactiveId,
+    nodeType,
+    defaultValue = NULL,
+    hasValue = FALSE
+) {
+  .rtuiGraphEnsureRuntime(runtime)
+  .rtuiGraphSetNodeType(runtime, reactiveId, nodeType)
+  .rtuiReactiveStoreEnsure(
+    runtime,
+    reactiveId,
+    value = defaultValue,
+    hasValue = hasValue,
+    dirty = !isTRUE(hasValue)
+  )
+}
+
+.rtuiGraphUpdateDependencies <- function(runtime, nodeId, dependencyIds) {
+  nextDeps <- unique(as.character(dependencyIds))
+  previousDeps <- .rtuiGraphMapGet(runtime$graphDependencies, nodeId)
+
+  removedDeps <- setdiff(previousDeps, nextDeps)
+  addedDeps <- setdiff(nextDeps, previousDeps)
+
+  .rtuiGraphMapSet(runtime$graphDependencies, nodeId, nextDeps)
+
+  for (dependencyId in removedDeps) {
+    dependents <- .rtuiGraphMapGet(runtime$graphDependents, dependencyId)
+    .rtuiGraphMapSet(
+      runtime$graphDependents,
+      dependencyId,
+      setdiff(dependents, nodeId)
+    )
+  }
+
+  for (dependencyId in addedDeps) {
+    dependents <- .rtuiGraphMapGet(runtime$graphDependents, dependencyId)
+    .rtuiGraphMapSet(
+      runtime$graphDependents,
+      dependencyId,
+      c(dependents, nodeId)
+    )
+  }
+}
+
+.rtuiGraphBeginEvaluation <- function(runtime, reactiveId) {
+  .rtuiGraphEnsureRuntime(runtime)
+  stack <- runtime$graphEvalStack
+  if (reactiveId %in% stack) {
+    stop("Cyclic reactive dependency detected for `", reactiveId, "`.")
+  }
+
+  runtime$graphEvalStack <- c(stack, reactiveId)
+  .rtuiGraphMapSet(runtime$currentEvalDeps, reactiveId, character())
+}
+
 .rtuiInIsolate <- function(runtime) {
   isTRUE(runtime$currentIsolateDepth > 0L)
+}
+
+.rtuiCaptureSuspended <- function(runtime) {
+  isTRUE(runtime$currentCaptureDepth > 0L)
+}
+
+.rtuiGraphRegisterRead <- function(runtime, dependencyId) {
+  if (.rtuiInIsolate(runtime) || .rtuiCaptureSuspended(runtime)) {
+    return(invisible(NULL))
+  }
+
+  .rtuiGraphEnsureRuntime(runtime)
+  stack <- runtime$graphEvalStack
+  if (length(stack) == 0L) {
+    return(invisible(NULL))
+  }
+
+  currentNodeId <- stack[[length(stack)]]
+  dependencies <- .rtuiGraphMapGet(runtime$currentEvalDeps, currentNodeId)
+  if (!(dependencyId %in% dependencies)) {
+    .rtuiGraphMapSet(
+      runtime$currentEvalDeps,
+      currentNodeId,
+      c(dependencies, dependencyId)
+    )
+  }
+
+  invisible(NULL)
+}
+
+.rtuiGraphEndEvaluation <- function(runtime, reactiveId, success) {
+  .rtuiGraphEnsureRuntime(runtime)
+  stack <- runtime$graphEvalStack
+
+  if (length(stack) > 0L) {
+    if (identical(stack[[length(stack)]], reactiveId)) {
+      runtime$graphEvalStack <- stack[-length(stack)]
+    } else {
+      runtime$graphEvalStack <- stack[stack != reactiveId]
+    }
+  }
+
+  if (!isTRUE(success)) {
+    if (exists(reactiveId, envir = runtime$currentEvalDeps, inherits = FALSE)) {
+      rm(list = reactiveId, envir = runtime$currentEvalDeps)
+    }
+    return(invisible(NULL))
+  }
+
+  dependencies <- .rtuiGraphMapGet(runtime$currentEvalDeps, reactiveId)
+  if (exists(reactiveId, envir = runtime$currentEvalDeps, inherits = FALSE)) {
+    rm(list = reactiveId, envir = runtime$currentEvalDeps)
+  }
+  .rtuiGraphUpdateDependencies(runtime, reactiveId, dependencies)
+  invisible(NULL)
+}
+
+.rtuiGraphInvalidateDependents <- function(runtime, sourceId) {
+  .rtuiGraphEnsureRuntime(runtime)
+  queue <- c(sourceId)
+  seen <- character()
+
+  while (length(queue) > 0L) {
+    currentId <- queue[[1L]]
+    queue <- queue[-1L]
+    if (currentId %in% seen) {
+      next
+    }
+    seen <- c(seen, currentId)
+
+    dependents <- .rtuiGraphMapGet(runtime$graphDependents, currentId)
+    if (length(dependents) == 0L) {
+      next
+    }
+
+    for (dependentId in dependents) {
+      .rtuiReactiveStoreMarkDirty(runtime, dependentId, dirty = TRUE)
+      .rtuiDropReactiveCache(runtime, dependentId)
+    }
+
+    queue <- c(queue, dependents)
+  }
+
+  invisible(NULL)
 }
 
 .rtuiSetReactiveChanged <- function(runtime, reactiveId, changed, force = FALSE) {
@@ -95,8 +349,11 @@
 .rtuiUpdateReactiveState <- function(runtime, reactiveId, value) {
   previous <- .rtuiReactiveStoreGet(runtime, reactiveId)
   changed <- is.null(previous) || !isTRUE(previous$hasValue) || !identical(previous$value, value)
-  .rtuiReactiveStoreSet(runtime, reactiveId, value = value, hasValue = TRUE)
+  .rtuiReactiveStoreSet(runtime, reactiveId, value = value, hasValue = TRUE, dirty = FALSE)
   .rtuiSetReactiveChanged(runtime, reactiveId, changed)
+  if (isTRUE(changed)) {
+    .rtuiGraphInvalidateDependents(runtime, reactiveId)
+  }
   value
 }
 
@@ -172,7 +429,7 @@
   }
 
   if (identical(eventSpec$type, "reactive")) {
-    eventSpec$object()
+    .rtuiWithCaptureEnabled(runtime, eventSpec$object())
     reactiveChanged <- .rtuiGetReactiveChanged(runtime, eventSpec$reactiveId)
     if (isInitRun) {
       return(isTRUE(runAtInit))
@@ -181,6 +438,29 @@
   }
 
   FALSE
+}
+
+.rtuiReactiveEventDependencies <- function(runtime, eventSpec, runAtInit) {
+  dependencies <- character()
+
+  if (identical(eventSpec$type, "input")) {
+    return(.rtuiInputNodeId(eventSpec$inputId))
+  }
+
+  if (!identical(eventSpec$type, "reactive")) {
+    return(dependencies)
+  }
+
+  dependencies <- c(dependencies, eventSpec$reactiveId)
+
+  if (!is.null(runtime$currentEventId) || isTRUE(runAtInit)) {
+    eventDeps <- .rtuiGraphMapGet(runtime$graphDependencies, eventSpec$reactiveId)
+    if (length(eventDeps) > 0L) {
+      dependencies <- c(dependencies, eventDeps)
+    }
+  }
+
+  unique(dependencies)
 }
 
 .rtuiResolveOutputValue <- function(value) {
@@ -231,6 +511,46 @@
   }
 
   value
+}
+
+.rtuiInputEnv <- function(runtime, inputState) {
+  input <- new.env(parent = emptyenv())
+
+  for (id in names(inputState)) {
+    local({
+      inputId <- id
+      makeActiveBinding(
+        inputId,
+        function(value) {
+          if (!missing(value)) {
+            stop("`input` bindings are read-only.")
+          }
+          .rtuiGraphRegisterRead(runtime, .rtuiInputNodeId(inputId))
+          runtime$currentInputState[[inputId]]
+        },
+        env = input
+      )
+    })
+  }
+
+  input
+}
+
+.rtuiWithCaptureSuspended <- function(runtime, expr) {
+  runtime$currentCaptureDepth <- runtime$currentCaptureDepth + 1L
+  on.exit({
+    runtime$currentCaptureDepth <- max(0L, runtime$currentCaptureDepth - 1L)
+  }, add = TRUE)
+  expr
+}
+
+.rtuiWithCaptureEnabled <- function(runtime, expr) {
+  previousDepth <- runtime$currentCaptureDepth
+  runtime$currentCaptureDepth <- 0L
+  on.exit({
+    runtime$currentCaptureDepth <- previousDepth
+  }, add = TRUE)
+  expr
 }
 
 #' Create a TUI application
@@ -289,6 +609,14 @@ tuiApp <- function(ui, server) {
   runtime$currentInput <- NULL
   runtime$currentOutput <- NULL
   runtime$currentIsolateDepth <- 0L
+  runtime$currentCaptureDepth <- 0L
+  runtime$currentRunId <- 0L
+  runtime$currentInputState <- list()
+  runtime$graphDependencies <- new.env(parent = emptyenv())
+  runtime$graphDependents <- new.env(parent = emptyenv())
+  runtime$graphNodeTypes <- new.env(parent = emptyenv())
+  runtime$currentEvalDeps <- new.env(parent = emptyenv())
+  runtime$graphEvalStack <- character()
 
   inputState <- .rtuiInitialInput(meta)
   outputState <- .rtuiInitialOutput(meta)
@@ -403,16 +731,28 @@ tuiApp <- function(ui, server) {
     .rtuiRuntimeContext$currentRuntime <- oldRuntime
   }, add = TRUE)
 
-  input <- list2env(inputState, parent = emptyenv())
-  output <- list2env(outputState, parent = emptyenv())
-
+  .rtuiGraphEnsureRuntime(runtime)
+  runtime$currentRunId <- runtime$currentRunId + 1L
   runtime$reactiveIndex <- 0L
   runtime$currentReactiveCache <- new.env(parent = emptyenv())
   runtime$currentReactiveChanged <- new.env(parent = emptyenv())
   runtime$currentEventId <- eventId
+  runtime$currentInputState <- inputState
+  runtime$currentOutput <- NULL
+  runtime$currentIsolateDepth <- 0L
+  runtime$currentCaptureDepth <- 0L
+  runtime$graphEvalStack <- character()
+  runtime$currentEvalDeps <- new.env(parent = emptyenv())
+
+  input <- .rtuiInputEnv(runtime, inputState)
+  output <- list2env(outputState, parent = emptyenv())
+
   runtime$currentInput <- input
   runtime$currentOutput <- output
-  runtime$currentIsolateDepth <- 0L
+
+  if (!is.null(eventId)) {
+    .rtuiGraphInvalidateDependents(runtime, .rtuiInputNodeId(eventId))
+  }
 
   server(input, output)
 
@@ -441,15 +781,32 @@ tuiReactive <- function(expr) {
 
   reactiveObject <- function() {
     runtime <- .rtuiCurrentRuntime()
-    cacheKey <- paste0("reactive:", reactiveId)
+    .rtuiGraphEnsureReactiveNode(runtime, reactiveId, "reactive", hasValue = FALSE)
+    .rtuiGraphRegisterRead(runtime, reactiveId)
+
+    cacheKey <- .rtuiReactiveCacheKey("reactive", reactiveId)
     if (exists(cacheKey, envir = runtime$currentReactiveCache, inherits = FALSE)) {
       return(get(cacheKey, envir = runtime$currentReactiveCache, inherits = FALSE))
     }
+
+    current <- .rtuiReactiveStoreEnsure(runtime, reactiveId, hasValue = FALSE)
+    if (isTRUE(current$hasValue) && !isTRUE(current$dirty)) {
+      value <- current$value
+      assign(cacheKey, value, envir = runtime$currentReactiveCache)
+      return(value)
+    }
+
+    success <- FALSE
+    .rtuiGraphBeginEvaluation(runtime, reactiveId)
+    on.exit({
+      .rtuiGraphEndEvaluation(runtime, reactiveId, success)
+    }, add = TRUE)
 
     value <- eval(exprSub, envir = exprEnv)
     value <- .rtuiEvalMaybeReactive(value)
     value <- .rtuiUpdateReactiveState(runtime, reactiveId, value)
 
+    success <- TRUE
     assign(cacheKey, value, envir = runtime$currentReactiveCache)
     value
   }
@@ -473,24 +830,35 @@ tuiReactiveVal <- function(value = NULL) {
   runtime <- .rtuiCurrentRuntime()
   reactiveId <- .rtuiNextReactiveId("reactiveVal")
 
-  if (is.null(.rtuiReactiveStoreGet(runtime, reactiveId))) {
-    .rtuiReactiveStoreSet(runtime, reactiveId, value = value, hasValue = TRUE)
-  }
+  .rtuiGraphEnsureReactiveNode(
+    runtime,
+    reactiveId,
+    "reactiveVal",
+    defaultValue = value,
+    hasValue = TRUE
+  )
 
   reactiveValue <- function(value) {
     runtime <- .rtuiCurrentRuntime()
-    current <- .rtuiReactiveStoreGet(runtime, reactiveId)
-    if (is.null(current)) {
-      current <- list(value = NULL, hasValue = FALSE)
-    }
+    .rtuiGraphEnsureReactiveNode(runtime, reactiveId, "reactiveVal", hasValue = FALSE)
+    current <- .rtuiReactiveStoreEnsure(runtime, reactiveId, hasValue = FALSE)
+    cacheKey <- .rtuiReactiveCacheKey("reactiveVal", reactiveId)
 
     if (missing(value)) {
+      .rtuiGraphRegisterRead(runtime, reactiveId)
+      if (!exists(cacheKey, envir = runtime$currentReactiveCache, inherits = FALSE)) {
+        assign(cacheKey, current$value, envir = runtime$currentReactiveCache)
+      }
       return(current$value)
     }
 
     changed <- !isTRUE(current$hasValue) || !identical(current$value, value)
-    .rtuiReactiveStoreSet(runtime, reactiveId, value = value, hasValue = TRUE)
+    .rtuiReactiveStoreSet(runtime, reactiveId, value = value, hasValue = TRUE, dirty = FALSE)
     .rtuiSetReactiveChanged(runtime, reactiveId, changed, force = TRUE)
+    assign(cacheKey, value, envir = runtime$currentReactiveCache)
+    if (isTRUE(changed)) {
+      .rtuiGraphInvalidateDependents(runtime, reactiveId)
+    }
     invisible(value)
   }
 
@@ -525,20 +893,45 @@ tuiReactiveEvent <- function(event, expr, runAtInit = FALSE) {
 
   reactiveObject <- function() {
     runtime <- .rtuiCurrentRuntime()
-    cacheKey <- paste0("reactiveEvent:", reactiveId)
+    .rtuiGraphEnsureReactiveNode(runtime, reactiveId, "reactiveEvent", hasValue = FALSE)
+    .rtuiGraphRegisterRead(runtime, reactiveId)
+    dependencyIds <- .rtuiReactiveEventDependencies(runtime, eventSpec, runAtInit)
+    .rtuiGraphUpdateDependencies(runtime, reactiveId, dependencyIds)
+
+    cacheKey <- .rtuiReactiveCacheKey("reactiveEvent", reactiveId)
     if (exists(cacheKey, envir = runtime$currentReactiveCache, inherits = FALSE)) {
       return(get(cacheKey, envir = runtime$currentReactiveCache, inherits = FALSE))
     }
 
+    current <- .rtuiReactiveStoreEnsure(runtime, reactiveId, hasValue = FALSE)
+    if (!isTRUE(current$dirty) && isTRUE(current$hasValue)) {
+      assign(cacheKey, current$value, envir = runtime$currentReactiveCache)
+      return(current$value)
+    }
+    if (!isTRUE(current$dirty) && !isTRUE(current$hasValue)) {
+      .rtuiSetReactiveChanged(runtime, reactiveId, FALSE)
+      assign(cacheKey, NULL, envir = runtime$currentReactiveCache)
+      return(NULL)
+    }
+
     if (.rtuiShouldTriggerEvent(eventSpec, runAtInit = runAtInit)) {
-      value <- eval(exprSub, envir = exprEnv)
+      success <- FALSE
+      .rtuiGraphBeginEvaluation(runtime, reactiveId)
+      on.exit({
+        .rtuiGraphEndEvaluation(runtime, reactiveId, success)
+      }, add = TRUE)
+
+      .rtuiGraphMapSet(runtime$currentEvalDeps, reactiveId, dependencyIds)
+      value <- .rtuiWithCaptureSuspended(runtime, eval(exprSub, envir = exprEnv))
       value <- .rtuiEvalMaybeReactive(value)
       value <- .rtuiUpdateReactiveState(runtime, reactiveId, value)
+      success <- TRUE
       assign(cacheKey, value, envir = runtime$currentReactiveCache)
       return(value)
     }
 
     previous <- .rtuiReactiveStoreGet(runtime, reactiveId)
+    .rtuiReactiveStoreMarkDirty(runtime, reactiveId, dirty = FALSE)
     .rtuiSetReactiveChanged(runtime, reactiveId, FALSE)
     value <- if (is.null(previous) || !isTRUE(previous$hasValue)) NULL else previous$value
     assign(cacheKey, value, envir = runtime$currentReactiveCache)

@@ -77,10 +77,10 @@ tuiRun(app)  # press Escape or Ctrl+Q to quit
 | `tuiInputButton(label, id)` | Button that triggers a handler |
 | `tuiInputText(id, placeholder, value)` | Single-line text input |
 | `tuiRenderText(expr)` / `tuiRenderNumeric(expr, digits = NULL)` | Build renderers assigned to `output$...` |
-| `tuiReactive(expr)` / `tuiReactiveVal(value)` | Define reactive expressions and mutable values |
-| `tuiReactiveEvent(event, expr, runAtInit = FALSE)` | Event-scoped reactive expression |
-| `tuiIsolate(expr)` | Read reactive values without creating event dependencies |
+| `tuiReactive(expr)` / `tuiReactiveVal(value)` | Define graph-tracked reactive expressions and mutable values (auto invalidation of dependents) |
+| `tuiReactiveEvent(event, expr, runAtInit = FALSE)` | Event-scoped reactive expression that re-runs when its event source invalidates |
+| `tuiIsolate(expr)` | Read reactive values without registering graph dependencies |
 | `tuiObserve(expr)` | Run code every server cycle |
-| `tuiObserveEvent(event, expr, runAtInit = FALSE)` | Run code only when an input/ref reactive event triggers the server |
+| `tuiObserveEvent(event, expr, runAtInit = FALSE)` | Run code only when an input/reactive event invalidates during the cycle |
 
 Navigate with **Tab** / **arrow keys**, activate buttons with **Enter**.
