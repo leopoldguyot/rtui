@@ -1,8 +1,9 @@
 # Create a TUI application
 
 Defines a terminal UI application from a UI tree and a server function.
-The runtime automatically manages `input` and `output` state, similarly
-to Shiny's conceptual model.
+The runtime runs `server(input, output)` once during initialization to
+register outputs and observers, then re-evaluates only invalidated
+reactive graph nodes for each input event.
 
 ## Usage
 
@@ -34,10 +35,10 @@ tuiApp(ui, server)
     or `output$<name> <- tuiRenderNumeric(...)`.
 
   - use
-    [`tuiObserveEvent()`](https://leopoldguyot.github.io/rtui/reference/tuiObserveEvent.md)
+    [`tuiObserve()`](https://leopoldguyot.github.io/rtui/reference/tuiObserve.md)
     /
-    [`tuiReactiveEvent()`](https://leopoldguyot.github.io/rtui/reference/tuiReactiveEvent.md)
-    for event-based updates.
+    [`tuiObserveEvent()`](https://leopoldguyot.github.io/rtui/reference/tuiObserveEvent.md)
+    for reactive side effects.
 
 ## Value
 

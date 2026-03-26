@@ -53,11 +53,13 @@ app <- tuiApp(
       input$nameInput
     })
 
-    output$message <- tuiRenderText({
+    message <- tuiReactive({
+      counter()
       currentName <- tuiIsolate(appliedName())
       paste0("counter changed while name is ", currentName)
     })
 
+    output$message <- tuiRenderText(message())
     output$counter <- tuiRenderNumeric(counter(), digits = 0)
     output$name <- tuiRenderText(paste("Your name is:", appliedName()))
   }
@@ -82,8 +84,8 @@ tuiRun(app)  # press Escape or Ctrl+Q to quit
 | `tuiReactiveEvent(event, expr, runAtInit = FALSE)`              | Event-scoped reactive expression that re-runs when its event source invalidates                |
 | `tuiReq(...)`                                                   | Stop current reactive/render evaluation when required values are falsy                         |
 | `tuiIsolate(expr)`                                              | Read reactive values without registering graph dependencies                                    |
-| `tuiObserve(expr)`                                              | Run code every server cycle                                                                    |
-| `tuiObserveEvent(event, expr, runAtInit = FALSE)`               | Run code only when an input/reactive event invalidates during the cycle                        |
+| `tuiObserve(expr)`                                              | Register an observer that runs when its dependencies invalidate                                |
+| `tuiObserveEvent(event, expr, runAtInit = FALSE)`               | Register an observer that runs only when the event source invalidates                          |
 
 Navigate with **Tab** / **arrow keys**, activate buttons with **Enter**.
 

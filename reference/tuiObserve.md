@@ -1,6 +1,7 @@
 # Observe reactive values
 
-Evaluates `expr` every server run.
+Registers an observer that re-evaluates `expr` when dependencies
+invalidate.
 
 ## Usage
 

@@ -95,11 +95,13 @@
 <span>      <span class="va">input</span><span class="op">$</span><span class="va">nameInput</span></span>
 <span>    <span class="op">}</span><span class="op">)</span></span>
 <span></span>
-<span>    <span class="va">output</span><span class="op">$</span><span class="va">message</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tuiRenderText.html">tuiRenderText</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>    <span class="va">message</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tuiReactive.html">tuiReactive</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>      <span class="fu">counter</span><span class="op">(</span><span class="op">)</span></span>
 <span>      <span class="va">currentName</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tuiIsolate.html">tuiIsolate</a></span><span class="op">(</span><span class="fu">appliedName</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span>      <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"counter changed while name is "</span>, <span class="va">currentName</span><span class="op">)</span></span>
 <span>    <span class="op">}</span><span class="op">)</span></span>
 <span></span>
+<span>    <span class="va">output</span><span class="op">$</span><span class="va">message</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tuiRenderText.html">tuiRenderText</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span>    <span class="va">output</span><span class="op">$</span><span class="va">counter</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tuiRenderNumeric.html">tuiRenderNumeric</a></span><span class="op">(</span><span class="fu">counter</span><span class="op">(</span><span class="op">)</span>, digits <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
 <span>    <span class="va">output</span><span class="op">$</span><span class="va">name</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tuiRenderText.html">tuiRenderText</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Your name is:"</span>, <span class="fu">appliedName</span><span class="op">(</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span>  <span class="op">}</span></span>
@@ -177,11 +179,11 @@
 </tr>
 <tr class="odd">
 <td><code>tuiObserve(expr)</code></td>
-<td>Run code every server cycle</td>
+<td>Register an observer that runs when its dependencies invalidate</td>
 </tr>
 <tr class="even">
 <td><code>tuiObserveEvent(event, expr, runAtInit = FALSE)</code></td>
-<td>Run code only when an input/reactive event invalidates during the cycle</td>
+<td>Register an observer that runs only when the event source invalidates</td>
 </tr>
 </tbody>
 </table>

@@ -1,6 +1,7 @@
 # Observe selected input/reactive events
 
-Evaluates `expr` only when `event` is triggered.
+Registers an observer that evaluates `expr` only when `event` is
+triggered.
 
 ## Usage
 
