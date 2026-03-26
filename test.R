@@ -17,10 +17,14 @@ app <- tuiApp(
     appliedName <- tuiReactiveEvent(input$applyName, runAtInit = TRUE, {
       input$nameInput
     })
-    n <- tuiReactiveVal(0)
+    n <- tuiReactiveVal(0L)
+
+    tuiObserveEvent(counter(), {
+      n(n() + 1L)
+    }, runAtInit = TRUE)
+
     output$message <- tuiRenderText({
       counter()
-      n(n() + 1)
       currentName <- tuiIsolate(appliedName())
       paste0("counter changed while name is ", currentName, " n = ", n())
     })

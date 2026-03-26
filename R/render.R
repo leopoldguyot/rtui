@@ -75,6 +75,12 @@
 #'
 #' @param expr An expression returning text-compatible output.
 #'
+#' @details
+#' Renderer expressions should ideally be side-effect free. If a `tuiRender*`
+#' expression mutates reactive state (for example via `tuiReactiveVal()`), the
+#' output can invalidate itself during its own evaluation. In that case, `rtui`
+#' emits a warning (once per output id) and still completes the render pass.
+#'
 #' @return A text renderer object for assignment in `output$...`.
 #'
 #' @export
@@ -89,6 +95,12 @@ tuiRenderText <- function(expr) {
 #'
 #' @param expr An expression returning numeric-compatible output.
 #' @param digits Optional number of digits after the decimal point.
+#'
+#' @details
+#' Renderer expressions should ideally be side-effect free. If a `tuiRender*`
+#' expression mutates reactive state (for example via `tuiReactiveVal()`), the
+#' output can invalidate itself during its own evaluation. In that case, `rtui`
+#' emits a warning (once per output id) and still completes the render pass.
 #'
 #' @return A numeric renderer object for assignment in `output$...`.
 #'

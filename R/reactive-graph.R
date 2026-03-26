@@ -481,6 +481,53 @@
     for (dependentId in dependents) {
       .rtuiReactiveStoreMarkDirty(runtime, dependentId, dirty = TRUE)
       .rtuiDropReactiveCache(runtime, dependentId)
+
+      if (!identical(.rtuiGraphNodeType(runtime, sourceId), "reactiveVal")) {
+        next
+      }
+
+      warningNodes <- character()
+      if (
+        length(runtime$graphEvalStack) > 0L &&
+          dependentId %in% runtime$graphEvalStack &&
+          identical(.rtuiGraphNodeType(runtime, dependentId), "output")
+      ) {
+        warningNodes <- c(warningNodes, dependentId)
+      }
+
+      for (evalNodeId in runtime$graphEvalStack) {
+        if (!identical(.rtuiGraphNodeType(runtime, evalNodeId), "output")) {
+          next
+        }
+        evalDeps <- .rtuiGraphMapGet(runtime$currentEvalDeps, evalNodeId)
+        if (sourceId %in% evalDeps) {
+          warningNodes <- c(warningNodes, evalNodeId)
+        }
+      }
+
+      warningNodes <- unique(warningNodes)
+      for (warningNodeId in warningNodes) {
+        outputId <- sub("^output:", "", warningNodeId)
+        if (!exists(outputId, envir = runtime$selfInvalidationWarnings, inherits = FALSE)) {
+          renderName <- "tuiRender*()"
+          if (exists(outputId, envir = runtime$outputDefinitions, inherits = FALSE)) {
+            definition <- get(outputId, envir = runtime$outputDefinitions, inherits = FALSE)
+            if (inherits(definition, "rtuiRenderer")) {
+              if (identical(definition$kind, "text")) {
+                renderName <- "tuiRenderText()"
+              } else if (identical(definition$kind, "numeric")) {
+                renderName <- "tuiRenderNumeric()"
+              }
+            }
+          }
+          warning(
+            "Output `", outputId, "` invalidated itself during `", renderName, "` evaluation. ",
+            "Avoid side effects in `tuiRender*`; move state updates to `tuiObserve()`/`tuiObserveEvent()`.",
+            call. = FALSE
+          )
+          assign(outputId, TRUE, envir = runtime$selfInvalidationWarnings)
+        }
+      }
     }
 
     queue <- c(queue, dependents)

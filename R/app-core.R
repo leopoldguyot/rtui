@@ -223,6 +223,7 @@ tuiApp <- function(ui, server) {
   runtime$outputDefinitions <- new.env(parent = emptyenv())
   runtime$observers <- new.env(parent = emptyenv())
   runtime$observerOrder <- character()
+  runtime$selfInvalidationWarnings <- new.env(parent = emptyenv())
   runtime
 }
 

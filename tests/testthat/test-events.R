@@ -125,3 +125,30 @@ test_that("tuiIsolate in output skips dependency on isolated reactive event", {
   app <- click_input(app, "inc")
   expect_identical(app$state$output$message, "counter changed while name is Ada")
 })
+
+test_that("tuiRender warns once when output self-invalidates via side effects", {
+  app <- tuiApp(
+    ui = tuiColumn(
+      tuiInputButton("inc", id = "inc"),
+      tuiOutputText("message")
+    ),
+    server = function(input, output) {
+      n <- tuiReactiveVal(0L)
+      output$message <- tuiRenderText({
+        input$inc
+        n(n() + 1L)
+        paste0("n=", n())
+      })
+    }
+  )
+
+  expect_warning(
+    {
+      app <- click_input(app, "inc")
+    },
+    "tuiRenderText\\(\\)"
+  )
+  expect_no_warning({
+    app <- click_input(app, "inc")
+  })
+})

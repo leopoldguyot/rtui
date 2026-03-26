@@ -17,3 +17,9 @@ A numeric renderer object for assignment in \code{output$...}.
 \description{
 Create a numeric renderer for \code{output$...}
 }
+\details{
+Renderer expressions should ideally be side-effect free. If a \verb{tuiRender*}
+expression mutates reactive state (for example via \code{tuiReactiveVal()}), the
+output can invalidate itself during its own evaluation. In that case, \code{rtui}
+emits a warning (once per output id) and still completes the render pass.
+}
