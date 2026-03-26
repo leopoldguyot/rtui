@@ -16,7 +16,7 @@ You need a C++17-capable compiler toolchain.
 
 **macOS:** install Xcode Command Line Tools (`xcode-select --install`).
 
-**Windows:** install [Rtools](https://cran.r-project.org/bin/windows/Rtools/) and run in a modern terminal (Windows Terminal, PowerShell, or a recent cmd.exe with VT enabled).
+**Windows:** install [Rtools](https://cran.r-project.org/bin/windows/Rtools/).
 
 You also need the `Rcpp` R package:
 ```r
@@ -38,6 +38,7 @@ library(rtui)
 app <- tuiApp(
   ui = tuiColumn(
     tuiOutputNumeric("counter"),
+    tuiOutputText("message"),
     tuiOutputText("name"),
     tuiRow(
       tuiInputButton("Increment", id = "inc"),
@@ -52,9 +53,9 @@ app <- tuiApp(
       input$nameInput
     })
 
-    tuiObserveEvent(counter(), {
+    output$message <- tuiRenderText({
       currentName <- tuiIsolate(appliedName())
-      message("counter changed while name is ", currentName)
+      paste0("counter changed while name is ", currentName)
     })
 
     output$counter <- tuiRenderNumeric(counter(), digits = 0)
@@ -86,8 +87,3 @@ tuiRun(app)  # press Escape or Ctrl+Q to quit
 
 Navigate with **Tab** / **arrow keys**, activate buttons with **Enter**.
 
-## Vignettes
-
-- `getting-started`: quick onboarding and minimal app pattern.
-- `explained-example`: a full app walkthrough with step-by-step reactive flow.
-- `reactivity-reference`: concise reference of the graph-based reactivity model.
