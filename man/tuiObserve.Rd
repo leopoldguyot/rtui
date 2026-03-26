@@ -13,5 +13,5 @@ tuiObserve(expr)
 Invisibly returns \code{NULL}.
 }
 \description{
-Evaluates \code{expr} every server run.
+Registers an observer that re-evaluates \code{expr} when dependencies invalidate.
 }

@@ -47,18 +47,18 @@ test_that("tuiReq in reactive preserves previous stable value", {
 })
 
 test_that("tuiReq short-circuits observe blocks silently", {
-  hit_count <- 0L
   app <- tuiApp(
     ui = tuiColumn(
       tuiInputButton("go", id = "go"),
       tuiOutputNumeric("out")
     ),
     server = function(input, output) {
+      hit_count <- tuiReactiveVal(0L)
       tuiObserve({
         tuiReq(input$go > 0L)
-        hit_count <<- hit_count + 1L
+        hit_count(hit_count() + 1L)
       })
-      output$out <- tuiRenderNumeric(hit_count)
+      output$out <- tuiRenderNumeric(hit_count())
     }
   )
 

@@ -1,8 +1,9 @@
 #' Create a TUI application
 #'
 #' Defines a terminal UI application from a UI tree and a server function.
-#' The runtime automatically manages `input` and `output` state, similarly to
-#' Shiny's conceptual model.
+#' The runtime runs `server(input, output)` once during initialization to
+#' register outputs and observers, then re-evaluates only invalidated reactive
+#' graph nodes for each input event.
 #'
 #' @param ui A UI component tree built with [tuiColumn()], [tuiRow()],
 #'   [tuiOutputText()], [tuiOutputNumeric()], [tuiInputButton()], or
@@ -12,7 +13,7 @@
 #'   - `input$<id>` is updated automatically from buttons and text inputs.
 #'   - assign rendered outputs with `output$<name> <- tuiRenderText(...)` or
 #'     `output$<name> <- tuiRenderNumeric(...)`.
-#'   - use [tuiObserveEvent()] / [tuiReactiveEvent()] for event-based updates.
+#'   - use [tuiObserve()] / [tuiObserveEvent()] for reactive side effects.
 #'
 #' @return An object of class `rtuiApp`.
 #'
@@ -45,36 +46,26 @@ tuiApp <- function(ui, server) {
     )
   }
 
-  runtime <- new.env(parent = emptyenv())
-  runtime$reactiveState <- new.env(parent = emptyenv())
-  runtime$reactiveIndex <- 0L
-  runtime$currentReactiveCache <- new.env(parent = emptyenv())
-  runtime$currentReactiveChanged <- new.env(parent = emptyenv())
-  runtime$currentEventId <- NULL
-  runtime$currentInput <- NULL
-  runtime$currentOutput <- NULL
-  runtime$currentIsolateDepth <- 0L
-  runtime$currentCaptureDepth <- 0L
-  runtime$currentRunId <- 0L
-  runtime$currentInputState <- list()
-  runtime$graphDependencies <- new.env(parent = emptyenv())
-  runtime$graphDependents <- new.env(parent = emptyenv())
-  runtime$graphNodeTypes <- new.env(parent = emptyenv())
-  runtime$currentEvalDeps <- new.env(parent = emptyenv())
-  runtime$graphEvalStack <- character()
-
+  runtime <- .rtuiCreateRuntime(meta$outputIds)
   inputState <- .rtuiInitialInput(meta)
   outputState <- .rtuiInitialOutput(meta)
+  runtime$currentInputState <- inputState
+  runtime$currentOutputState <- outputState
+  .rtuiInitializeOutputStore(runtime, outputState)
+
+  input <- .rtuiInputEnv(runtime, inputState)
+  output <- .rtuiOutputEnv(runtime, meta$outputIds)
+  runtime$currentInput <- input
+  runtime$currentOutput <- output
+
+  .rtuiWithRuntime(runtime, {
+    server(input, output)
+    .rtuiFlushRuntime(runtime, eventId = NULL, forceAll = TRUE)
+  })
 
   state <- list(
-    input = inputState,
-    output = .rtuiRunServer(
-      server = server,
-      inputState = inputState,
-      outputState = outputState,
-      eventId = NULL,
-      runtime = runtime
-    )
+    input = runtime$currentInputState,
+    output = runtime$currentOutputState
   )
 
   handlerIds <- unique(c(meta$buttonIds, meta$textInputIds))
@@ -83,13 +74,11 @@ tuiApp <- function(ui, server) {
     handlers[[id]] <- local({
       currentEventId <- id
       function(state) {
-        state$output <- .rtuiRunServer(
-          server = server,
-          inputState = state$input,
-          outputState = state$output,
-          eventId = currentEventId,
-          runtime = runtime
-        )
+        runtime$currentInputState <- state$input
+        .rtuiWithRuntime(runtime, {
+          .rtuiFlushRuntime(runtime, eventId = currentEventId, forceAll = FALSE)
+        })
+        state$output <- runtime$currentOutputState
         state
       }
     })
@@ -196,7 +185,134 @@ tuiApp <- function(ui, server) {
   for (id in meta$outputIds) {
     output[[id]] <- ""
   }
+
   output
+}
+
+#' Internal helper `.rtuiCreateRuntime`.
+#'
+#' Builds the runtime environment used by one app instance.
+#'
+#' @param outputIds Character vector of declared output identifiers.
+#'
+#' @return Runtime environment initialized with scheduler fields.
+#'
+#' @keywords internal
+#' @noRd
+.rtuiCreateRuntime <- function(outputIds) {
+  runtime <- new.env(parent = emptyenv())
+  runtime$reactiveState <- new.env(parent = emptyenv())
+  runtime$reactiveIndex <- 0L
+  runtime$observerIndex <- 0L
+  runtime$currentReactiveCache <- new.env(parent = emptyenv())
+  runtime$currentReactiveChanged <- new.env(parent = emptyenv())
+  runtime$currentEventId <- NULL
+  runtime$currentInput <- NULL
+  runtime$currentOutput <- NULL
+  runtime$currentIsolateDepth <- 0L
+  runtime$currentCaptureDepth <- 0L
+  runtime$currentRunId <- 0L
+  runtime$currentInputState <- list()
+  runtime$currentOutputState <- list()
+  runtime$graphDependencies <- new.env(parent = emptyenv())
+  runtime$graphDependents <- new.env(parent = emptyenv())
+  runtime$graphNodeTypes <- new.env(parent = emptyenv())
+  runtime$currentEvalDeps <- new.env(parent = emptyenv())
+  runtime$graphEvalStack <- character()
+  runtime$outputIds <- as.character(outputIds)
+  runtime$outputDefinitions <- new.env(parent = emptyenv())
+  runtime$observers <- new.env(parent = emptyenv())
+  runtime$observerOrder <- character()
+  runtime
+}
+
+#' Internal helper `.rtuiWithRuntime`.
+#'
+#' Temporarily binds a runtime to the global runtime context.
+#'
+#' @param runtime Runtime environment created for the current app instance.
+#' @param expr Expression to evaluate while runtime is bound.
+#'
+#' @return Value of `expr`.
+#'
+#' @keywords internal
+#' @noRd
+.rtuiWithRuntime <- function(runtime, expr) {
+  oldRuntime <- .rtuiRuntimeContext$currentRuntime
+  .rtuiRuntimeContext$currentRuntime <- runtime
+  on.exit({
+    .rtuiRuntimeContext$currentRuntime <- oldRuntime
+  }, add = TRUE)
+  expr
+}
+
+#' Internal helper `.rtuiOutputNodeId`.
+#'
+#' Builds the graph node id used for an output id.
+#'
+#' @param outputId Output identifier.
+#'
+#' @return A graph node id of the form `"output:<id>"`.
+#'
+#' @keywords internal
+#' @noRd
+.rtuiOutputNodeId <- function(outputId) {
+  paste0("output:", outputId)
+}
+
+#' Internal helper `.rtuiInitializeOutputStore`.
+#'
+#' Initializes output definitions and graph nodes with default values.
+#'
+#' @param runtime Runtime environment created for the current app instance.
+#' @param outputState Named list of output defaults.
+#'
+#' @return Invisibly returns `NULL`.
+#'
+#' @keywords internal
+#' @noRd
+.rtuiInitializeOutputStore <- function(runtime, outputState) {
+  for (outputId in names(outputState)) {
+    assign(outputId, outputState[[outputId]], envir = runtime$outputDefinitions)
+    .rtuiGraphEnsureReactiveNode(
+      runtime,
+      .rtuiOutputNodeId(outputId),
+      "output",
+      defaultValue = outputState[[outputId]],
+      hasValue = TRUE
+    )
+  }
+  invisible(NULL)
+}
+
+#' Internal helper `.rtuiSetOutputDefinition`.
+#'
+#' Stores a renderer/raw output definition and marks it dirty.
+#'
+#' @param runtime Runtime environment created for the current app instance.
+#' @param outputId Output identifier.
+#' @param value Value assigned to `output$<id>`.
+#'
+#' @return Invisibly returns `value`.
+#'
+#' @keywords internal
+#' @noRd
+.rtuiSetOutputDefinition <- function(runtime, outputId, value) {
+  assign(outputId, value, envir = runtime$outputDefinitions)
+  if (is.null(runtime$currentOutputState[[outputId]])) {
+    runtime$currentOutputState[[outputId]] <- ""
+  }
+
+  nodeId <- .rtuiOutputNodeId(outputId)
+  .rtuiGraphEnsureReactiveNode(
+    runtime,
+    nodeId,
+    "output",
+    defaultValue = runtime$currentOutputState[[outputId]],
+    hasValue = TRUE
+  )
+  .rtuiReactiveStoreMarkDirty(runtime, nodeId, dirty = TRUE)
+  invisible(value)
 }
 
 #' Internal helper `.rtuiInputEnv`.
@@ -233,56 +349,327 @@ tuiApp <- function(ui, server) {
   input
 }
 
-#' Internal helper `.rtuiRunServer`.
+#' Internal helper `.rtuiOutputEnv`.
 #'
-#' Runs one server cycle and resolves output renderer values.
+#' Creates the active-binding `output` environment for server execution.
 #'
-#' @param server Server callback executed for the current cycle.
-#' @param inputState Named list containing current input values.
-#' @param outputState Named list containing previous output values.
-#' @param eventId Optional input id that triggered the current server run.
 #' @param runtime Runtime environment created for the current app instance.
+#' @param outputIds Character vector of output identifiers.
 #'
-#' @return Named list of resolved output values for the cycle.
+#' @return Environment with active bindings for each output id.
 #'
 #' @keywords internal
 #' @noRd
-.rtuiRunServer <- function(server, inputState, outputState, eventId = NULL, runtime) {
-  oldRuntime <- .rtuiRuntimeContext$currentRuntime
-  .rtuiRuntimeContext$currentRuntime <- runtime
+.rtuiOutputEnv <- function(runtime, outputIds) {
+  output <- new.env(parent = emptyenv())
+
+  for (id in outputIds) {
+    local({
+      outputId <- id
+      makeActiveBinding(
+        outputId,
+        function(value) {
+          if (missing(value)) {
+            current <- runtime$currentOutputState[[outputId]]
+            if (is.null(current)) {
+              return("")
+            }
+            return(current)
+          }
+          .rtuiSetOutputDefinition(runtime, outputId, value)
+        },
+        env = output
+      )
+    })
+  }
+
+  output
+}
+
+#' Internal helper `.rtuiRegisterObserver`.
+#'
+#' Registers a persistent observer node in the scheduler.
+#'
+#' @param exprSub Quoted observer expression.
+#' @param exprEnv Environment where the expression should be evaluated.
+#' @param type Observer type, either `"observe"` or `"observeEvent"`.
+#' @param eventSpec Optional normalized event spec for event observers.
+#' @param runAtInit Whether event observers should run at initialization.
+#'
+#' @return Invisibly returns `NULL`.
+#'
+#' @keywords internal
+#' @noRd
+.rtuiRegisterObserver <- function(
+    exprSub,
+    exprEnv,
+    type = "observe",
+    eventSpec = NULL,
+    runAtInit = FALSE
+) {
+  runtime <- .rtuiCurrentRuntime()
+  runtime$observerIndex <- runtime$observerIndex + 1L
+  observerId <- paste0("observer_", runtime$observerIndex)
+
+  assign(
+    observerId,
+    list(
+      id = observerId,
+      type = type,
+      expr = exprSub,
+      env = exprEnv,
+      eventSpec = eventSpec,
+      runAtInit = isTRUE(runAtInit)
+    ),
+    envir = runtime$observers
+  )
+  runtime$observerOrder <- c(runtime$observerOrder, observerId)
+
+  .rtuiGraphEnsureReactiveNode(runtime, observerId, "observer", hasValue = TRUE)
+  .rtuiReactiveStoreMarkDirty(runtime, observerId, dirty = TRUE)
+  invisible(NULL)
+}
+
+#' Internal helper `.rtuiDirtyObserverIds`.
+#'
+#' Returns currently dirty observer ids in registration order.
+#'
+#' @param runtime Runtime environment created for the current app instance.
+#'
+#' @return Character vector of dirty observer node ids.
+#'
+#' @keywords internal
+#' @noRd
+.rtuiDirtyObserverIds <- function(runtime) {
+  dirty <- character()
+  for (observerId in runtime$observerOrder) {
+    current <- .rtuiReactiveStoreEnsure(runtime, observerId, hasValue = TRUE, dirty = TRUE)
+    if (isTRUE(current$dirty)) {
+      dirty <- c(dirty, observerId)
+    }
+  }
+  dirty
+}
+
+#' Internal helper `.rtuiDirtyOutputIds`.
+#'
+#' Returns currently dirty output ids in declaration order.
+#'
+#' @param runtime Runtime environment created for the current app instance.
+#'
+#' @return Character vector of dirty output ids.
+#'
+#' @keywords internal
+#' @noRd
+.rtuiDirtyOutputIds <- function(runtime) {
+  dirty <- character()
+  for (outputId in runtime$outputIds) {
+    nodeId <- .rtuiOutputNodeId(outputId)
+    current <- .rtuiReactiveStoreEnsure(
+      runtime,
+      nodeId,
+      value = runtime$currentOutputState[[outputId]],
+      hasValue = TRUE,
+      dirty = TRUE
+    )
+    if (isTRUE(current$dirty)) {
+      dirty <- c(dirty, outputId)
+    }
+  }
+  dirty
+}
+
+#' Internal helper `.rtuiMarkAllDirty`.
+#'
+#' Marks all observer and output nodes dirty.
+#'
+#' @param runtime Runtime environment created for the current app instance.
+#'
+#' @return Invisibly returns `NULL`.
+#'
+#' @keywords internal
+#' @noRd
+.rtuiMarkAllDirty <- function(runtime) {
+  for (observerId in runtime$observerOrder) {
+    .rtuiReactiveStoreMarkDirty(runtime, observerId, dirty = TRUE)
+  }
+  for (outputId in runtime$outputIds) {
+    .rtuiReactiveStoreMarkDirty(runtime, .rtuiOutputNodeId(outputId), dirty = TRUE)
+  }
+  invisible(NULL)
+}
+
+#' Internal helper `.rtuiEvaluateObserver`.
+#'
+#' Evaluates one dirty observer and updates its graph dependencies.
+#'
+#' @param runtime Runtime environment created for the current app instance.
+#' @param observerId Internal identifier of an observer node.
+#'
+#' @return `TRUE` if evaluation happened, `FALSE` otherwise.
+#'
+#' @keywords internal
+#' @noRd
+.rtuiEvaluateObserver <- function(runtime, observerId) {
+  if (!exists(observerId, envir = runtime$observers, inherits = FALSE)) {
+    return(FALSE)
+  }
+
+  current <- .rtuiReactiveStoreEnsure(runtime, observerId, hasValue = TRUE, dirty = TRUE)
+  if (!isTRUE(current$dirty)) {
+    return(FALSE)
+  }
+
+  observer <- get(observerId, envir = runtime$observers, inherits = FALSE)
+
+  success <- FALSE
+  .rtuiGraphBeginEvaluation(runtime, observerId)
   on.exit({
-    .rtuiRuntimeContext$currentRuntime <- oldRuntime
+    .rtuiGraphEndEvaluation(runtime, observerId, success)
   }, add = TRUE)
 
+  shouldRun <- TRUE
+  if (identical(observer$type, "observeEvent")) {
+    dependencyIds <- .rtuiReactiveEventDependencies(
+      runtime,
+      observer$eventSpec,
+      observer$runAtInit
+    )
+    .rtuiGraphMapSet(runtime$currentEvalDeps, observerId, dependencyIds)
+    shouldRun <- .rtuiShouldTriggerEvent(
+      observer$eventSpec,
+      runAtInit = observer$runAtInit
+    )
+  }
+
+  if (isTRUE(shouldRun)) {
+    tryCatch(
+      {
+        if (identical(observer$type, "observeEvent")) {
+          .rtuiWithCaptureSuspended(runtime, eval(observer$expr, envir = observer$env))
+        } else {
+          eval(observer$expr, envir = observer$env)
+        }
+      },
+      rtui_req_error = function(err) {
+        invisible(NULL)
+      }
+    )
+  }
+
+  .rtuiReactiveStoreMarkDirty(runtime, observerId, dirty = FALSE)
+  .rtuiSetReactiveChanged(runtime, observerId, FALSE, force = TRUE)
+  success <- TRUE
+  TRUE
+}
+
+#' Internal helper `.rtuiEvaluateOutput`.
+#'
+#' Evaluates one dirty output definition and stores its resolved value.
+#'
+#' @param runtime Runtime environment created for the current app instance.
+#' @param outputId Output identifier to evaluate.
+#'
+#' @return `TRUE` if evaluation happened, `FALSE` otherwise.
+#'
+#' @keywords internal
+#' @noRd
+.rtuiEvaluateOutput <- function(runtime, outputId) {
+  nodeId <- .rtuiOutputNodeId(outputId)
+  current <- .rtuiReactiveStoreEnsure(
+    runtime,
+    nodeId,
+    value = runtime$currentOutputState[[outputId]],
+    hasValue = TRUE,
+    dirty = TRUE
+  )
+  if (!isTRUE(current$dirty)) {
+    return(FALSE)
+  }
+
+  definition <- runtime$currentOutputState[[outputId]]
+  if (exists(outputId, envir = runtime$outputDefinitions, inherits = FALSE)) {
+    definition <- get(outputId, envir = runtime$outputDefinitions, inherits = FALSE)
+  }
+
+  success <- FALSE
+  .rtuiGraphBeginEvaluation(runtime, nodeId)
+  on.exit({
+    .rtuiGraphEndEvaluation(runtime, nodeId, success)
+  }, add = TRUE)
+
+  value <- .rtuiResolveOutputValue(definition)
+  previous <- if (isTRUE(current$hasValue)) current$value else runtime$currentOutputState[[outputId]]
+  changed <- !isTRUE(current$hasValue) || !identical(previous, value)
+
+  .rtuiReactiveStoreSet(runtime, nodeId, value = value, hasValue = TRUE, dirty = FALSE)
+  .rtuiSetReactiveChanged(runtime, nodeId, changed, force = TRUE)
+  runtime$currentOutputState[[outputId]] <- value
+
+  success <- TRUE
+  TRUE
+}
+
+#' Internal helper `.rtuiFlushRuntime`.
+#'
+#' Flushes dirty observer/output nodes until the graph reaches a stable state.
+#'
+#' @param runtime Runtime environment created for the current app instance.
+#' @param eventId Optional input id that triggered this flush.
+#' @param forceAll If `TRUE`, marks all observers and outputs dirty before flush.
+#'
+#' @return Named list with current resolved output values.
+#'
+#' @keywords internal
+#' @noRd
+.rtuiFlushRuntime <- function(runtime, eventId = NULL, forceAll = FALSE) {
   .rtuiGraphEnsureRuntime(runtime)
   runtime$currentRunId <- runtime$currentRunId + 1L
-  runtime$reactiveIndex <- 0L
   runtime$currentReactiveCache <- new.env(parent = emptyenv())
   runtime$currentReactiveChanged <- new.env(parent = emptyenv())
   runtime$currentEventId <- eventId
-  runtime$currentInputState <- inputState
-  runtime$currentOutput <- NULL
   runtime$currentIsolateDepth <- 0L
   runtime$currentCaptureDepth <- 0L
   runtime$graphEvalStack <- character()
   runtime$currentEvalDeps <- new.env(parent = emptyenv())
 
-  input <- .rtuiInputEnv(runtime, inputState)
-  output <- list2env(outputState, parent = emptyenv())
-
-  runtime$currentInput <- input
-  runtime$currentOutput <- output
+  if (isTRUE(forceAll)) {
+    .rtuiMarkAllDirty(runtime)
+  }
 
   if (!is.null(eventId)) {
     .rtuiGraphInvalidateDependents(runtime, .rtuiInputNodeId(eventId))
   }
 
-  server(input, output)
+  maxIterations <- 1000L
+  iterations <- 0L
+  repeat {
+    iterations <- iterations + 1L
+    if (iterations > maxIterations) {
+      stop("Reactive flush exceeded 1000 iterations; possible invalidation loop.")
+    }
 
-  resolvedOutput <- as.list(output, all.names = TRUE)
-  for (name in names(resolvedOutput)) {
-    resolvedOutput[[name]] <- .rtuiResolveOutputValue(resolvedOutput[[name]])
+    didWork <- FALSE
+
+    dirtyObservers <- .rtuiDirtyObserverIds(runtime)
+    if (length(dirtyObservers) > 0L) {
+      for (observerId in dirtyObservers) {
+        didWork <- isTRUE(.rtuiEvaluateObserver(runtime, observerId)) || didWork
+      }
+    }
+
+    dirtyOutputs <- .rtuiDirtyOutputIds(runtime)
+    if (length(dirtyOutputs) > 0L) {
+      for (outputId in dirtyOutputs) {
+        didWork <- isTRUE(.rtuiEvaluateOutput(runtime, outputId)) || didWork
+      }
+    }
+
+    if (!didWork) {
+      break
+    }
+
   }
 
-  resolvedOutput
+  runtime$currentOutputState
 }

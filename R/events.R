@@ -241,7 +241,12 @@ tuiReactiveEvent <- function(event, expr, runAtInit = FALSE) {
       return(NULL)
     }
 
-    if (.rtuiShouldTriggerEvent(eventSpec, runAtInit = runAtInit)) {
+    shouldTrigger <- .rtuiShouldTriggerEvent(eventSpec, runAtInit = runAtInit)
+    deferredDirtyTrigger <- !isTRUE(shouldTrigger) &&
+      isTRUE(current$dirty) &&
+      isTRUE(current$hasValue)
+
+    if (isTRUE(shouldTrigger) || isTRUE(deferredDirtyTrigger)) {
       success <- FALSE
       .rtuiGraphBeginEvaluation(runtime, reactiveId)
       on.exit({
@@ -285,7 +290,7 @@ tuiReactiveEvent <- function(event, expr, runAtInit = FALSE) {
 
 #' Observe selected input/reactive events
 #'
-#' Evaluates `expr` only when `event` is triggered.
+#' Registers an observer that evaluates `expr` only when `event` is triggered.
 #'
 #' @param event An `input$<id>` / `input[["id"]]` reference, or a reactive
 #'   call/object from [tuiReactive()], [tuiReactiveVal()], or
@@ -303,14 +308,13 @@ tuiObserveEvent <- function(event, expr, runAtInit = FALSE) {
   }
 
   eventSpec <- .rtuiResolveEventSpec(substitute(event), parent.frame())
-  if (.rtuiShouldTriggerEvent(eventSpec, runAtInit = runAtInit)) {
-    tryCatch(
-      eval.parent(substitute(expr)),
-      rtui_req_error = function(err) {
-        invisible(NULL)
-      }
-    )
-  }
+  .rtuiRegisterObserver(
+    exprSub = substitute(expr),
+    exprEnv = parent.frame(),
+    type = "observeEvent",
+    eventSpec = eventSpec,
+    runAtInit = runAtInit
+  )
 
   invisible(NULL)
 }

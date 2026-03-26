@@ -3,26 +3,28 @@ library(rtui)
 app <- tuiApp(
   ui = tuiColumn(
     tuiOutputNumeric("counter"),
+    tuiOutputText("message"),
     tuiOutputText("name"),
     tuiRow(
       tuiInputButton("Increment", id = "inc"),
       tuiInputButton("Decrement", id = "dec"),
       tuiInputButton("Apply name", id = "applyName")
     ),
-    tuiInputText(id = "inputName", placeholder = "Type a name", value = "John")
+    tuiInputText(id = "nameInput", value = "John")
   ),
   server = function(input, output) {
     counter <- tuiReactive(input$inc - input$dec)
-
-    #appliedName <- tuiReactiveEvent(input$applyName, runAtInit = TRUE, {
-    #  input$inputName
-    #})
-
-    appliedName <- tuiReactive({
-        input$applyName
-        tuiIsolate(input$inputName)
+    appliedName <- tuiReactiveEvent(input$applyName, runAtInit = TRUE, {
+      input$nameInput
     })
-    output$counter <- tuiRenderNumeric(counter())
+    n <- tuiReactiveVal(0)
+    output$message <- tuiRenderText({
+      counter()
+      n(n() + 1)
+      currentName <- tuiIsolate(appliedName())
+      paste0("counter changed while name is ", currentName, " n = ", n())
+    })
+    output$counter <- tuiRenderNumeric(counter(), digits = 0)
     output$name <- tuiRenderText(paste("Your name is:", appliedName()))
   }
 )

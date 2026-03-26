@@ -20,5 +20,5 @@ initialization.}
 Invisibly returns \code{NULL}.
 }
 \description{
-Evaluates \code{expr} only when \code{event} is triggered.
+Registers an observer that evaluates \code{expr} only when \code{event} is triggered.
 }

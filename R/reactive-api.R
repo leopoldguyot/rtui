@@ -147,7 +147,7 @@ tuiReactiveVal <- function(value = NULL) {
 
 #' Observe reactive values
 #'
-#' Evaluates `expr` every server run.
+#' Registers an observer that re-evaluates `expr` when dependencies invalidate.
 #'
 #' @param expr An expression to evaluate.
 #'
@@ -155,11 +155,10 @@ tuiReactiveVal <- function(value = NULL) {
 #'
 #' @export
 tuiObserve <- function(expr) {
-  tryCatch(
-    eval.parent(substitute(expr)),
-    rtui_req_error = function(err) {
-      invisible(NULL)
-    }
+  .rtuiRegisterObserver(
+    exprSub = substitute(expr),
+    exprEnv = parent.frame(),
+    type = "observe"
   )
   invisible(NULL)
 }

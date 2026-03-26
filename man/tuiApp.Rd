@@ -17,7 +17,7 @@ and \code{output} are environments:
 \item \verb{input$<id>} is updated automatically from buttons and text inputs.
 \item assign rendered outputs with \verb{output$<name> <- tuiRenderText(...)} or
 \verb{output$<name> <- tuiRenderNumeric(...)}.
-\item use \code{\link[=tuiObserveEvent]{tuiObserveEvent()}} / \code{\link[=tuiReactiveEvent]{tuiReactiveEvent()}} for event-based updates.
+\item use \code{\link[=tuiObserve]{tuiObserve()}} / \code{\link[=tuiObserveEvent]{tuiObserveEvent()}} for reactive side effects.
 }}
 }
 \value{
@@ -25,8 +25,9 @@ An object of class \code{rtuiApp}.
 }
 \description{
 Defines a terminal UI application from a UI tree and a server function.
-The runtime automatically manages \code{input} and \code{output} state, similarly to
-Shiny's conceptual model.
+The runtime runs \code{server(input, output)} once during initialization to
+register outputs and observers, then re-evaluates only invalidated reactive
+graph nodes for each input event.
 }
 \examples{
 app <- tuiApp(
