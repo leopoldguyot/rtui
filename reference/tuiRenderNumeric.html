@@ -56,6 +56,13 @@
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A numeric renderer object for assignment in <code>output$...</code>.</p>
     </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Renderer expressions should ideally be side-effect free. If a <code>tuiRender*</code>
+expression mutates reactive state (for example via <code><a href="tuiReactiveVal.html">tuiReactiveVal()</a></code>), the
+output can invalidate itself during its own evaluation. In that case, <code>rtui</code>
+emits a warning (once per output id) and still completes the render pass.</p>
+    </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
