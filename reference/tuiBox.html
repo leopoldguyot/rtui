@@ -42,7 +42,10 @@
 <span>  title <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  color <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  style <span class="op">=</span> <span class="st">"rounded"</span>,</span>
-<span>  titleStyle <span class="op">=</span> <span class="st">"header"</span></span>
+<span>  titleStyle <span class="op">=</span> <span class="st">"header"</span>,</span>
+<span>  titleAlign <span class="op">=</span> <span class="st">"left"</span>,</span>
+<span>  margin <span class="op">=</span> <span class="fl">0L</span>,</span>
+<span>  backgroundColor <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -76,6 +79,20 @@ Use <code>NULL</code> (default) for no title.</p></dd>
 <dd><p>Title rendering style. One of <code>"header"</code> (default), which
 places the title inside the box as a header separated by a bar, or
 <code>"border"</code>, which places the title in the top-left border line.</p></dd>
+
+
+<dt id="arg-titlealign">titleAlign<a class="anchor" aria-label="anchor" href="#arg-titlealign"></a></dt>
+<dd><p>Title alignment for <code>"header"</code> mode. One of <code>"left"</code>
+(default), <code>"center"</code>, or <code>"right"</code>.</p></dd>
+
+
+<dt id="arg-margin">margin<a class="anchor" aria-label="anchor" href="#arg-margin"></a></dt>
+<dd><p>Integer number of spaces outside the box (default <code>0</code>).</p></dd>
+
+
+<dt id="arg-backgroundcolor">backgroundColor<a class="anchor" aria-label="anchor" href="#arg-backgroundcolor"></a></dt>
+<dd><p>Optional background color for the box content area.
+Supports the same color values as <code>color</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

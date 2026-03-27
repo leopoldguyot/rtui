@@ -70,22 +70,22 @@ tuiRun(app)  # press Escape or Ctrl+Q to quit
 
 ## API
 
-| Function                                                                              | Description                                                                                    |
-|---------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------|
-| `tuiApp(ui, server)`                                                                  | Define a TUI application                                                                       |
-| `tuiRun(app)`                                                                         | Start the app (blocking)                                                                       |
-| `tuiColumn(...)`                                                                      | Stack components vertically                                                                    |
-| `tuiRow(...)`                                                                         | Place components side by side                                                                  |
-| `tuiBox(child, title = NULL, color = NULL, style = "rounded", titleStyle = "header")` | Wrap a component in a configurable border (`header` or `border` title placement)               |
-| `tuiOutputText("id")` / `tuiOutputNumeric("id")`                                      | Display `output$id` in the UI                                                                  |
-| `tuiInputButton(label, id, color = NULL)`                                             | Button that triggers a handler (optional text color)                                           |
-| `tuiInputText(id, placeholder, value, multiline = FALSE)`                             | One-line text input by default (`multiline = TRUE` allows newlines)                            |
-| `tuiRenderText(expr)` / `tuiRenderNumeric(expr, digits = NULL)`                       | Build renderers assigned to `output$...`                                                       |
-| `tuiReactive(expr)` / `tuiReactiveVal(value)`                                         | Define graph-tracked reactive expressions and mutable values (auto invalidation of dependents) |
-| `tuiReactiveEvent(event, expr, runAtInit = FALSE)`                                    | Event-scoped reactive expression that re-runs when its event source invalidates                |
-| `tuiReq(...)`                                                                         | Stop current reactive/render evaluation when required values are falsy                         |
-| `tuiIsolate(expr)`                                                                    | Read reactive values without registering graph dependencies                                    |
-| `tuiObserve(expr)`                                                                    | Register an observer that runs when its dependencies invalidate                                |
-| `tuiObserveEvent(event, expr, runAtInit = FALSE)`                                     | Register an observer that runs only when the event source invalidates                          |
+| Function                                                                                                                                       | Description                                                                                    |
+|------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------|
+| `tuiApp(ui, server)`                                                                                                                           | Define a TUI application                                                                       |
+| `tuiRun(app)`                                                                                                                                  | Start the app (blocking)                                                                       |
+| `tuiColumn(...)`                                                                                                                               | Stack components vertically                                                                    |
+| `tuiRow(...)`                                                                                                                                  | Place components side by side                                                                  |
+| `tuiBox(child, title = NULL, color = NULL, style = "rounded", titleStyle = "header", titleAlign = "left", margin = 0, backgroundColor = NULL)` | Wrap a component in a configurable border with title/layout options                            |
+| `tuiOutputText("id")` / `tuiOutputNumeric("id")`                                                                                               | Display `output$id` in the UI                                                                  |
+| `tuiInputButton(label, id, color = NULL)`                                                                                                      | Button that triggers a handler (optional text color)                                           |
+| `tuiInputText(id, placeholder, value, multiline = FALSE)`                                                                                      | One-line text input by default (`multiline = TRUE` allows newlines)                            |
+| `tuiRenderText(expr)` / `tuiRenderNumeric(expr, digits = NULL)`                                                                                | Build renderers assigned to `output$...`                                                       |
+| `tuiReactive(expr)` / `tuiReactiveVal(value)`                                                                                                  | Define graph-tracked reactive expressions and mutable values (auto invalidation of dependents) |
+| `tuiReactiveEvent(event, expr, runAtInit = FALSE)`                                                                                             | Event-scoped reactive expression that re-runs when its event source invalidates                |
+| `tuiReq(...)`                                                                                                                                  | Stop current reactive/render evaluation when required values are falsy                         |
+| `tuiIsolate(expr)`                                                                                                                             | Read reactive values without registering graph dependencies                                    |
+| `tuiObserve(expr)`                                                                                                                             | Register an observer that runs when its dependencies invalidate                                |
+| `tuiObserveEvent(event, expr, runAtInit = FALSE)`                                                                                              | Register an observer that runs only when the event source invalidates                          |
 
 Navigate with **Tab** / **arrow keys**, activate buttons with **Enter**.

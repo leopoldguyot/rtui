@@ -10,7 +10,10 @@ tuiBox(
   title = NULL,
   color = NULL,
   style = "rounded",
-  titleStyle = "header"
+  titleStyle = "header",
+  titleAlign = "left",
+  margin = 0L,
+  backgroundColor = NULL
 )
 ```
 
@@ -43,6 +46,20 @@ tuiBox(
   Title rendering style. One of `"header"` (default), which places the
   title inside the box as a header separated by a bar, or `"border"`,
   which places the title in the top-left border line.
+
+- titleAlign:
+
+  Title alignment for `"header"` mode. One of `"left"` (default),
+  `"center"`, or `"right"`.
+
+- margin:
+
+  Integer number of spaces outside the box (default `0`).
+
+- backgroundColor:
+
+  Optional background color for the box content area. Supports the same
+  color values as `color`.
 
 ## Value
 
