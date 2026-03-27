@@ -57,6 +57,11 @@ tuiRow <- function(...) {
 #' @param titleStyle Title rendering style. One of `"header"` (default), which
 #'   places the title inside the box as a header separated by a bar, or
 #'   `"border"`, which places the title in the top-left border line.
+#' @param titleAlign Title alignment for `"header"` mode. One of `"left"`
+#'   (default), `"center"`, or `"right"`.
+#' @param margin Integer number of spaces outside the box (default `0`).
+#' @param backgroundColor Optional background color for the box content area.
+#'   Supports the same color values as `color`.
 #'
 #' @return A `rtuiComponent` list node of type `"box"`.
 #'
@@ -66,7 +71,10 @@ tuiBox <- function(
     title = NULL,
     color = NULL,
     style = "rounded",
-    titleStyle = "header"
+    titleStyle = "header",
+    titleAlign = "left",
+    margin = 0L,
+    backgroundColor = NULL
 ) {
   if (!inherits(child, "rtuiComponent")) {
     stop("`child` must be a rtuiComponent object.")
@@ -96,19 +104,46 @@ tuiBox <- function(
     )
   }
 
+  if (!is.character(titleAlign) || length(titleAlign) != 1L || is.na(titleAlign)) {
+    stop("`titleAlign` must be a single character string.")
+  }
+  titleAlign <- tolower(trimws(titleAlign))
+  allowed_title_align <- c("left", "center", "right")
+  if (!titleAlign %in% allowed_title_align) {
+    stop(
+      "`titleAlign` must be one of ",
+      paste(shQuote(allowed_title_align), collapse = ", "),
+      "."
+    )
+  }
+
+  if (!is.numeric(margin) || length(margin) != 1L || is.na(margin)) {
+    stop("`margin` must be a single non-negative integer.")
+  }
+  if (margin < 0 || margin != as.integer(margin)) {
+    stop("`margin` must be a single non-negative integer.")
+  }
+  margin <- as.integer(margin)
+
   color <- .rtuiNormalizeColor(color)
+  backgroundColor <- .rtuiNormalizeColor(backgroundColor)
 
   component <- list(
     type = "box",
     child = child,
     style = style,
-    titleStyle = titleStyle
+    titleStyle = titleStyle,
+    titleAlign = titleAlign,
+    margin = margin
   )
   if (!is.null(title)) {
     component$title <- title
   }
   if (!is.null(color)) {
     component$color <- color
+  }
+  if (!is.null(backgroundColor)) {
+    component$backgroundColor <- backgroundColor
   }
 
   structure(component, class = "rtuiComponent")

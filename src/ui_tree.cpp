@@ -4,7 +4,9 @@
 #include <ftxui/component/component_options.hpp>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/dom/elements.hpp>
+#include <ftxui/dom/node.hpp>
 #include <ftxui/screen/color.hpp>
+#include <ftxui/screen/string.hpp>
 
 #include <cctype>
 #include <cstdint>
@@ -164,7 +166,7 @@ uint8_t hex_pair_to_byte(char high, char low) {
   return static_cast<uint8_t>(high_value * 16 + low_value);
 }
 
-Color named_button_color(const std::string& normalized) {
+Color named_ui_color(const std::string& normalized) {
   if (normalized == "default") return Color::Default;
   if (normalized == "black") return Color::Black;
   if (normalized == "red") return Color::Red;
@@ -182,18 +184,22 @@ Color named_button_color(const std::string& normalized) {
   if (normalized == "magentalight") return Color::MagentaLight;
   if (normalized == "cyanlight") return Color::CyanLight;
   if (normalized == "white") return Color::White;
-  Rcpp::stop("Unsupported button color `%s`.", normalized.c_str());
+  Rcpp::stop("Unsupported color `%s`.", normalized.c_str());
   return Color::Default;
 }
 
-std::optional<Color> parse_optional_color(const Rcpp::List& node) {
-  if (!node.containsElementNamed("color")) {
+std::optional<Color> parse_optional_color(
+    const Rcpp::List& node,
+    const char* field_name = "color",
+    const char* arg_name = "color"
+) {
+  if (!node.containsElementNamed(field_name)) {
     return std::nullopt;
   }
 
-  SEXP candidate = node["color"];
+  SEXP candidate = node[field_name];
   if (!is_single_string(candidate)) {
-    Rcpp::stop("`color` must be a single character string.");
+    Rcpp::stop("`%s` must be a single character string.", arg_name);
   }
 
   std::string normalized = ascii_lower(Rcpp::as<std::string>(candidate));
@@ -211,7 +217,7 @@ std::optional<Color> parse_optional_color(const Rcpp::List& node) {
     return Color::RGB(red, green, blue);
   }
 
-  return named_button_color(normalized);
+  return named_ui_color(normalized);
 }
 
 std::optional<std::string> parse_optional_title(const Rcpp::List& node) {
@@ -266,6 +272,48 @@ std::string parse_box_title_style(const Rcpp::List& node) {
   return title_style;
 }
 
+std::string parse_box_title_align(const Rcpp::List& node) {
+  if (!node.containsElementNamed("titleAlign")) {
+    return "left";
+  }
+
+  SEXP candidate = node["titleAlign"];
+  if (!is_single_string(candidate)) {
+    Rcpp::stop("`titleAlign` must be a single character string.");
+  }
+
+  std::string title_align = ascii_lower(Rcpp::as<std::string>(candidate));
+  if (title_align != "left" && title_align != "center" && title_align != "right") {
+    Rcpp::stop("Unsupported box title align `%s`.", title_align.c_str());
+  }
+  return title_align;
+}
+
+int parse_box_margin(const Rcpp::List& node) {
+  if (!node.containsElementNamed("margin")) {
+    return 0;
+  }
+
+  SEXP candidate = node["margin"];
+  if (TYPEOF(candidate) == INTSXP) {
+    if (Rf_length(candidate) != 1 || INTEGER(candidate)[0] == NA_INTEGER) {
+      Rcpp::stop("`margin` must be a single non-negative integer.");
+    }
+  } else if (TYPEOF(candidate) == REALSXP) {
+    if (Rf_length(candidate) != 1 || ISNAN(REAL(candidate)[0])) {
+      Rcpp::stop("`margin` must be a single non-negative integer.");
+    }
+  } else {
+    Rcpp::stop("`margin` must be a single non-negative integer.");
+  }
+
+  int margin = Rcpp::as<int>(candidate);
+  if (margin < 0) {
+    Rcpp::stop("`margin` must be a single non-negative integer.");
+  }
+  return margin;
+}
+
 std::string box_left_corner(BorderStyle style) {
   switch (style) {
     case LIGHT:
@@ -282,6 +330,94 @@ std::string box_left_corner(BorderStyle style) {
       return " ";
   }
   return "┌";
+}
+
+std::string box_right_corner(BorderStyle style) {
+  switch (style) {
+    case LIGHT:
+      return "┐";
+    case DASHED:
+      return "┓";
+    case HEAVY:
+      return "┓";
+    case DOUBLE:
+      return "╗";
+    case ROUNDED:
+      return "╮";
+    case EMPTY:
+      return " ";
+  }
+  return "┐";
+}
+
+Element align_title_element(Element title_element, const std::string& title_align) {
+  if (title_align == "center") {
+    return hcenter(std::move(title_element));
+  }
+  if (title_align == "right") {
+    return align_right(std::move(title_element));
+  }
+  return std::move(title_element);
+}
+
+Element apply_margin(Element element, int margin) {
+  if (margin <= 0) {
+    return element;
+  }
+
+  std::string side_padding(static_cast<size_t>(margin), ' ');
+  Elements rows;
+  rows.reserve(static_cast<size_t>(margin * 2 + 1));
+  for (int i = 0; i < margin; ++i) {
+    rows.push_back(text(""));
+  }
+  rows.push_back(hbox({
+    text(side_padding),
+    std::move(element),
+    text(side_padding)
+  }));
+  for (int i = 0; i < margin; ++i) {
+    rows.push_back(text(""));
+  }
+  return vbox(std::move(rows));
+}
+
+class BoldTextElement : public Node {
+ public:
+  explicit BoldTextElement(std::string text) : text_(std::move(text)) {}
+
+  void ComputeRequirement() override {
+    requirement_.min_x = string_width(text_);
+    requirement_.min_y = 1;
+  }
+
+  void Render(Screen& screen) override {
+    int x = box_.x_min;
+    const int y = box_.y_min;
+    if (y > box_.y_max) {
+      return;
+    }
+
+    for (const auto& glyph : Utf8ToGlyphs(text_)) {
+      if (x > box_.x_max) {
+        break;
+      }
+      if (glyph == "\n") {
+        continue;
+      }
+      Pixel& pixel = screen.PixelAt(x, y);
+      pixel.character = glyph;
+      pixel.bold = true;
+      ++x;
+    }
+  }
+
+ private:
+  std::string text_;
+};
+
+Element bold_text_element(std::string text) {
+  return std::make_shared<BoldTextElement>(std::move(text));
 }
 
 bool parse_input_multiline(const Rcpp::List& node) {
@@ -369,30 +505,56 @@ ftxui::Component build_component(
     Component child = build_component(Rcpp::as<Rcpp::List>(node["child"]), state, handlers);
     BorderStyle style = parse_box_style(node);
     std::optional<Color> box_color = parse_optional_color(node);
+    std::optional<Color> box_background_color =
+        parse_optional_color(node, "backgroundColor", "backgroundColor");
     std::optional<std::string> title = parse_optional_title(node);
     std::string title_style = parse_box_title_style(node);
+    std::string title_align = parse_box_title_align(node);
+    int margin = parse_box_margin(node);
 
-    return Renderer(child, [child, style, box_color, title, title_style] {
+    return Renderer(
+        child,
+        [child, style, box_color, box_background_color, title, title_style, title_align, margin] {
       Element content = child->Render();
+      if (box_background_color.has_value()) {
+        content |= bgcolor(*box_background_color);
+      }
       Element bordered = box_color.has_value()
           ? content | borderStyled(style, *box_color)
           : content | borderStyled(style);
 
       if (title.has_value()) {
-        Element title_element = text(*title) | bold;
-
         if (title_style == "border") {
-          Element overlay;
-          if (box_color.has_value()) {
-            overlay = hbox({
-              text(box_left_corner(style)) | ftxui::color(*box_color),
-              text(std::string(" ") + *title + " ") | bold
+          const std::string title_with_padding = std::string(" ") + *title + " ";
+          Element top_line;
+          if (title_align == "left") {
+            top_line = hbox({
+              bold_text_element(box_left_corner(style)),
+              bold_text_element(title_with_padding)
+            });
+          } else if (title_align == "right") {
+            top_line = hbox({
+              filler(),
+              bold_text_element(title_with_padding),
+              bold_text_element(box_right_corner(style))
             });
           } else {
-            overlay = text(box_left_corner(style) + std::string(" ") + *title + " ") | bold;
+            top_line = hcenter(bold_text_element(title_with_padding));
           }
-          return dbox({std::move(bordered), std::move(overlay)});
+
+          // Keep the title overlay constrained to the top row only; otherwise
+          // bold would apply down the full box height via decorator bounds.
+          Element overlay = vbox({
+            std::move(top_line),
+            filler()
+          });
+
+          Element with_title = dbox({std::move(bordered), std::move(overlay)});
+          return apply_margin(std::move(with_title), margin);
         }
+
+        Element title_element = text(*title) | bold;
+        title_element = align_title_element(std::move(title_element), title_align);
 
         Element separator_line = separatorStyled(style);
 
@@ -402,13 +564,13 @@ ftxui::Component build_component(
           content
         });
 
-        if (box_color.has_value()) {
-          return inner | borderStyled(style, *box_color);
-        }
-        return inner | borderStyled(style);
+        Element boxed = box_color.has_value()
+            ? inner | borderStyled(style, *box_color)
+            : inner | borderStyled(style);
+        return apply_margin(std::move(boxed), margin);
       }
 
-      return bordered;
+      return apply_margin(std::move(bordered), margin);
     });
   }
 

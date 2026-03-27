@@ -9,7 +9,10 @@ tuiBox(
   title = NULL,
   color = NULL,
   style = "rounded",
-  titleStyle = "header"
+  titleStyle = "header",
+  titleAlign = "left",
+  margin = 0L,
+  backgroundColor = NULL
 )
 }
 \arguments{
@@ -30,6 +33,14 @@ Use \code{NULL} (default) for no title.}
 \item{titleStyle}{Title rendering style. One of \code{"header"} (default), which
 places the title inside the box as a header separated by a bar, or
 \code{"border"}, which places the title in the top-left border line.}
+
+\item{titleAlign}{Title alignment for \code{"header"} mode. One of \code{"left"}
+(default), \code{"center"}, or \code{"right"}.}
+
+\item{margin}{Integer number of spaces outside the box (default \code{0}).}
+
+\item{backgroundColor}{Optional background color for the box content area.
+Supports the same color values as \code{color}.}
 }
 \value{
 A \code{rtuiComponent} list node of type \code{"box"}.

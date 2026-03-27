@@ -5,8 +5,11 @@ app <- tuiApp(
     tuiBox(
       title = "Counter controls",
       color = "cyan",
+      backgroundColor = "#101820",
       style = "rounded",
-      titleStyle = "border",
+      titleStyle = "header",
+      titleAlign = "center",
+      margin = 1L,
       child = tuiColumn(
         tuiOutputNumeric("counter"),
         tuiOutputText("message"),
@@ -17,6 +20,35 @@ app <- tuiApp(
           tuiInputButton("Apply name", id = "applyName")
         ),
         tuiInputText(id = "nameInput", value = "John", multiline = FALSE)
+      )
+    ),
+    tuiRow(
+      tuiBox(
+        title = "Left",
+        titleStyle = "border",
+        titleAlign = "left",
+        color = "green",
+        style = "light",
+        margin = 1L,
+        child = tuiOutputText("borderLeftDemo")
+      ),
+      tuiBox(
+        title = "Center",
+        titleStyle = "border",
+        titleAlign = "center",
+        color = "yellow",
+        style = "light",
+        margin = 1L,
+        child = tuiOutputText("borderCenterDemo")
+      ),
+      tuiBox(
+        title = "Right",
+        titleStyle = "border",
+        titleAlign = "right",
+        color = "magenta",
+        style = "light",
+        margin = 1L,
+        child = tuiOutputText("borderRightDemo")
       )
     )
   ),
@@ -38,6 +70,9 @@ app <- tuiApp(
     })
     output$counter <- tuiRenderNumeric(counter(), digits = 0)
     output$name <- tuiRenderText(paste("Your name is:", appliedName()))
+    output$borderLeftDemo <- tuiRenderText('titleAlign = "left"')
+    output$borderCenterDemo <- tuiRenderText('titleAlign = "center"')
+    output$borderRightDemo <- tuiRenderText('titleAlign = "right"')
   }
 )
 
