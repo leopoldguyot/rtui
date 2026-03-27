@@ -210,6 +210,20 @@ std::optional<Color> parse_button_color(const Rcpp::List& node) {
   return named_button_color(normalized);
 }
 
+bool parse_input_multiline(const Rcpp::List& node) {
+  if (!node.containsElementNamed("multiline")) {
+    return false;
+  }
+
+  SEXP candidate = node["multiline"];
+  if (TYPEOF(candidate) != LGLSXP ||
+      Rf_length(candidate) != 1 ||
+      LOGICAL(candidate)[0] == NA_LOGICAL) {
+    Rcpp::stop("`multiline` must be TRUE or FALSE.");
+  }
+  return Rcpp::as<bool>(candidate);
+}
+
 }  // namespace
 
 ftxui::Component build_component(
@@ -276,11 +290,13 @@ ftxui::Component build_component(
   if (type == "input") {
     std::string id          = Rcpp::as<std::string>(node["id"]);
     std::string placeholder = Rcpp::as<std::string>(node["placeholder"]);
+    bool multiline = parse_input_multiline(node);
 
     auto content = std::make_shared<std::string>(get_input_string(state, id));
 
     InputOption opts;
     opts.placeholder = placeholder;
+    opts.multiline = multiline;
     opts.on_change = [state, handlers, id, content] {
       set_input_value(state, id, Rcpp::wrap(*content));
       run_handler_if_present(handlers, id, state);

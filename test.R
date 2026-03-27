@@ -10,7 +10,7 @@ app <- tuiApp(
       tuiInputButton("Decrement", id = "dec"),
       tuiInputButton("Apply name", id = "applyName")
     ),
-    tuiInputText(id = "nameInput", value = "John")
+    tuiInputText(id = "nameInput", value = "John", multiline = FALSE)
   ),
   server = function(input, output) {
     counter <- tuiReactive(input$inc - input$dec)

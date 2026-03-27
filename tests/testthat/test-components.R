@@ -32,3 +32,22 @@ test_that("tuiInputButton validates color values", {
     "`color` must be one of"
   )
 })
+
+test_that("tuiInputText stores multiline flag", {
+  input <- tuiInputText(id = "name")
+  expect_null(input$multiline)
+
+  multiline_input <- tuiInputText(id = "name", multiline = TRUE)
+  expect_identical(multiline_input$multiline, TRUE)
+})
+
+test_that("tuiInputText validates multiline argument", {
+  expect_error(
+    tuiInputText(id = "name", multiline = "no"),
+    "`multiline` must be TRUE or FALSE."
+  )
+  expect_error(
+    tuiInputText(id = "name", multiline = NA),
+    "`multiline` must be TRUE or FALSE."
+  )
+})

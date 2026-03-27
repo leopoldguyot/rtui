@@ -127,27 +127,37 @@ tuiInputButton <- function(label, id, color = NULL) {
 
 #' Text input component
 #'
-#' A focusable single-line text input. The typed value is stored automatically
-#' in `input$<id>` and triggers a server update on change. The input starts
-#' with `value`.
+#' A focusable text input. The typed value is stored automatically in
+#' `input$<id>` and triggers a server update on change. The input starts with
+#' `value`. By default (`multiline = FALSE`), Enter triggers submit without
+#' inserting a newline. Set `multiline = TRUE` to allow newlines.
 #'
 #' @param id A character string used as the input key (`input$<id>`).
 #' @param placeholder A character string shown when the input is empty.
 #' @param value A character string used as the initial/default input value.
+#' @param multiline A single logical value. If `FALSE` (default), Enter does
+#'   not modify the text content. If `TRUE`, Enter inserts a newline.
 #'
 #' @return A `rtuiComponent` list node of type `"input"`.
 #'
 #' @export
-tuiInputText <- function(id, placeholder = "", value = "") {
+tuiInputText <- function(id, placeholder = "", value = "", multiline = FALSE) {
   if (!is.character(id) || length(id) != 1L || is.na(id))
     stop("`id` must be a single character string.")
   if (!is.character(placeholder) || length(placeholder) != 1L || is.na(placeholder))
     stop("`placeholder` must be a single character string.")
   if (!is.character(value) || length(value) != 1L || is.na(value))
     stop("`value` must be a single character string.")
+  if (!is.logical(multiline) || length(multiline) != 1L || is.na(multiline))
+    stop("`multiline` must be TRUE or FALSE.")
+
+  component <- list(type = "input", id = id, placeholder = placeholder, value = value)
+  if (isTRUE(multiline)) {
+    component$multiline <- TRUE
+  }
 
   structure(
-    list(type = "input", id = id, placeholder = placeholder, value = value),
+    component,
     class = "rtuiComponent"
   )
 }

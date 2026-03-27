@@ -4,7 +4,7 @@
 \alias{tuiInputText}
 \title{Text input component}
 \usage{
-tuiInputText(id, placeholder = "", value = "")
+tuiInputText(id, placeholder = "", value = "", multiline = FALSE)
 }
 \arguments{
 \item{id}{A character string used as the input key (\verb{input$<id>}).}
@@ -12,12 +12,16 @@ tuiInputText(id, placeholder = "", value = "")
 \item{placeholder}{A character string shown when the input is empty.}
 
 \item{value}{A character string used as the initial/default input value.}
+
+\item{multiline}{A single logical value. If \code{FALSE} (default), Enter does
+not modify the text content. If \code{TRUE}, Enter inserts a newline.}
 }
 \value{
 A \code{rtuiComponent} list node of type \code{"input"}.
 }
 \description{
-A focusable single-line text input. The typed value is stored automatically
-in \verb{input$<id>} and triggers a server update on change. The input starts
-with \code{value}.
+A focusable text input. The typed value is stored automatically in
+\verb{input$<id>} and triggers a server update on change. The input starts with
+\code{value}. By default (\code{multiline = FALSE}), Enter triggers submit without
+inserting a newline. Set \code{multiline = TRUE} to allow newlines.
 }
