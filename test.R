@@ -2,15 +2,23 @@ library(rtui)
 
 app <- tuiApp(
   ui = tuiColumn(
-    tuiOutputNumeric("counter"),
-    tuiOutputText("message"),
-    tuiOutputText("name"),
-    tuiRow(
-      tuiInputButton("Increment", id = "inc", color = "red"),
-      tuiInputButton("Decrement", id = "dec"),
-      tuiInputButton("Apply name", id = "applyName")
-    ),
-    tuiInputText(id = "nameInput", value = "John", multiline = FALSE)
+    tuiBox(
+      title = "Counter controls",
+      color = "cyan",
+      style = "rounded",
+      titleStyle = "border",
+      child = tuiColumn(
+        tuiOutputNumeric("counter"),
+        tuiOutputText("message"),
+        tuiOutputText("name"),
+        tuiRow(
+          tuiInputButton("Increment", id = "inc", color = "red"),
+          tuiInputButton("Decrement", id = "dec"),
+          tuiInputButton("Apply name", id = "applyName")
+        ),
+        tuiInputText(id = "nameInput", value = "John", multiline = FALSE)
+      )
+    )
   ),
   server = function(input, output) {
     counter <- tuiReactive(input$inc - input$dec)
@@ -21,7 +29,7 @@ app <- tuiApp(
 
     tuiObserveEvent(counter(), {
       n(n() + 1L)
-    }, runAtInit = TRUE)
+    }, runAtInit = FALSE)
 
     output$message <- tuiRenderText({
       counter()

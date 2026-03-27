@@ -36,17 +36,17 @@ tuiOutputNumeric <- function(outputId) {
   )
 }
 
-#' Internal helper `.rtuiNormalizeButtonColor`.
+#' Internal helper `.rtuiNormalizeColor`.
 #'
-#' Validates and normalizes a button color argument.
+#' Validates and normalizes a UI color argument.
 #'
-#' @param color Optional color value for `tuiInputButton()`.
+#' @param color Optional color value for UI components.
 #'
 #' @return `NULL` or a normalized lowercase color string.
 #'
 #' @keywords internal
 #' @noRd
-.rtuiNormalizeButtonColor <- function(color) {
+.rtuiNormalizeColor <- function(color) {
   if (is.null(color)) {
     return(NULL)
   }
@@ -112,7 +112,7 @@ tuiInputButton <- function(label, id, color = NULL) {
     stop("`label` must be a single character string.")
   if (!is.character(id) || length(id) != 1L || is.na(id))
     stop("`id` must be a single character string.")
-  color <- .rtuiNormalizeButtonColor(color)
+  color <- .rtuiNormalizeColor(color)
 
   component <- list(type = "button", label = label, id = id)
   if (!is.null(color)) {

@@ -51,3 +51,47 @@ test_that("tuiInputText validates multiline argument", {
     "`multiline` must be TRUE or FALSE."
   )
 })
+
+test_that("tuiBox stores configuration and validates inputs", {
+  wrapped <- tuiBox(
+    child = tuiOutputText("out"),
+    title = "Panel",
+    color = "blue",
+    style = "double",
+    titleStyle = "border"
+  )
+
+  expect_identical(wrapped$type, "box")
+  expect_identical(wrapped$title, "Panel")
+  expect_identical(wrapped$color, "blue")
+  expect_identical(wrapped$style, "double")
+  expect_identical(wrapped$titleStyle, "border")
+  expect_s3_class(wrapped$child, "rtuiComponent")
+
+  default_box <- tuiBox(tuiOutputText("out"))
+  expect_identical(default_box$style, "rounded")
+  expect_identical(default_box$titleStyle, "header")
+  expect_null(default_box[["title"]])
+  expect_null(default_box$color)
+
+  expect_error(
+    tuiBox(child = "not-a-component"),
+    "`child` must be a rtuiComponent object."
+  )
+  expect_error(
+    tuiBox(child = tuiOutputText("out"), title = NA_character_),
+    "`title` must be NULL or a single character string."
+  )
+  expect_error(
+    tuiBox(child = tuiOutputText("out"), style = "unknown"),
+    "`style` must be one of"
+  )
+  expect_error(
+    tuiBox(child = tuiOutputText("out"), titleStyle = "middle"),
+    "`titleStyle` must be one of"
+  )
+  expect_error(
+    tuiBox(child = tuiOutputText("out"), color = "not-a-color"),
+    "`color` must be one of"
+  )
+})

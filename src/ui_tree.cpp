@@ -127,6 +127,12 @@ std::string ascii_lower(std::string value) {
   return value;
 }
 
+bool is_single_string(SEXP value) {
+  return TYPEOF(value) == STRSXP &&
+      Rf_length(value) == 1 &&
+      STRING_ELT(value, 0) != NA_STRING;
+}
+
 bool is_hex_color(const std::string& value) {
   if (value.size() != 7 || value[0] != '#') {
     return false;
@@ -180,15 +186,13 @@ Color named_button_color(const std::string& normalized) {
   return Color::Default;
 }
 
-std::optional<Color> parse_button_color(const Rcpp::List& node) {
+std::optional<Color> parse_optional_color(const Rcpp::List& node) {
   if (!node.containsElementNamed("color")) {
     return std::nullopt;
   }
 
   SEXP candidate = node["color"];
-  if (TYPEOF(candidate) != STRSXP ||
-      Rf_length(candidate) != 1 ||
-      STRING_ELT(candidate, 0) == NA_STRING) {
+  if (!is_single_string(candidate)) {
     Rcpp::stop("`color` must be a single character string.");
   }
 
@@ -208,6 +212,76 @@ std::optional<Color> parse_button_color(const Rcpp::List& node) {
   }
 
   return named_button_color(normalized);
+}
+
+std::optional<std::string> parse_optional_title(const Rcpp::List& node) {
+  if (!node.containsElementNamed("title")) {
+    return std::nullopt;
+  }
+
+  SEXP candidate = node["title"];
+  if (!is_single_string(candidate)) {
+    Rcpp::stop("`title` must be a single character string.");
+  }
+
+  return Rcpp::as<std::string>(candidate);
+}
+
+BorderStyle parse_box_style(const Rcpp::List& node) {
+  if (!node.containsElementNamed("style")) {
+    return ROUNDED;
+  }
+
+  SEXP candidate = node["style"];
+  if (!is_single_string(candidate)) {
+    Rcpp::stop("`style` must be a single character string.");
+  }
+
+  std::string style = ascii_lower(Rcpp::as<std::string>(candidate));
+  if (style == "rounded") return ROUNDED;
+  if (style == "light") return LIGHT;
+  if (style == "dashed") return DASHED;
+  if (style == "heavy") return HEAVY;
+  if (style == "double") return DOUBLE;
+  if (style == "empty") return EMPTY;
+
+  Rcpp::stop("Unsupported box style `%s`.", style.c_str());
+  return ROUNDED;
+}
+
+std::string parse_box_title_style(const Rcpp::List& node) {
+  if (!node.containsElementNamed("titleStyle")) {
+    return "header";
+  }
+
+  SEXP candidate = node["titleStyle"];
+  if (!is_single_string(candidate)) {
+    Rcpp::stop("`titleStyle` must be a single character string.");
+  }
+
+  std::string title_style = ascii_lower(Rcpp::as<std::string>(candidate));
+  if (title_style != "header" && title_style != "border") {
+    Rcpp::stop("Unsupported box title style `%s`.", title_style.c_str());
+  }
+  return title_style;
+}
+
+std::string box_left_corner(BorderStyle style) {
+  switch (style) {
+    case LIGHT:
+      return "┌";
+    case DASHED:
+      return "┏";
+    case HEAVY:
+      return "┏";
+    case DOUBLE:
+      return "╔";
+    case ROUNDED:
+      return "╭";
+    case EMPTY:
+      return " ";
+  }
+  return "┌";
 }
 
 bool parse_input_multiline(const Rcpp::List& node) {
@@ -235,7 +309,7 @@ ftxui::Component build_component(
 
   // ── Layout containers ────────────────────────────────────────────────────
 
-  if (type == "vbox" || type == "hbox") {
+  if (type == "column" || type == "row") {
     Rcpp::List children = node["children"];
     Components comps;
     for (int i = 0; i < children.size(); ++i) {
@@ -243,7 +317,7 @@ ftxui::Component build_component(
         build_component(Rcpp::as<Rcpp::List>(children[i]), state, handlers)
       );
     }
-    if (type == "vbox")
+    if (type == "column")
       return Container::Vertical(comps);
     else
       return Container::Horizontal(comps);
@@ -264,7 +338,7 @@ ftxui::Component build_component(
   if (type == "button") {
     std::string label   = Rcpp::as<std::string>(node["label"]);
     std::string id = Rcpp::as<std::string>(node["id"]);
-    std::optional<Color> button_color = parse_button_color(node);
+    std::optional<Color> button_color = parse_optional_color(node);
 
     ButtonOption option = ButtonOption::Simple();
     if (button_color.has_value()) {
@@ -283,6 +357,59 @@ ftxui::Component build_component(
       increment_button_input(state, id);
       run_handler_if_present(handlers, id, state);
     }, option);
+  }
+
+  // ── Box wrapper ───────────────────────────────────────────────────────────
+
+  if (type == "box") {
+    if (!node.containsElementNamed("child")) {
+      Rcpp::stop("`box` component requires a `child` field.");
+    }
+
+    Component child = build_component(Rcpp::as<Rcpp::List>(node["child"]), state, handlers);
+    BorderStyle style = parse_box_style(node);
+    std::optional<Color> box_color = parse_optional_color(node);
+    std::optional<std::string> title = parse_optional_title(node);
+    std::string title_style = parse_box_title_style(node);
+
+    return Renderer(child, [child, style, box_color, title, title_style] {
+      Element content = child->Render();
+      Element bordered = box_color.has_value()
+          ? content | borderStyled(style, *box_color)
+          : content | borderStyled(style);
+
+      if (title.has_value()) {
+        Element title_element = text(*title) | bold;
+
+        if (title_style == "border") {
+          Element overlay;
+          if (box_color.has_value()) {
+            overlay = hbox({
+              text(box_left_corner(style)) | ftxui::color(*box_color),
+              text(std::string(" ") + *title + " ") | bold
+            });
+          } else {
+            overlay = text(box_left_corner(style) + std::string(" ") + *title + " ") | bold;
+          }
+          return dbox({std::move(bordered), std::move(overlay)});
+        }
+
+        Element separator_line = separatorStyled(style);
+
+        Element inner = vbox({
+          std::move(title_element),
+          std::move(separator_line),
+          content
+        });
+
+        if (box_color.has_value()) {
+          return inner | borderStyled(style, *box_color);
+        }
+        return inner | borderStyled(style);
+      }
+
+      return bordered;
+    });
   }
 
   // ── Text input ───────────────────────────────────────────────────────────

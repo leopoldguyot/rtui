@@ -76,6 +76,7 @@ tuiRun(app)  # press Escape or Ctrl+Q to quit
 | `tuiRun(app)` | Start the app (blocking) |
 | `tuiColumn(...)` | Stack components vertically |
 | `tuiRow(...)` | Place components side by side |
+| `tuiBox(child, title = NULL, color = NULL, style = "rounded", titleStyle = "header")` | Wrap a component in a configurable border (`header` or `border` title placement) |
 | `tuiOutputText("id")` / `tuiOutputNumeric("id")` | Display `output$id` in the UI |
 | `tuiInputButton(label, id, color = NULL)` | Button that triggers a handler (optional text color) |
 | `tuiInputText(id, placeholder, value, multiline = FALSE)` | One-line text input by default (`multiline = TRUE` allows newlines) |

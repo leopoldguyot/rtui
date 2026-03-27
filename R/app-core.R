@@ -6,8 +6,8 @@
 #' graph nodes for each input event.
 #'
 #' @param ui A UI component tree built with [tuiColumn()], [tuiRow()],
-#'   [tuiOutputText()], [tuiOutputNumeric()], [tuiInputButton()], or
-#'   [tuiInputText()].
+#'   [tuiBox()], [tuiOutputText()], [tuiOutputNumeric()],
+#'   [tuiInputButton()], or [tuiInputText()].
 #' @param server A function called as `server(input, output)`. Both `input`
 #'   and `output` are environments:
 #'   - `input$<id>` is updated automatically from buttons and text inputs.
@@ -107,24 +107,30 @@ tuiApp <- function(ui, server) {
   textInputDefaults <- list()
 
   walk <- function(x) {
-    type <- x$type
+    type <- x[["type"]]
 
     if (type %in% c("outputText", "outputNumeric")) {
-      outputIds <<- c(outputIds, x$outputId)
+      outputIds <<- c(outputIds, x[["outputId"]])
     }
     if (identical(type, "button")) {
-      buttonIds <<- c(buttonIds, x$id)
+      buttonIds <<- c(buttonIds, x[["id"]])
     }
     if (identical(type, "input")) {
-      textInputIds <<- c(textInputIds, x$id)
-      defaultValue <- if (is.null(x$value)) "" else x$value
-      textInputDefaults[[x$id]] <<- defaultValue
+      inputId <- x[["id"]]
+      textInputIds <<- c(textInputIds, inputId)
+      defaultValue <- if (is.null(x[["value"]])) "" else x[["value"]]
+      textInputDefaults[[inputId]] <<- defaultValue
     }
 
-    if (!is.null(x$children)) {
-      for (child in x$children) {
+    children <- x[["children", exact = TRUE]]
+    if (!is.null(children)) {
+      for (child in children) {
         walk(child)
       }
+    }
+    child <- x[["child", exact = TRUE]]
+    if (!is.null(child)) {
+      walk(child)
     }
   }
 

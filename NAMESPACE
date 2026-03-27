@@ -2,6 +2,7 @@
 
 S3method(print,rtuiApp)
 export(tuiApp)
+export(tuiBox)
 export(tuiColumn)
 export(tuiInputButton)
 export(tuiInputText)

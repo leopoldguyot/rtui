@@ -10,7 +10,7 @@ tuiRow(...)
 \item{...}{Child components built with layout or component functions.}
 }
 \value{
-A \code{rtuiComponent} list node of type \code{"hbox"}.
+A \code{rtuiComponent} list node of type \code{"row"}.
 }
 \description{
 Places child components side by side horizontally.

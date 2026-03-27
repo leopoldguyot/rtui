@@ -10,7 +10,7 @@ tuiColumn(...)
 \item{...}{Child components built with layout or component functions.}
 }
 \value{
-A \code{rtuiComponent} list node of type \code{"vbox"}.
+A \code{rtuiComponent} list node of type \code{"column"}.
 }
 \description{
 Stacks child components vertically.
