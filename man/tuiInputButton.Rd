@@ -4,12 +4,18 @@
 \alias{tuiInputButton}
 \title{Button input component}
 \usage{
-tuiInputButton(label, id)
+tuiInputButton(label, id, color = NULL)
 }
 \arguments{
 \item{label}{A character string shown as the button label.}
 
 \item{id}{A character string used as the input key (\verb{input$<id>}).}
+
+\item{color}{Optional button color. Supports named colors (\code{"default"},
+\code{"black"}, \code{"red"}, \code{"green"}, \code{"yellow"}, \code{"blue"}, \code{"magenta"},
+\code{"cyan"}, \code{"graylight"}, \code{"graydark"}, \code{"redlight"}, \code{"greenlight"},
+\code{"yellowlight"}, \code{"bluelight"}, \code{"magentalight"}, \code{"cyanlight"},
+\code{"white"}) or a hex string like \code{"#RRGGBB"}.}
 }
 \value{
 A \code{rtuiComponent} list node of type \code{"button"}.

@@ -6,7 +6,7 @@ app <- tuiApp(
     tuiOutputText("message"),
     tuiOutputText("name"),
     tuiRow(
-      tuiInputButton("Increment", id = "inc"),
+      tuiInputButton("Increment", id = "inc", color = "red"),
       tuiInputButton("Decrement", id = "dec"),
       tuiInputButton("Apply name", id = "applyName")
     ),

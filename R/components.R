@@ -36,6 +36,61 @@ tuiOutputNumeric <- function(outputId) {
   )
 }
 
+#' Internal helper `.rtuiNormalizeButtonColor`.
+#'
+#' Validates and normalizes a button color argument.
+#'
+#' @param color Optional color value for `tuiInputButton()`.
+#'
+#' @return `NULL` or a normalized lowercase color string.
+#'
+#' @keywords internal
+#' @noRd
+.rtuiNormalizeButtonColor <- function(color) {
+  if (is.null(color)) {
+    return(NULL)
+  }
+
+  if (!is.character(color) || length(color) != 1L || is.na(color)) {
+    stop("`color` must be NULL or a single character string.")
+  }
+
+  normalized <- tolower(trimws(color))
+  if (nchar(normalized) == 0L) {
+    stop("`color` must not be an empty string.")
+  }
+
+  if (grepl("^#[0-9a-f]{6}$", normalized)) {
+    return(normalized)
+  }
+
+  aliases <- c(
+    gray = "graylight",
+    grey = "graylight",
+    greylight = "graylight",
+    greydark = "graydark"
+  )
+  if (normalized %in% names(aliases)) {
+    normalized <- aliases[[normalized]]
+  }
+
+  allowed <- c(
+    "default", "black", "red", "green", "yellow", "blue", "magenta", "cyan",
+    "graylight", "graydark", "redlight", "greenlight", "yellowlight",
+    "bluelight", "magentalight", "cyanlight", "white"
+  )
+
+  if (!normalized %in% allowed) {
+    stop(
+      "`color` must be one of ",
+      paste(shQuote(allowed), collapse = ", "),
+      ", or a hex color like '#RRGGBB'."
+    )
+  }
+
+  normalized
+}
+
 #' Button input component
 #'
 #' A focusable button. When activated (Enter key), it increments `input$id`
@@ -43,18 +98,29 @@ tuiOutputNumeric <- function(outputId) {
 #'
 #' @param label A character string shown as the button label.
 #' @param id A character string used as the input key (`input$<id>`).
+#' @param color Optional button color. Supports named colors (`"default"`,
+#'   `"black"`, `"red"`, `"green"`, `"yellow"`, `"blue"`, `"magenta"`,
+#'   `"cyan"`, `"graylight"`, `"graydark"`, `"redlight"`, `"greenlight"`,
+#'   `"yellowlight"`, `"bluelight"`, `"magentalight"`, `"cyanlight"`,
+#'   `"white"`) or a hex string like `"#RRGGBB"`.
 #'
 #' @return A `rtuiComponent` list node of type `"button"`.
 #'
 #' @export
-tuiInputButton <- function(label, id) {
+tuiInputButton <- function(label, id, color = NULL) {
   if (!is.character(label) || length(label) != 1L || is.na(label))
     stop("`label` must be a single character string.")
   if (!is.character(id) || length(id) != 1L || is.na(id))
     stop("`id` must be a single character string.")
+  color <- .rtuiNormalizeButtonColor(color)
+
+  component <- list(type = "button", label = label, id = id)
+  if (!is.null(color)) {
+    component$color <- color
+  }
 
   structure(
-    list(type = "button", label = label, id = id),
+    component,
     class = "rtuiComponent"
   )
 }

@@ -1,10 +1,15 @@
 #include "ui_tree.h"
 
 #include <ftxui/component/component.hpp>
+#include <ftxui/component/component_options.hpp>
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/dom/elements.hpp>
+#include <ftxui/screen/color.hpp>
 
+#include <cctype>
+#include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -115,6 +120,96 @@ void increment_button_input(
   state->values["input"] = input_values;
 }
 
+std::string ascii_lower(std::string value) {
+  for (char& ch : value) {
+    ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+  }
+  return value;
+}
+
+bool is_hex_color(const std::string& value) {
+  if (value.size() != 7 || value[0] != '#') {
+    return false;
+  }
+
+  for (size_t i = 1; i < value.size(); ++i) {
+    if (std::isxdigit(static_cast<unsigned char>(value[i])) == 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+uint8_t hex_pair_to_byte(char high, char low) {
+  auto nibble = [](char ch) -> int {
+    unsigned char value = static_cast<unsigned char>(ch);
+    if (value >= '0' && value <= '9') {
+      return static_cast<int>(value - '0');
+    }
+    value = static_cast<unsigned char>(std::tolower(value));
+    if (value >= 'a' && value <= 'f') {
+      return static_cast<int>(10 + value - 'a');
+    }
+    return -1;
+  };
+
+  int high_value = nibble(high);
+  int low_value = nibble(low);
+  return static_cast<uint8_t>(high_value * 16 + low_value);
+}
+
+Color named_button_color(const std::string& normalized) {
+  if (normalized == "default") return Color::Default;
+  if (normalized == "black") return Color::Black;
+  if (normalized == "red") return Color::Red;
+  if (normalized == "green") return Color::Green;
+  if (normalized == "yellow") return Color::Yellow;
+  if (normalized == "blue") return Color::Blue;
+  if (normalized == "magenta") return Color::Magenta;
+  if (normalized == "cyan") return Color::Cyan;
+  if (normalized == "graylight") return Color::GrayLight;
+  if (normalized == "graydark") return Color::GrayDark;
+  if (normalized == "redlight") return Color::RedLight;
+  if (normalized == "greenlight") return Color::GreenLight;
+  if (normalized == "yellowlight") return Color::YellowLight;
+  if (normalized == "bluelight") return Color::BlueLight;
+  if (normalized == "magentalight") return Color::MagentaLight;
+  if (normalized == "cyanlight") return Color::CyanLight;
+  if (normalized == "white") return Color::White;
+  Rcpp::stop("Unsupported button color `%s`.", normalized.c_str());
+  return Color::Default;
+}
+
+std::optional<Color> parse_button_color(const Rcpp::List& node) {
+  if (!node.containsElementNamed("color")) {
+    return std::nullopt;
+  }
+
+  SEXP candidate = node["color"];
+  if (TYPEOF(candidate) != STRSXP ||
+      Rf_length(candidate) != 1 ||
+      STRING_ELT(candidate, 0) == NA_STRING) {
+    Rcpp::stop("`color` must be a single character string.");
+  }
+
+  std::string normalized = ascii_lower(Rcpp::as<std::string>(candidate));
+  if (normalized == "gray" || normalized == "grey" || normalized == "greylight") {
+    normalized = "graylight";
+  }
+  if (normalized == "greydark") {
+    normalized = "graydark";
+  }
+
+  if (is_hex_color(normalized)) {
+    uint8_t red = hex_pair_to_byte(normalized[1], normalized[2]);
+    uint8_t green = hex_pair_to_byte(normalized[3], normalized[4]);
+    uint8_t blue = hex_pair_to_byte(normalized[5], normalized[6]);
+    return Color::RGB(red, green, blue);
+  }
+
+  return named_button_color(normalized);
+}
+
 }  // namespace
 
 ftxui::Component build_component(
@@ -155,11 +250,25 @@ ftxui::Component build_component(
   if (type == "button") {
     std::string label   = Rcpp::as<std::string>(node["label"]);
     std::string id = Rcpp::as<std::string>(node["id"]);
+    std::optional<Color> button_color = parse_button_color(node);
+
+    ButtonOption option = ButtonOption::Simple();
+    if (button_color.has_value()) {
+      const Color resolved_color = *button_color;
+      option.transform = [resolved_color](const EntryState& state) {
+        auto element = text(state.label) | borderLight;
+        element |= ftxui::color(resolved_color);
+        if (state.focused) {
+          element |= inverted;
+        }
+        return element;
+      };
+    }
 
     return Button(label, [state, handlers, id] {
       increment_button_input(state, id);
       run_handler_if_present(handlers, id, state);
-    });
+    }, option);
   }
 
   // ── Text input ───────────────────────────────────────────────────────────
