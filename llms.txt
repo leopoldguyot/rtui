@@ -78,7 +78,7 @@ tuiRun(app)  # press Escape or Ctrl+Q to quit
 | `tuiRow(...)`                                                   | Place components side by side                                                                  |
 | `tuiOutputText("id")` / `tuiOutputNumeric("id")`                | Display `output$id` in the UI                                                                  |
 | `tuiInputButton(label, id, color = NULL)`                       | Button that triggers a handler (optional text color)                                           |
-| `tuiInputText(id, placeholder, value)`                          | Single-line text input                                                                         |
+| `tuiInputText(id, placeholder, value, multiline = FALSE)`       | One-line text input by default (`multiline = TRUE` allows newlines)                            |
 | `tuiRenderText(expr)` / `tuiRenderNumeric(expr, digits = NULL)` | Build renderers assigned to `output$...`                                                       |
 | `tuiReactive(expr)` / `tuiReactiveVal(value)`                   | Define graph-tracked reactive expressions and mutable values (auto invalidation of dependents) |
 | `tuiReactiveEvent(event, expr, runAtInit = FALSE)`              | Event-scoped reactive expression that re-runs when its event source invalidates                |
