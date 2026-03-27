@@ -139,49 +139,53 @@
 <td>Place components side by side</td>
 </tr>
 <tr class="odd">
+<td><code>tuiBox(child, title = NULL, color = NULL, style = "rounded", titleStyle = "header")</code></td>
+<td>Wrap a component in a configurable border (<code>header</code> or <code>border</code> title placement)</td>
+</tr>
+<tr class="even">
 <td>
 <code>tuiOutputText("id")</code> / <code>tuiOutputNumeric("id")</code>
 </td>
 <td>Display <code>output$id</code> in the UI</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>tuiInputButton(label, id, color = NULL)</code></td>
 <td>Button that triggers a handler (optional text color)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>tuiInputText(id, placeholder, value, multiline = FALSE)</code></td>
 <td>One-line text input by default (<code>multiline = TRUE</code> allows newlines)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>
 <code>tuiRenderText(expr)</code> / <code>tuiRenderNumeric(expr, digits = NULL)</code>
 </td>
 <td>Build renderers assigned to <code>output$...</code>
 </td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>
 <code>tuiReactive(expr)</code> / <code>tuiReactiveVal(value)</code>
 </td>
 <td>Define graph-tracked reactive expressions and mutable values (auto invalidation of dependents)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>tuiReactiveEvent(event, expr, runAtInit = FALSE)</code></td>
 <td>Event-scoped reactive expression that re-runs when its event source invalidates</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>tuiReq(...)</code></td>
 <td>Stop current reactive/render evaluation when required values are falsy</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>tuiIsolate(expr)</code></td>
 <td>Read reactive values without registering graph dependencies</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>tuiObserve(expr)</code></td>
 <td>Register an observer that runs when its dependencies invalidate</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>tuiObserveEvent(event, expr, runAtInit = FALSE)</code></td>
 <td>Register an observer that runs only when the event source invalidates</td>
 </tr>

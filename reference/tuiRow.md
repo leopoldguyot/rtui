@@ -16,4 +16,4 @@ tuiRow(...)
 
 ## Value
 
-A `rtuiComponent` list node of type `"hbox"`.
+A `rtuiComponent` list node of type `"row"`.

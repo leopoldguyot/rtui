@@ -5,6 +5,9 @@
 - [`tuiApp()`](https://leopoldguyot.github.io/rtui/reference/tuiApp.md)
   : Create a TUI application
 
+- [`tuiBox()`](https://leopoldguyot.github.io/rtui/reference/tuiBox.md)
+  : Box layout wrapper
+
 - [`tuiColumn()`](https://leopoldguyot.github.io/rtui/reference/tuiColumn.md)
   : Vertical box layout
 

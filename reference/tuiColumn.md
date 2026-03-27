@@ -16,4 +16,4 @@ tuiColumn(...)
 
 ## Value
 
-A `rtuiComponent` list node of type `"vbox"`.
+A `rtuiComponent` list node of type `"column"`.

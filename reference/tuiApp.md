@@ -18,6 +18,7 @@ tuiApp(ui, server)
   A UI component tree built with
   [`tuiColumn()`](https://leopoldguyot.github.io/rtui/reference/tuiColumn.md),
   [`tuiRow()`](https://leopoldguyot.github.io/rtui/reference/tuiRow.md),
+  [`tuiBox()`](https://leopoldguyot.github.io/rtui/reference/tuiBox.md),
   [`tuiOutputText()`](https://leopoldguyot.github.io/rtui/reference/tuiOutputText.md),
   [`tuiOutputNumeric()`](https://leopoldguyot.github.io/rtui/reference/tuiOutputNumeric.md),
   [`tuiInputButton()`](https://leopoldguyot.github.io/rtui/reference/tuiInputButton.md),
