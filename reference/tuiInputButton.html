@@ -40,7 +40,7 @@ and triggers a server update.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">tuiInputButton</span><span class="op">(</span><span class="va">label</span>, <span class="va">id</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">tuiInputButton</span><span class="op">(</span><span class="va">label</span>, <span class="va">id</span>, color <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -53,6 +53,14 @@ and triggers a server update.</p>
 
 <dt id="arg-id">id<a class="anchor" aria-label="anchor" href="#arg-id"></a></dt>
 <dd><p>A character string used as the input key (<code>input$&lt;id&gt;</code>).</p></dd>
+
+
+<dt id="arg-color">color<a class="anchor" aria-label="anchor" href="#arg-color"></a></dt>
+<dd><p>Optional button color. Supports named colors (<code>"default"</code>,
+<code>"black"</code>, <code>"red"</code>, <code>"green"</code>, <code>"yellow"</code>, <code>"blue"</code>, <code>"magenta"</code>,
+<code>"cyan"</code>, <code>"graylight"</code>, <code>"graydark"</code>, <code>"redlight"</code>, <code>"greenlight"</code>,
+<code>"yellowlight"</code>, <code>"bluelight"</code>, <code>"magentalight"</code>, <code>"cyanlight"</code>,
+<code>"white"</code>) or a hex string like <code>"#RRGGBB"</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
