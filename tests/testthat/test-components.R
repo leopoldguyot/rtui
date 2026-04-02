@@ -52,6 +52,30 @@ test_that("tuiInputText validates multiline argument", {
   )
 })
 
+test_that("tuiInputCheckbox stores value and validates inputs", {
+  checked <- tuiInputCheckbox("Enable feature", id = "enabled", value = TRUE)
+  expect_identical(checked$type, "checkbox")
+  expect_identical(checked$label, "Enable feature")
+  expect_identical(checked$id, "enabled")
+  expect_identical(checked$value, TRUE)
+
+  unchecked <- tuiInputCheckbox("Enable feature", id = "enabled2")
+  expect_identical(unchecked$value, FALSE)
+
+  expect_error(
+    tuiInputCheckbox(1, id = "enabled"),
+    "`label` must be a single character string."
+  )
+  expect_error(
+    tuiInputCheckbox("Enable feature", id = NA_character_),
+    "`id` must be a single character string."
+  )
+  expect_error(
+    tuiInputCheckbox("Enable feature", id = "enabled", value = "yes"),
+    "`value` must be TRUE or FALSE."
+  )
+})
+
 test_that("tuiBox stores configuration and validates inputs", {
   wrapped <- tuiBox(
     child = tuiOutputText("out"),

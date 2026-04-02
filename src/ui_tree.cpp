@@ -122,6 +122,46 @@ void increment_button_input(
   state->values["input"] = input_values;
 }
 
+bool get_input_bool(
+    const std::shared_ptr<AppState>& state,
+    const std::string& id
+) {
+  auto lower = [](std::string value) {
+    for (char& ch : value) {
+      ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+    }
+    return value;
+  };
+
+  Rcpp::List input_values = get_sublist_or_empty(state->values, "input");
+  if (!input_values.containsElementNamed(id.c_str())) {
+    return false;
+  }
+
+  SEXP val = input_values[id];
+  if (TYPEOF(val) == LGLSXP && Rf_length(val) == 1 && LOGICAL(val)[0] != NA_LOGICAL) {
+    return LOGICAL(val)[0] == TRUE;
+  }
+  if (TYPEOF(val) == INTSXP && Rf_length(val) == 1 && INTEGER(val)[0] != NA_INTEGER) {
+    return INTEGER(val)[0] != 0;
+  }
+  if (TYPEOF(val) == REALSXP && Rf_length(val) == 1 && !ISNAN(REAL(val)[0])) {
+    return REAL(val)[0] != 0.0;
+  }
+
+  if (TYPEOF(val) == STRSXP && Rf_length(val) == 1 && STRING_ELT(val, 0) != NA_STRING) {
+    std::string normalized = lower(Rcpp::as<std::string>(val));
+    if (normalized == "true" || normalized == "1") {
+      return true;
+    }
+    if (normalized == "false" || normalized == "0") {
+      return false;
+    }
+  }
+
+  return false;
+}
+
 std::string ascii_lower(std::string value) {
   for (char& ch : value) {
     ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
@@ -568,6 +608,21 @@ ftxui::Component build_component(
       increment_button_input(state, id);
       run_handler_if_present(handlers, id, state);
     }, option);
+  }
+
+  // ── Checkbox ──────────────────────────────────────────────────────────────
+
+  if (type == "checkbox") {
+    std::string label = Rcpp::as<std::string>(node["label"]);
+    std::string id = Rcpp::as<std::string>(node["id"]);
+    auto checked = std::make_shared<bool>(get_input_bool(state, id));
+    CheckboxOption option = CheckboxOption::Simple();
+    option.on_change = [state, handlers, id, checked] {
+      set_input_value(state, id, Rcpp::wrap(*checked));
+      run_handler_if_present(handlers, id, state);
+    };
+
+    return Checkbox(label, checked.get(), option);
   }
 
   // ── Box wrapper ───────────────────────────────────────────────────────────

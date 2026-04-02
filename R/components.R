@@ -161,3 +161,29 @@ tuiInputText <- function(id, placeholder = "", value = "", multiline = FALSE) {
     class = "rtuiComponent"
   )
 }
+
+#' Checkbox input component
+#'
+#' A focusable checkbox. Toggling it updates `input$<id>` and triggers
+#' a server update.
+#'
+#' @param label A character string shown as the checkbox label.
+#' @param id A character string used as the input key (`input$<id>`).
+#' @param value A single logical value used as the initial/default checkbox value.
+#'
+#' @return A `rtuiComponent` list node of type `"checkbox"`.
+#'
+#' @export
+tuiInputCheckbox <- function(label, id, value = FALSE) {
+  if (!is.character(label) || length(label) != 1L || is.na(label))
+    stop("`label` must be a single character string.")
+  if (!is.character(id) || length(id) != 1L || is.na(id))
+    stop("`id` must be a single character string.")
+  if (!is.logical(value) || length(value) != 1L || is.na(value))
+    stop("`value` must be TRUE or FALSE.")
+
+  structure(
+    list(type = "checkbox", label = label, id = id, value = isTRUE(value)),
+    class = "rtuiComponent"
+  )
+}

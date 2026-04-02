@@ -7,7 +7,7 @@
 #'
 #' @param ui A UI component tree built with [tuiColumn()], [tuiRow()],
 #'   [tuiBox()], [tuiOutputText()], [tuiOutputNumeric()],
-#'   [tuiInputButton()], or [tuiInputText()].
+#'   [tuiInputButton()], [tuiInputText()], or `tuiInputCheckbox()`.
 #' @param server A function called as `server(input, output)`. Both `input`
 #'   and `output` are environments:
 #'   - `input$<id>` is updated automatically from buttons and text inputs.
@@ -38,11 +38,12 @@ tuiApp <- function(ui, server) {
   }
 
   meta <- .rtuiCollectUiMeta(ui)
-  overlapIds <- intersect(meta$buttonIds, meta$textInputIds)
-  if (length(overlapIds) > 0L) {
+  inputIds <- c(meta$buttonIds, meta$textInputIds, meta$checkboxIds)
+  duplicatedIds <- unique(inputIds[duplicated(inputIds)])
+  if (length(duplicatedIds) > 0L) {
     stop(
-      "Component ids must be unique across buttons and text inputs. Duplicates: ",
-      paste(overlapIds, collapse = ", ")
+      "Component ids must be unique across buttons, text inputs, and checkboxes. Duplicates: ",
+      paste(duplicatedIds, collapse = ", ")
     )
   }
 
@@ -68,7 +69,7 @@ tuiApp <- function(ui, server) {
     output = runtime$currentOutputState
   )
 
-  handlerIds <- unique(c(meta$buttonIds, meta$textInputIds))
+  handlerIds <- unique(c(meta$buttonIds, meta$textInputIds, meta$checkboxIds))
   handlers <- stats::setNames(vector("list", length(handlerIds)), handlerIds)
   for (id in handlerIds) {
     handlers[[id]] <- local({
@@ -105,6 +106,8 @@ tuiApp <- function(ui, server) {
   buttonIds <- character()
   textInputIds <- character()
   textInputDefaults <- list()
+  checkboxIds <- character()
+  checkboxDefaults <- list()
 
   walk <- function(x) {
     type <- x[["type"]]
@@ -120,6 +123,11 @@ tuiApp <- function(ui, server) {
       textInputIds <<- c(textInputIds, inputId)
       defaultValue <- if (is.null(x[["value"]])) "" else x[["value"]]
       textInputDefaults[[inputId]] <<- defaultValue
+    }
+    if (identical(type, "checkbox")) {
+      inputId <- x[["id"]]
+      checkboxIds <<- c(checkboxIds, inputId)
+      checkboxDefaults[[inputId]] <<- isTRUE(x[["value"]])
     }
 
     children <- x[["children", exact = TRUE]]
@@ -137,12 +145,15 @@ tuiApp <- function(ui, server) {
   walk(node)
 
   textInputIds <- unique(textInputIds)
+  checkboxIds <- unique(checkboxIds)
 
   list(
     outputIds = unique(outputIds),
     buttonIds = unique(buttonIds),
     textInputIds = textInputIds,
-    textInputDefaults = textInputDefaults[textInputIds]
+    textInputDefaults = textInputDefaults[textInputIds],
+    checkboxIds = checkboxIds,
+    checkboxDefaults = checkboxDefaults[checkboxIds]
   )
 }
 
@@ -157,7 +168,7 @@ tuiApp <- function(ui, server) {
 #' @keywords internal
 #' @noRd
 .rtuiInitialInput <- function(meta) {
-  ids <- c(meta$buttonIds, meta$textInputIds)
+  ids <- c(meta$buttonIds, meta$textInputIds, meta$checkboxIds)
   input <- stats::setNames(vector("list", length(ids)), ids)
 
   for (id in meta$buttonIds) {
@@ -167,6 +178,11 @@ tuiApp <- function(ui, server) {
   textDefaults <- if (is.null(meta$textInputDefaults)) list() else meta$textInputDefaults
   for (id in meta$textInputIds) {
     input[[id]] <- if (!is.null(textDefaults[[id]])) textDefaults[[id]] else ""
+  }
+
+  checkboxDefaults <- if (is.null(meta$checkboxDefaults)) list() else meta$checkboxDefaults
+  for (id in meta$checkboxIds) {
+    input[[id]] <- if (!is.null(checkboxDefaults[[id]])) isTRUE(checkboxDefaults[[id]]) else FALSE
   }
 
   input

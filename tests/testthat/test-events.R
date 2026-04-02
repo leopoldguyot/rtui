@@ -16,6 +16,27 @@ test_that("tuiInputText updates input state and renderer output", {
   expect_identical(app$state$output$out, "Grace")
 })
 
+test_that("tuiInputCheckbox toggles logical input state and output", {
+  app <- tuiApp(
+    ui = tuiColumn(
+      tuiInputCheckbox("Enabled", id = "enabled", value = FALSE),
+      tuiOutputText("out")
+    ),
+    server = function(input, output) {
+      output$out <- tuiRenderText(if (isTRUE(input$enabled)) "on" else "off")
+    }
+  )
+
+  expect_identical(app$state$input$enabled, FALSE)
+  expect_identical(app$state$output$out, "off")
+  app <- toggle_checkbox_input(app, "enabled")
+  expect_identical(app$state$input$enabled, TRUE)
+  expect_identical(app$state$output$out, "on")
+  app <- toggle_checkbox_input(app, "enabled")
+  expect_identical(app$state$input$enabled, FALSE)
+  expect_identical(app$state$output$out, "off")
+})
+
 test_that("tuiObserveEvent runs only for the selected input event", {
   app <- tuiApp(
     ui = tuiColumn(

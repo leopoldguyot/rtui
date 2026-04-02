@@ -9,7 +9,7 @@ tuiApp(ui, server)
 \arguments{
 \item{ui}{A UI component tree built with \code{\link[=tuiColumn]{tuiColumn()}}, \code{\link[=tuiRow]{tuiRow()}},
 \code{\link[=tuiBox]{tuiBox()}}, \code{\link[=tuiOutputText]{tuiOutputText()}}, \code{\link[=tuiOutputNumeric]{tuiOutputNumeric()}},
-\code{\link[=tuiInputButton]{tuiInputButton()}}, or \code{\link[=tuiInputText]{tuiInputText()}}.}
+\code{\link[=tuiInputButton]{tuiInputButton()}}, \code{\link[=tuiInputText]{tuiInputText()}}, or \code{tuiInputCheckbox()}.}
 
 \item{server}{A function called as \code{server(input, output)}. Both \code{input}
 and \code{output} are environments:

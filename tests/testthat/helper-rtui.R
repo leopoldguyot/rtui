@@ -9,3 +9,9 @@ set_text_input <- function(app, id, value) {
   app$state <- app$handlers[[id]](app$state)
   app
 }
+
+toggle_checkbox_input <- function(app, id) {
+  app$state$input[[id]] <- !isTRUE(app$state$input[[id]])
+  app$state <- app$handlers[[id]](app$state)
+  app
+}
