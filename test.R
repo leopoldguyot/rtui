@@ -5,7 +5,6 @@ app <- tuiApp(
     tuiBox(
       title = "Counter controls",
       color = "cyan",
-      backgroundColor = "#101820",
       style = "rounded",
       titleStyle = "header",
       titleAlign = "center",

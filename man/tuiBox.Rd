@@ -11,8 +11,7 @@ tuiBox(
   style = "rounded",
   titleStyle = "header",
   titleAlign = "left",
-  margin = 0L,
-  backgroundColor = NULL
+  margin = 0L
 )
 }
 \arguments{
@@ -38,9 +37,6 @@ places the title inside the box as a header separated by a bar, or
 (default), \code{"center"}, or \code{"right"}.}
 
 \item{margin}{Integer number of spaces outside the box (default \code{0}).}
-
-\item{backgroundColor}{Optional background color for the box content area.
-Supports the same color values as \code{color}.}
 }
 \value{
 A \code{rtuiComponent} list node of type \code{"box"}.

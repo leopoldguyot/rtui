@@ -60,8 +60,7 @@ test_that("tuiBox stores configuration and validates inputs", {
     style = "double",
     titleStyle = "border",
     titleAlign = "center",
-    margin = 1L,
-    backgroundColor = "#123456"
+    margin = 1L
   )
 
   expect_identical(wrapped$type, "box")
@@ -71,7 +70,6 @@ test_that("tuiBox stores configuration and validates inputs", {
   expect_identical(wrapped$titleStyle, "border")
   expect_identical(wrapped$titleAlign, "center")
   expect_identical(wrapped$margin, 1L)
-  expect_identical(wrapped$backgroundColor, "#123456")
   expect_s3_class(wrapped$child, "rtuiComponent")
 
   default_box <- tuiBox(tuiOutputText("out"))
@@ -81,7 +79,6 @@ test_that("tuiBox stores configuration and validates inputs", {
   expect_identical(default_box$margin, 0L)
   expect_null(default_box[["title"]])
   expect_null(default_box$color)
-  expect_null(default_box$backgroundColor)
 
   expect_error(
     tuiBox(child = "not-a-component"),
@@ -113,10 +110,6 @@ test_that("tuiBox stores configuration and validates inputs", {
   )
   expect_error(
     tuiBox(child = tuiOutputText("out"), color = "not-a-color"),
-    "`color` must be one of"
-  )
-  expect_error(
-    tuiBox(child = tuiOutputText("out"), backgroundColor = "not-a-color"),
     "`color` must be one of"
   )
 })

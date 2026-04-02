@@ -416,8 +416,83 @@ class BoldTextElement : public Node {
   std::string text_;
 };
 
-Element bold_text_element(std::string text) {
-  return std::make_shared<BoldTextElement>(std::move(text));
+class BoxTopLineOverlayElement : public Node {
+ public:
+  BoxTopLineOverlayElement(BorderStyle style, std::string title, std::string title_align)
+      : style_(style), title_(std::move(title)), title_align_(std::move(title_align)) {}
+
+  void ComputeRequirement() override {
+    requirement_.min_x = 0;
+    requirement_.min_y = 0;
+  }
+
+  void Render(Screen& screen) override {
+    const int y = box_.y_min;
+    if (y > box_.y_max) {
+      return;
+    }
+
+    const int x_min = box_.x_min;
+    const int x_max = box_.x_max;
+    auto write_bold = [&screen, y, x_min, x_max](int x, const std::string& glyph) {
+      if (glyph == "\n") {
+        return;
+      }
+      if (x < x_min || x > x_max) {
+        return;
+      }
+      Pixel& pixel = screen.PixelAt(x, y);
+      pixel.character = glyph;
+      pixel.bold = true;
+    };
+
+    auto write_text = [&write_bold](int start_x, const std::string& text) {
+      int x = start_x;
+      for (const auto& glyph : Utf8ToGlyphs(text)) {
+        write_bold(x, glyph);
+        ++x;
+      }
+    };
+
+    const std::string left_corner = box_left_corner(style_);
+    const std::string right_corner = box_right_corner(style_);
+    const std::string title_with_padding = std::string(" ") + title_ + " ";
+    const int full_width = box_.x_max - box_.x_min + 1;
+    const int title_width = string_width(title_with_padding);
+
+    if (title_align_ == "left") {
+      write_text(box_.x_min, left_corner);
+      write_text(box_.x_min + 1, title_with_padding);
+      return;
+    }
+
+    if (title_align_ == "right") {
+      const int start = std::max(box_.x_min, box_.x_max - title_width);
+      write_text(start, title_with_padding);
+      write_text(box_.x_max, right_corner);
+      return;
+    }
+
+    int start = box_.x_min + (full_width - title_width) / 2;
+    start = std::max(box_.x_min + 1, start);
+    if (start + title_width > box_.x_max) {
+      start = std::max(box_.x_min + 1, box_.x_max - title_width);
+    }
+    write_text(start, title_with_padding);
+  }
+
+ private:
+  BorderStyle style_;
+  std::string title_;
+  std::string title_align_;
+};
+
+Element box_top_line_overlay(
+    BorderStyle style,
+    const std::string& title,
+    const std::string& title_align
+) {
+  return std::make_shared<BoxTopLineOverlayElement>(style, title, title_align);
 }
 
 bool parse_input_multiline(const Rcpp::List& node) {
@@ -505,8 +580,6 @@ ftxui::Component build_component(
     Component child = build_component(Rcpp::as<Rcpp::List>(node["child"]), state, handlers);
     BorderStyle style = parse_box_style(node);
     std::optional<Color> box_color = parse_optional_color(node);
-    std::optional<Color> box_background_color =
-        parse_optional_color(node, "backgroundColor", "backgroundColor");
     std::optional<std::string> title = parse_optional_title(node);
     std::string title_style = parse_box_title_style(node);
     std::string title_align = parse_box_title_align(node);
@@ -514,40 +587,16 @@ ftxui::Component build_component(
 
     return Renderer(
         child,
-        [child, style, box_color, box_background_color, title, title_style, title_align, margin] {
+        [child, style, box_color, title, title_style, title_align, margin] {
       Element content = child->Render();
-      if (box_background_color.has_value()) {
-        content |= bgcolor(*box_background_color);
-      }
-      Element bordered = box_color.has_value()
-          ? content | borderStyled(style, *box_color)
-          : content | borderStyled(style);
 
       if (title.has_value()) {
         if (title_style == "border") {
-          const std::string title_with_padding = std::string(" ") + *title + " ";
-          Element top_line;
-          if (title_align == "left") {
-            top_line = hbox({
-              bold_text_element(box_left_corner(style)),
-              bold_text_element(title_with_padding)
-            });
-          } else if (title_align == "right") {
-            top_line = hbox({
-              filler(),
-              bold_text_element(title_with_padding),
-              bold_text_element(box_right_corner(style))
-            });
-          } else {
-            top_line = hcenter(bold_text_element(title_with_padding));
-          }
+          Element bordered = box_color.has_value()
+              ? content | borderStyled(style, *box_color)
+              : content | borderStyled(style);
 
-          // Keep the title overlay constrained to the top row only; otherwise
-          // bold would apply down the full box height via decorator bounds.
-          Element overlay = vbox({
-            std::move(top_line),
-            filler()
-          });
+          Element overlay = box_top_line_overlay(style, *title, title_align);
 
           Element with_title = dbox({std::move(bordered), std::move(overlay)});
           return apply_margin(std::move(with_title), margin);
@@ -555,13 +604,12 @@ ftxui::Component build_component(
 
         Element title_element = text(*title) | bold;
         title_element = align_title_element(std::move(title_element), title_align);
-
         Element separator_line = separatorStyled(style);
 
         Element inner = vbox({
           std::move(title_element),
           std::move(separator_line),
-          content
+          std::move(content)
         });
 
         Element boxed = box_color.has_value()
@@ -570,6 +618,9 @@ ftxui::Component build_component(
         return apply_margin(std::move(boxed), margin);
       }
 
+      Element bordered = box_color.has_value()
+          ? content | borderStyled(style, *box_color)
+          : content | borderStyled(style);
       return apply_margin(std::move(bordered), margin);
     });
   }

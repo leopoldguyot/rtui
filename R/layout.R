@@ -60,8 +60,6 @@ tuiRow <- function(...) {
 #' @param titleAlign Title alignment for `"header"` mode. One of `"left"`
 #'   (default), `"center"`, or `"right"`.
 #' @param margin Integer number of spaces outside the box (default `0`).
-#' @param backgroundColor Optional background color for the box content area.
-#'   Supports the same color values as `color`.
 #'
 #' @return A `rtuiComponent` list node of type `"box"`.
 #'
@@ -73,8 +71,7 @@ tuiBox <- function(
     style = "rounded",
     titleStyle = "header",
     titleAlign = "left",
-    margin = 0L,
-    backgroundColor = NULL
+    margin = 0L
 ) {
   if (!inherits(child, "rtuiComponent")) {
     stop("`child` must be a rtuiComponent object.")
@@ -126,7 +123,6 @@ tuiBox <- function(
   margin <- as.integer(margin)
 
   color <- .rtuiNormalizeColor(color)
-  backgroundColor <- .rtuiNormalizeColor(backgroundColor)
 
   component <- list(
     type = "box",
@@ -141,9 +137,6 @@ tuiBox <- function(
   }
   if (!is.null(color)) {
     component$color <- color
-  }
-  if (!is.null(backgroundColor)) {
-    component$backgroundColor <- backgroundColor
   }
 
   structure(component, class = "rtuiComponent")
