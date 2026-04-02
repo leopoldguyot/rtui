@@ -152,3 +152,22 @@ test_that("tuiRender warns once when output self-invalidates via side effects", 
     app <- click_input(app, "inc")
   })
 })
+
+test_that("recreating app for run resets initial input defaults", {
+  app <- tuiApp(
+    ui = tuiColumn(
+      tuiInputText(id = "name", value = "John"),
+      tuiOutputText("out")
+    ),
+    server = function(input, output) {
+      output$out <- tuiRenderText(input$name)
+    }
+  )
+
+  app <- set_text_input(app, "name", "Ada")
+  expect_identical(app$state$input$name, "Ada")
+
+  rerun <- tuiApp(app$ui, app$server)
+  expect_identical(rerun$state$input$name, "John")
+  expect_identical(rerun$state$output$out, "John")
+})

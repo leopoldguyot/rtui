@@ -85,7 +85,7 @@ tuiApp <- function(ui, server) {
   }
 
   structure(
-    list(state = state, ui = ui, handlers = handlers),
+    list(state = state, ui = ui, handlers = handlers, server = server),
     class = "rtuiApp"
   )
 }

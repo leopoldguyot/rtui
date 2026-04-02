@@ -13,7 +13,12 @@ tuiRun <- function(app) {
     stop("`app` must be an `rtuiApp` created by `tuiApp()`.")
   }
 
-  runTuiApp(app$ui, app$state, app$handlers)
+  if (is.null(app$ui) || is.null(app$server)) {
+    stop("`app` is invalid. Recreate it with `tuiApp(ui, server)`.")
+  }
+
+  fresh_app <- tuiApp(app$ui, app$server)
+  runTuiApp(fresh_app$ui, fresh_app$state, fresh_app$handlers)
   invisible(NULL)
 }
 
