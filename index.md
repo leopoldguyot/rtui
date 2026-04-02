@@ -45,6 +45,7 @@ app <- tuiApp(
       tuiInputButton("Decrement", id = "dec"),
       tuiInputButton("Apply name", id = "applyName")
     ),
+    tuiInputCheckbox("Enabled", id = "enabled", value = TRUE),
     tuiInputText(id = "nameInput", value = "John")
   ),
   server = function(input, output) {
@@ -56,7 +57,8 @@ app <- tuiApp(
     message <- tuiReactive({
       counter()
       currentName <- tuiIsolate(appliedName())
-      paste0("counter changed while name is ", currentName)
+      enabledState <- if (isTRUE(input$enabled)) "enabled" else "disabled"
+      paste0("counter changed while name is ", currentName, " [", enabledState, "]")
     })
 
     output$message <- tuiRenderText(message())
@@ -79,6 +81,7 @@ tuiRun(app)  # press Escape or Ctrl+Q to quit
 | `tuiBox(child, title = NULL, color = NULL, style = "rounded", titleStyle = "header", titleAlign = "left", margin = 0)` | Wrap a component in a configurable border with title/layout options                            |
 | `tuiOutputText("id")` / `tuiOutputNumeric("id")`                                                                       | Display `output$id` in the UI                                                                  |
 | `tuiInputButton(label, id, color = NULL)`                                                                              | Button that triggers a handler (optional text color)                                           |
+| `tuiInputCheckbox(label, id, value = FALSE)`                                                                           | Checkbox that toggles a logical `input$id` value                                               |
 | `tuiInputText(id, placeholder, value, multiline = FALSE)`                                                              | One-line text input by default (`multiline = TRUE` allows newlines)                            |
 | `tuiRenderText(expr)` / `tuiRenderNumeric(expr, digits = NULL)`                                                        | Build renderers assigned to `output$...`                                                       |
 | `tuiReactive(expr)` / `tuiReactiveVal(value)`                                                                          | Define graph-tracked reactive expressions and mutable values (auto invalidation of dependents) |

@@ -22,8 +22,9 @@ tuiApp(ui, server)
   [`tuiOutputText()`](https://leopoldguyot.github.io/rtui/reference/tuiOutputText.md),
   [`tuiOutputNumeric()`](https://leopoldguyot.github.io/rtui/reference/tuiOutputNumeric.md),
   [`tuiInputButton()`](https://leopoldguyot.github.io/rtui/reference/tuiInputButton.md),
+  [`tuiInputText()`](https://leopoldguyot.github.io/rtui/reference/tuiInputText.md),
   or
-  [`tuiInputText()`](https://leopoldguyot.github.io/rtui/reference/tuiInputText.md).
+  [`tuiInputCheckbox()`](https://leopoldguyot.github.io/rtui/reference/tuiInputCheckbox.md).
 
 - server:
 

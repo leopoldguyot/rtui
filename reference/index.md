@@ -14,6 +14,9 @@
 - [`tuiInputButton()`](https://leopoldguyot.github.io/rtui/reference/tuiInputButton.md)
   : Button input component
 
+- [`tuiInputCheckbox()`](https://leopoldguyot.github.io/rtui/reference/tuiInputCheckbox.md)
+  : Checkbox input component
+
 - [`tuiInputText()`](https://leopoldguyot.github.io/rtui/reference/tuiInputText.md)
   : Text input component
 

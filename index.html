@@ -87,6 +87,7 @@
 <span>      <span class="fu"><a href="reference/tuiInputButton.html">tuiInputButton</a></span><span class="op">(</span><span class="st">"Decrement"</span>, id <span class="op">=</span> <span class="st">"dec"</span><span class="op">)</span>,</span>
 <span>      <span class="fu"><a href="reference/tuiInputButton.html">tuiInputButton</a></span><span class="op">(</span><span class="st">"Apply name"</span>, id <span class="op">=</span> <span class="st">"applyName"</span><span class="op">)</span></span>
 <span>    <span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="reference/tuiInputCheckbox.html">tuiInputCheckbox</a></span><span class="op">(</span><span class="st">"Enabled"</span>, id <span class="op">=</span> <span class="st">"enabled"</span>, value <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
 <span>    <span class="fu"><a href="reference/tuiInputText.html">tuiInputText</a></span><span class="op">(</span>id <span class="op">=</span> <span class="st">"nameInput"</span>, value <span class="op">=</span> <span class="st">"John"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span>,</span>
 <span>  server <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">input</span>, <span class="va">output</span><span class="op">)</span> <span class="op">{</span></span>
@@ -98,7 +99,8 @@
 <span>    <span class="va">message</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tuiReactive.html">tuiReactive</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>      <span class="fu">counter</span><span class="op">(</span><span class="op">)</span></span>
 <span>      <span class="va">currentName</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tuiIsolate.html">tuiIsolate</a></span><span class="op">(</span><span class="fu">appliedName</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
-<span>      <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"counter changed while name is "</span>, <span class="va">currentName</span><span class="op">)</span></span>
+<span>      <span class="va">enabledState</span> <span class="op">&lt;-</span> <span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Logic.html" class="external-link">isTRUE</a></span><span class="op">(</span><span class="va">input</span><span class="op">$</span><span class="va">enabled</span><span class="op">)</span><span class="op">)</span> <span class="st">"enabled"</span> <span class="kw">else</span> <span class="st">"disabled"</span></span>
+<span>      <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"counter changed while name is "</span>, <span class="va">currentName</span>, <span class="st">" ["</span>, <span class="va">enabledState</span>, <span class="st">"]"</span><span class="op">)</span></span>
 <span>    <span class="op">}</span><span class="op">)</span></span>
 <span></span>
 <span>    <span class="va">output</span><span class="op">$</span><span class="va">message</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tuiRenderText.html">tuiRenderText</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
@@ -153,39 +155,43 @@
 <td>Button that triggers a handler (optional text color)</td>
 </tr>
 <tr class="even">
+<td><code>tuiInputCheckbox(label, id, value = FALSE)</code></td>
+<td>Checkbox that toggles a logical <code>input$id</code> value</td>
+</tr>
+<tr class="odd">
 <td><code>tuiInputText(id, placeholder, value, multiline = FALSE)</code></td>
 <td>One-line text input by default (<code>multiline = TRUE</code> allows newlines)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>
 <code>tuiRenderText(expr)</code> / <code>tuiRenderNumeric(expr, digits = NULL)</code>
 </td>
 <td>Build renderers assigned to <code>output$...</code>
 </td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>
 <code>tuiReactive(expr)</code> / <code>tuiReactiveVal(value)</code>
 </td>
 <td>Define graph-tracked reactive expressions and mutable values (auto invalidation of dependents)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>tuiReactiveEvent(event, expr, runAtInit = FALSE)</code></td>
 <td>Event-scoped reactive expression that re-runs when its event source invalidates</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>tuiReq(...)</code></td>
 <td>Stop current reactive/render evaluation when required values are falsy</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>tuiIsolate(expr)</code></td>
 <td>Read reactive values without registering graph dependencies</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>tuiObserve(expr)</code></td>
 <td>Register an observer that runs when its dependencies invalidate</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>tuiObserveEvent(event, expr, runAtInit = FALSE)</code></td>
 <td>Register an observer that runs only when the event source invalidates</td>
 </tr>
