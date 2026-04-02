@@ -7,7 +7,7 @@ or `Ctrl+Q`.
 ## Usage
 
 ``` r
-tuiRun(app)
+tuiRun(app, overflow = "clip")
 ```
 
 ## Arguments
@@ -16,6 +16,12 @@ tuiRun(app)
 
   An `rtuiApp` object created by
   [`tuiApp()`](https://leopoldguyot.github.io/rtui/reference/tuiApp.md).
+
+- overflow:
+
+  Overflow handling strategy when content exceeds terminal size. Use
+  `"clip"` (default) to crop content to the visible terminal viewport,
+  or `"scroll"` to wrap the app in a global scrollable viewport.
 
 ## Value
 

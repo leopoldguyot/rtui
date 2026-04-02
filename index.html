@@ -109,7 +109,7 @@
 <span>  <span class="op">}</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="reference/tuiRun.html">tuiRun</a></span><span class="op">(</span><span class="va">app</span><span class="op">)</span>  <span class="co"># press Escape or Ctrl+Q to quit</span></span></code></pre></div>
+<span><span class="fu"><a href="reference/tuiRun.html">tuiRun</a></span><span class="op">(</span><span class="va">app</span>, overflow <span class="op">=</span> <span class="st">"clip"</span><span class="op">)</span>  <span class="co"># press Escape or Ctrl+Q to quit</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="api">API<a class="anchor" aria-label="anchor" href="#api"></a>
@@ -129,8 +129,8 @@
 <td>Define a TUI application</td>
 </tr>
 <tr class="even">
-<td><code>tuiRun(app)</code></td>
-<td>Start the app (blocking)</td>
+<td><code>tuiRun(app, overflow = "clip")</code></td>
+<td>Start the app (blocking), with terminal overflow policy (<code>"clip"</code> or <code>"scroll"</code>)</td>
 </tr>
 <tr class="odd">
 <td><code>tuiColumn(...)</code></td>
