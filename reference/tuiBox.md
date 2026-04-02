@@ -12,8 +12,7 @@ tuiBox(
   style = "rounded",
   titleStyle = "header",
   titleAlign = "left",
-  margin = 0L,
-  backgroundColor = NULL
+  margin = 0L
 )
 ```
 
@@ -55,11 +54,6 @@ tuiBox(
 - margin:
 
   Integer number of spaces outside the box (default `0`).
-
-- backgroundColor:
-
-  Optional background color for the box content area. Supports the same
-  color values as `color`.
 
 ## Value
 
