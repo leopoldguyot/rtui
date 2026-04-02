@@ -67,7 +67,7 @@ app <- tuiApp(
   }
 )
 
-tuiRun(app)  # press Escape or Ctrl+Q to quit
+tuiRun(app, overflow = "clip")  # press Escape or Ctrl+Q to quit
 ```
 
 ## API
@@ -75,7 +75,7 @@ tuiRun(app)  # press Escape or Ctrl+Q to quit
 | Function | Description |
 |---|---|
 | `tuiApp(ui, server)` | Define a TUI application |
-| `tuiRun(app)` | Start the app (blocking) |
+| `tuiRun(app, overflow = "clip")` | Start the app (blocking), with terminal overflow policy (`"clip"` or `"scroll"`) |
 | `tuiColumn(...)` | Stack components vertically |
 | `tuiRow(...)` | Place components side by side |
 | `tuiBox(child, title = NULL, color = NULL, style = "rounded", titleStyle = "header", titleAlign = "left", margin = 0)` | Wrap a component in a configurable border with title/layout options |

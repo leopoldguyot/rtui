@@ -4,13 +4,29 @@
 #' it takes over the terminal until the user presses `Escape` or `Ctrl+Q`.
 #'
 #' @param app An `rtuiApp` object created by [tuiApp()].
+#' @param overflow Overflow handling strategy when content exceeds terminal size.
+#'   Use `"clip"` (default) to crop content to the visible terminal viewport, or
+#'   `"scroll"` to wrap the app in a global scrollable viewport.
 #'
 #' @return Invisibly returns `NULL`.
 #'
 #' @export
-tuiRun <- function(app) {
+tuiRun <- function(app, overflow = "clip") {
   if (!inherits(app, "rtuiApp")) {
     stop("`app` must be an `rtuiApp` created by `tuiApp()`.")
+  }
+
+  if (!is.character(overflow) || length(overflow) != 1L || is.na(overflow)) {
+    stop("`overflow` must be a single character string.")
+  }
+  overflow <- tolower(trimws(overflow))
+  allowed_overflow <- c("clip", "scroll")
+  if (!overflow %in% allowed_overflow) {
+    stop(
+      "`overflow` must be one of ",
+      paste(shQuote(allowed_overflow), collapse = ", "),
+      "."
+    )
   }
 
   if (is.null(app$ui) || is.null(app$server)) {
@@ -18,7 +34,7 @@ tuiRun <- function(app) {
   }
 
   fresh_app <- tuiApp(app$ui, app$server)
-  runTuiApp(fresh_app$ui, fresh_app$state, fresh_app$handlers)
+  runTuiApp(fresh_app$ui, fresh_app$state, fresh_app$handlers, overflow)
   invisible(NULL)
 }
 

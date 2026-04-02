@@ -137,3 +137,22 @@ test_that("tuiBox stores configuration and validates inputs", {
     "`color` must be one of"
   )
 })
+
+test_that("tuiRun validates overflow argument", {
+  app <- tuiApp(
+    ui = tuiOutputText("out"),
+    server = function(input, output) {
+      output$out <- tuiRenderText("ok")
+    }
+  )
+
+  expect_error(
+    tuiRun(app, overflow = 1),
+    "`overflow` must be a single character string."
+  )
+
+  expect_error(
+    tuiRun(app, overflow = "invalid"),
+    "`overflow` must be one of"
+  )
+})

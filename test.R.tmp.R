@@ -77,4 +77,4 @@ app <- tuiApp(
   }
 )
 
-tuiRun(app)  # press Escape or Ctrl+Q to quit
+tuiRun(app, overflow = "clip")  # press Escape or Ctrl+Q to quit

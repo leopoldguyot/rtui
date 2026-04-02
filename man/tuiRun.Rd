@@ -4,10 +4,14 @@
 \alias{tuiRun}
 \title{Run a TUI application}
 \usage{
-tuiRun(app)
+tuiRun(app, overflow = "clip")
 }
 \arguments{
 \item{app}{An \code{rtuiApp} object created by \code{\link[=tuiApp]{tuiApp()}}.}
+
+\item{overflow}{Overflow handling strategy when content exceeds terminal size.
+Use \code{"clip"} (default) to crop content to the visible terminal viewport, or
+\code{"scroll"} to wrap the app in a global scrollable viewport.}
 }
 \value{
 Invisibly returns \code{NULL}.
