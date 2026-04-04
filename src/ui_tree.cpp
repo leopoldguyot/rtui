@@ -5,11 +5,14 @@
 #include <ftxui/component/component_base.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/dom/node.hpp>
+#include <ftxui/dom/node_decorator.hpp>
 #include <ftxui/screen/color.hpp>
 #include <ftxui/screen/string.hpp>
 
+#include <algorithm>
 #include <cctype>
 #include <cstdint>
+#include <cmath>
 #include <memory>
 #include <optional>
 #include <string>
@@ -354,6 +357,89 @@ int parse_box_margin(const Rcpp::List& node) {
   return margin;
 }
 
+std::optional<int> parse_optional_non_negative_integer(
+    const Rcpp::List& node,
+    const char* field_name,
+    const char* arg_name
+) {
+  if (!node.containsElementNamed(field_name)) {
+    return std::nullopt;
+  }
+
+  SEXP candidate = node[field_name];
+  double raw = 0.0;
+  if (TYPEOF(candidate) == INTSXP) {
+    if (Rf_length(candidate) != 1 || INTEGER(candidate)[0] == NA_INTEGER) {
+      Rcpp::stop("`%s` must be a single non-negative integer.", arg_name);
+    }
+    raw = static_cast<double>(INTEGER(candidate)[0]);
+  } else if (TYPEOF(candidate) == REALSXP) {
+    if (Rf_length(candidate) != 1 || ISNAN(REAL(candidate)[0])) {
+      Rcpp::stop("`%s` must be a single non-negative integer.", arg_name);
+    }
+    raw = REAL(candidate)[0];
+  } else {
+    Rcpp::stop("`%s` must be a single non-negative integer.", arg_name);
+  }
+
+  if (raw < 0.0 || std::floor(raw) != raw) {
+    Rcpp::stop("`%s` must be a single non-negative integer.", arg_name);
+  }
+  return static_cast<int>(raw);
+}
+
+std::optional<double> parse_optional_percent(
+    const Rcpp::List& node,
+    const char* field_name,
+    const char* arg_name
+) {
+  if (!node.containsElementNamed(field_name)) {
+    return std::nullopt;
+  }
+
+  SEXP candidate = node[field_name];
+  if ((TYPEOF(candidate) != INTSXP && TYPEOF(candidate) != REALSXP) ||
+      Rf_length(candidate) != 1) {
+    Rcpp::stop(
+      "`%s` must be a single numeric value between 0 and 1.",
+      arg_name
+    );
+  }
+
+  double value = Rcpp::as<double>(candidate);
+  if (ISNAN(value) || value < 0.0 || value > 1.0) {
+    Rcpp::stop(
+      "`%s` must be a single numeric value between 0 and 1.",
+      arg_name
+    );
+  }
+
+  return value;
+}
+
+struct NodeSizeSpec {
+  std::optional<int> width;
+  std::optional<int> height;
+  std::optional<int> min_height;
+  std::optional<int> max_height;
+
+  bool has_constraints() const {
+    return width.has_value() ||
+      height.has_value() ||
+      min_height.has_value() ||
+      max_height.has_value();
+  }
+};
+
+NodeSizeSpec parse_node_size_spec(const Rcpp::List& node) {
+  return NodeSizeSpec{
+    parse_optional_non_negative_integer(node, "width", "width"),
+    parse_optional_non_negative_integer(node, "height", "height"),
+    parse_optional_non_negative_integer(node, "minHeight", "minHeight"),
+    parse_optional_non_negative_integer(node, "maxHeight", "maxHeight")
+  };
+}
+
 std::string box_left_corner(BorderStyle style) {
   switch (style) {
     case LIGHT:
@@ -413,13 +499,13 @@ Element apply_margin(Element element, int margin) {
   }
   rows.push_back(hbox({
     text(side_padding),
-    std::move(element),
+    std::move(element) | xflex | yflex,
     text(side_padding)
-  }));
+  }) | xflex | yflex);
   for (int i = 0; i < margin; ++i) {
     rows.push_back(text(""));
   }
-  return vbox(std::move(rows));
+  return vbox(std::move(rows)) | xflex | yflex;
 }
 
 class BoldTextElement : public Node {
@@ -535,6 +621,370 @@ Element box_top_line_overlay(
   return std::make_shared<BoxTopLineOverlayElement>(style, title, title_align);
 }
 
+class SizeConstraintElement : public NodeDecorator {
+ public:
+  SizeConstraintElement(Element child, NodeSizeSpec spec)
+      : NodeDecorator(std::move(child)), spec_(std::move(spec)) {}
+
+  void ComputeRequirement() override {
+    NodeDecorator::ComputeRequirement();
+    requirement_ = children_[0]->requirement();
+
+    if (spec_.width.has_value()) {
+      requirement_.min_x = *spec_.width;
+      requirement_.flex_grow_x = 0;
+      requirement_.flex_shrink_x = 0;
+    }
+
+    if (spec_.min_height.has_value()) {
+      requirement_.min_y = std::max(requirement_.min_y, *spec_.min_height);
+    }
+    if (spec_.max_height.has_value()) {
+      requirement_.min_y = std::min(requirement_.min_y, *spec_.max_height);
+    }
+    if (spec_.height.has_value()) {
+      requirement_.min_y = *spec_.height;
+      requirement_.flex_grow_y = 0;
+      requirement_.flex_shrink_y = 0;
+    }
+  }
+
+  void SetBox(Box box) override {
+    box_ = box;
+    Box child_box = box;
+
+    auto resolve_axis_size = [](
+        int available,
+        const std::optional<int>& fixed,
+        const std::optional<int>& min_value,
+        const std::optional<int>& max_value
+    ) {
+      if (available <= 0) {
+        return 0;
+      }
+
+      int size = available;
+      if (fixed.has_value()) {
+        size = *fixed;
+      }
+      if (min_value.has_value()) {
+        size = std::max(size, *min_value);
+      }
+      if (max_value.has_value()) {
+        size = std::min(size, *max_value);
+      }
+      return std::clamp(size, 0, available);
+    };
+
+    const int available_width = std::max(0, box.x_max - box.x_min + 1);
+    const int available_height = std::max(0, box.y_max - box.y_min + 1);
+
+    const int resolved_width = resolve_axis_size(
+      available_width,
+      spec_.width,
+      std::nullopt,
+      std::nullopt
+    );
+    const int resolved_height = resolve_axis_size(
+      available_height,
+      spec_.height,
+      spec_.min_height,
+      spec_.max_height
+    );
+
+    child_box.x_max = child_box.x_min + resolved_width - 1;
+    child_box.y_max = child_box.y_min + resolved_height - 1;
+    children_[0]->SetBox(child_box);
+  }
+
+ private:
+  NodeSizeSpec spec_;
+};
+
+Element apply_size_constraints(Element element, const NodeSizeSpec& spec) {
+  if (!spec.has_constraints()) {
+    return element;
+  }
+  return std::make_shared<SizeConstraintElement>(std::move(element), spec);
+}
+
+std::vector<int> allocate_axis_sizes(
+    int total_size,
+    const std::vector<int>& min_sizes,
+    const std::vector<int>& flex_grow,
+    const std::vector<std::optional<double>>& percents
+) {
+  const size_t count = min_sizes.size();
+  std::vector<int> sizes(count, 0);
+  if (count == 0 || total_size <= 0) {
+    return sizes;
+  }
+
+  std::vector<size_t> specified_indices;
+  std::vector<size_t> unspecified_indices;
+  specified_indices.reserve(count);
+  unspecified_indices.reserve(count);
+
+  int assigned = 0;
+  for (size_t i = 0; i < count; ++i) {
+    if (i < percents.size() && percents[i].has_value()) {
+      const int size = std::max(
+        0,
+        static_cast<int>(std::round(percents[i].value() * total_size))
+      );
+      sizes[i] = size;
+      assigned += size;
+      specified_indices.push_back(i);
+    } else {
+      unspecified_indices.push_back(i);
+    }
+  }
+
+  if (assigned > total_size) {
+    int overflow = assigned - total_size;
+    for (auto it = specified_indices.rbegin(); it != specified_indices.rend(); ++it) {
+      size_t index = *it;
+      const int reduce = std::min(overflow, sizes[index]);
+      sizes[index] -= reduce;
+      overflow -= reduce;
+      if (overflow == 0) {
+        break;
+      }
+    }
+  }
+
+  int remaining = total_size;
+  for (int size : sizes) {
+    remaining -= size;
+  }
+  remaining = std::max(0, remaining);
+
+  if (!unspecified_indices.empty()) {
+    int min_sum = 0;
+    for (size_t index : unspecified_indices) {
+      min_sum += std::max(0, min_sizes[index]);
+    }
+
+    if (min_sum <= remaining) {
+      for (size_t index : unspecified_indices) {
+        sizes[index] = std::max(0, min_sizes[index]);
+      }
+
+      int extra = remaining - min_sum;
+      if (extra > 0) {
+        std::vector<int> weights;
+        weights.reserve(unspecified_indices.size());
+        int weight_sum = 0;
+        for (size_t index : unspecified_indices) {
+          const int weight = std::max(1, flex_grow[index]);
+          weights.push_back(weight);
+          weight_sum += weight;
+        }
+
+        int extra_left = extra;
+        int weight_left = weight_sum;
+        for (size_t i = 0; i < unspecified_indices.size(); ++i) {
+          const int add = weight_left > 0
+              ? (extra_left * weights[i]) / weight_left
+              : 0;
+          sizes[unspecified_indices[i]] += add;
+          extra_left -= add;
+          weight_left -= weights[i];
+        }
+        for (size_t i = 0; extra_left > 0 && !unspecified_indices.empty(); ++i, --extra_left) {
+          sizes[unspecified_indices[i % unspecified_indices.size()]] += 1;
+        }
+      }
+    } else if (min_sum > 0) {
+      int remaining_left = remaining;
+      int min_left = min_sum;
+      for (size_t index : unspecified_indices) {
+        const int min_size = std::max(0, min_sizes[index]);
+        const int allocated = min_left > 0
+            ? (remaining_left * min_size) / min_left
+            : 0;
+        sizes[index] = allocated;
+        remaining_left -= allocated;
+        min_left -= min_size;
+      }
+      for (size_t i = 0; remaining_left > 0 && !unspecified_indices.empty(); ++i, --remaining_left) {
+        sizes[unspecified_indices[i % unspecified_indices.size()]] += 1;
+      }
+    } else {
+      const int base = remaining / static_cast<int>(unspecified_indices.size());
+      int rest = remaining % static_cast<int>(unspecified_indices.size());
+      for (size_t index : unspecified_indices) {
+        sizes[index] = base + (rest > 0 ? 1 : 0);
+        if (rest > 0) {
+          --rest;
+        }
+      }
+    }
+  } else if (!sizes.empty() && remaining > 0) {
+    sizes.back() += remaining;
+  }
+
+  int total_allocated = 0;
+  for (int size : sizes) {
+    total_allocated += size;
+  }
+  if (!sizes.empty() && total_allocated < total_size) {
+    sizes.back() += total_size - total_allocated;
+  }
+  if (!sizes.empty() && total_allocated > total_size) {
+    int overflow = total_allocated - total_size;
+    for (auto it = sizes.rbegin(); it != sizes.rend() && overflow > 0; ++it) {
+      const int reduce = std::min(overflow, *it);
+      *it -= reduce;
+      overflow -= reduce;
+    }
+  }
+
+  return sizes;
+}
+
+class StrictPercentHBoxElement : public Node {
+ public:
+  StrictPercentHBoxElement(Elements children, std::vector<std::optional<double>> percents)
+      : Node(std::move(children)), percents_(std::move(percents)) {}
+
+  void ComputeRequirement() override {
+    requirement_ = Requirement{};
+
+    for (auto& child : children_) {
+      child->ComputeRequirement();
+
+      if (requirement_.focused.Prefer(child->requirement().focused)) {
+        requirement_.focused = child->requirement().focused;
+        requirement_.focused.box.Shift(requirement_.min_x, 0);
+      }
+
+      requirement_.min_x += child->requirement().min_x;
+      requirement_.min_y = std::max(requirement_.min_y, child->requirement().min_y);
+    }
+  }
+
+  void SetBox(Box box) override {
+    Node::SetBox(box);
+    const int total_width = std::max(0, box.x_max - box.x_min + 1);
+
+    std::vector<int> min_sizes;
+    std::vector<int> flex_grow;
+    min_sizes.reserve(children_.size());
+    flex_grow.reserve(children_.size());
+    for (const auto& child : children_) {
+      min_sizes.push_back(std::max(0, child->requirement().min_x));
+      flex_grow.push_back(std::max(0, child->requirement().flex_grow_x));
+    }
+
+    const std::vector<int> sizes = allocate_axis_sizes(
+      total_width,
+      min_sizes,
+      flex_grow,
+      percents_
+    );
+
+    int x = box.x_min;
+    for (size_t i = 0; i < children_.size(); ++i) {
+      Box child_box = box;
+      child_box.x_min = x;
+      child_box.x_max = x + sizes[i] - 1;
+      children_[i]->SetBox(child_box);
+      x += sizes[i];
+    }
+  }
+
+ private:
+  std::vector<std::optional<double>> percents_;
+};
+
+class StrictPercentVBoxElement : public Node {
+ public:
+  StrictPercentVBoxElement(Elements children, std::vector<std::optional<double>> percents)
+      : Node(std::move(children)), percents_(std::move(percents)) {}
+
+  void ComputeRequirement() override {
+    requirement_ = Requirement{};
+
+    for (auto& child : children_) {
+      child->ComputeRequirement();
+
+      if (requirement_.focused.Prefer(child->requirement().focused)) {
+        requirement_.focused = child->requirement().focused;
+        requirement_.focused.box.Shift(0, requirement_.min_y);
+      }
+
+      requirement_.min_y += child->requirement().min_y;
+      requirement_.min_x = std::max(requirement_.min_x, child->requirement().min_x);
+    }
+  }
+
+  void SetBox(Box box) override {
+    Node::SetBox(box);
+    const int total_height = std::max(0, box.y_max - box.y_min + 1);
+
+    std::vector<int> min_sizes;
+    std::vector<int> flex_grow;
+    min_sizes.reserve(children_.size());
+    flex_grow.reserve(children_.size());
+    for (const auto& child : children_) {
+      min_sizes.push_back(std::max(0, child->requirement().min_y));
+      flex_grow.push_back(std::max(0, child->requirement().flex_grow_y));
+    }
+
+    const std::vector<int> sizes = allocate_axis_sizes(
+      total_height,
+      min_sizes,
+      flex_grow,
+      percents_
+    );
+
+    int y = box.y_min;
+    for (size_t i = 0; i < children_.size(); ++i) {
+      Box child_box = box;
+      child_box.y_min = y;
+      child_box.y_max = y + sizes[i] - 1;
+      children_[i]->SetBox(child_box);
+      y += sizes[i];
+    }
+  }
+
+ private:
+  std::vector<std::optional<double>> percents_;
+};
+
+Element strict_percent_hbox(
+    Elements children,
+    std::vector<std::optional<double>> percents
+) {
+  return std::make_shared<StrictPercentHBoxElement>(
+    std::move(children),
+    std::move(percents)
+  );
+}
+
+Element strict_percent_vbox(
+    Elements children,
+    std::vector<std::optional<double>> percents
+) {
+  return std::make_shared<StrictPercentVBoxElement>(
+    std::move(children),
+    std::move(percents)
+  );
+}
+
+Component apply_node_size_spec(Component component, const Rcpp::List& node) {
+  const NodeSizeSpec spec = parse_node_size_spec(node);
+  if (!spec.has_constraints()) {
+    return component;
+  }
+
+  return Renderer(component, [component, spec] {
+    Element content = component->Render();
+    return apply_size_constraints(std::move(content), spec);
+  });
+}
+
 bool parse_input_multiline(const Rcpp::List& node) {
   if (!node.containsElementNamed("multiline")) {
     return false;
@@ -563,25 +1013,51 @@ ftxui::Component build_component(
   if (type == "column" || type == "row") {
     Rcpp::List children = node["children"];
     Components comps;
+    std::vector<std::optional<double>> main_axis_percents;
+    const bool is_column = type == "column";
+    main_axis_percents.reserve(static_cast<size_t>(children.size()));
     for (int i = 0; i < children.size(); ++i) {
+      const Rcpp::List child_node = Rcpp::as<Rcpp::List>(children[i]);
+      main_axis_percents.push_back(
+        is_column
+          ? parse_optional_percent(child_node, "heightPercent", "heightPercent")
+          : parse_optional_percent(child_node, "widthPercent", "widthPercent")
+      );
       comps.push_back(
-        build_component(Rcpp::as<Rcpp::List>(children[i]), state, handlers)
+        build_component(child_node, state, handlers)
       );
     }
-    if (type == "column")
-      return Container::Vertical(comps);
-    else
-      return Container::Horizontal(comps);
+
+    Component container = is_column
+      ? Container::Vertical(comps)
+      : Container::Horizontal(comps);
+
+    Component rendered = Renderer(
+      container,
+      [comps, main_axis_percents, is_column] {
+        Elements elements;
+        elements.reserve(comps.size());
+        for (const auto& comp : comps) {
+          elements.push_back(comp->Render());
+        }
+        if (is_column) {
+          return strict_percent_vbox(std::move(elements), main_axis_percents);
+        }
+        return strict_percent_hbox(std::move(elements), main_axis_percents);
+      }
+    );
+    return apply_node_size_spec(std::move(rendered), node);
   }
 
   // ── Output text / numeric (reads from state$output) ──────────────────────
 
   if (type == "outputText" || type == "outputNumeric") {
     std::string output_id = Rcpp::as<std::string>(node["outputId"]);
-    return Renderer([state, output_id] {
+    Component component = Renderer([state, output_id] {
       SEXP val = get_output_value(state, output_id);
       return text(value_to_string(val));
     });
+    return apply_node_size_spec(std::move(component), node);
   }
 
   // ── Button ───────────────────────────────────────────────────────────────
@@ -604,10 +1080,11 @@ ftxui::Component build_component(
       };
     }
 
-    return Button(label, [state, handlers, id] {
+    Component component = Button(label, [state, handlers, id] {
       increment_button_input(state, id);
       run_handler_if_present(handlers, id, state);
     }, option);
+    return apply_node_size_spec(std::move(component), node);
   }
 
   // ── Checkbox ──────────────────────────────────────────────────────────────
@@ -622,7 +1099,8 @@ ftxui::Component build_component(
       run_handler_if_present(handlers, id, state);
     };
 
-    return Checkbox(label, checked.get(), option);
+    Component component = Checkbox(label, checked.get(), option);
+    return apply_node_size_spec(std::move(component), node);
   }
 
   // ── Box wrapper ───────────────────────────────────────────────────────────
@@ -640,20 +1118,24 @@ ftxui::Component build_component(
     std::string title_align = parse_box_title_align(node);
     int margin = parse_box_margin(node);
 
-    return Renderer(
+    Component component = Renderer(
         child,
         [child, style, box_color, title, title_style, title_align, margin] {
-      Element content = child->Render();
+      Element content = child->Render() | xflex | yflex;
 
       if (title.has_value()) {
         if (title_style == "border") {
           Element bordered = box_color.has_value()
               ? content | borderStyled(style, *box_color)
               : content | borderStyled(style);
+          bordered |= xflex;
+          bordered |= yflex;
 
           Element overlay = box_top_line_overlay(style, *title, title_align);
 
           Element with_title = dbox({std::move(bordered), std::move(overlay)});
+          with_title |= xflex;
+          with_title |= yflex;
           return apply_margin(std::move(with_title), margin);
         }
 
@@ -666,18 +1148,25 @@ ftxui::Component build_component(
           std::move(separator_line),
           std::move(content)
         });
+        inner |= xflex;
+        inner |= yflex;
 
         Element boxed = box_color.has_value()
             ? inner | borderStyled(style, *box_color)
             : inner | borderStyled(style);
+        boxed |= xflex;
+        boxed |= yflex;
         return apply_margin(std::move(boxed), margin);
       }
 
       Element bordered = box_color.has_value()
           ? content | borderStyled(style, *box_color)
           : content | borderStyled(style);
+      bordered |= xflex;
+      bordered |= yflex;
       return apply_margin(std::move(bordered), margin);
     });
+    return apply_node_size_spec(std::move(component), node);
   }
 
   // ── Text input ───────────────────────────────────────────────────────────
@@ -697,7 +1186,8 @@ ftxui::Component build_component(
       run_handler_if_present(handlers, id, state);
     };
 
-    return Input(content.get(), opts);
+    Component component = Input(content.get(), opts);
+    return apply_node_size_spec(std::move(component), node);
   }
 
   // Fallback: empty renderer for unknown types

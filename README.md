@@ -91,4 +91,6 @@ tuiRun(app, overflow = "clip")  # press Escape or Ctrl+Q to quit
 | `tuiObserve(expr)` | Register an observer that runs when its dependencies invalidate |
 | `tuiObserveEvent(event, expr, runAtInit = FALSE)` | Register an observer that runs only when the event source invalidates |
 
+All exported UI builders (`tuiRow`, `tuiColumn`, `tuiBox`, outputs, and inputs) accept optional sizing arguments: `width`, `height`, `minHeight`, `maxHeight`, `widthPercent`, and `heightPercent`.
+
 Navigate with **Tab** / **arrow keys**, activate buttons with **Enter**.

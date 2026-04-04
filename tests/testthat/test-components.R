@@ -138,6 +138,71 @@ test_that("tuiBox stores configuration and validates inputs", {
   )
 })
 
+test_that("size arguments are stored on components and layouts", {
+  sized_output <- tuiOutputText(
+    "out",
+    width = 20,
+    minHeight = 1,
+    maxHeight = 3
+  )
+  expect_identical(sized_output$width, 20L)
+  expect_identical(sized_output$minHeight, 1L)
+  expect_identical(sized_output$maxHeight, 3L)
+
+  sized_button <- tuiInputButton(
+    "Apply",
+    id = "apply",
+    widthPercent = 0.2
+  )
+  expect_identical(sized_button$widthPercent, 0.2)
+
+  sized_box <- tuiBox(
+    child = tuiOutputText("panel"),
+    width = 40,
+    minHeight = 2,
+    maxHeight = 8,
+    heightPercent = 0.5
+  )
+  expect_identical(sized_box$width, 40L)
+  expect_identical(sized_box$minHeight, 2L)
+  expect_identical(sized_box$maxHeight, 8L)
+  expect_identical(sized_box$heightPercent, 0.5)
+})
+
+test_that("size argument validation and strict percent sums are enforced", {
+  expect_error(
+    tuiOutputText("out", width = -1),
+    "`width` must be NULL or a single non-negative integer."
+  )
+  expect_error(
+    tuiOutputText("out", widthPercent = 1.2),
+    "`widthPercent` must be NULL or a single numeric value between 0 and 1."
+  )
+  expect_error(
+    tuiOutputText("out", width = 10, widthPercent = 0.5),
+    "`width` and `widthPercent` cannot both be set."
+  )
+  expect_error(
+    tuiOutputText("out", height = 2, minHeight = 4),
+    "`height` must be greater than or equal to `minHeight`."
+  )
+
+  expect_error(
+    tuiRow(
+      tuiOutputText("a", widthPercent = 0.7),
+      tuiOutputText("b", widthPercent = 0.4)
+    ),
+    "Sum of `widthPercent` values in tuiRow\\(\\) children must be <= 1."
+  )
+  expect_error(
+    tuiColumn(
+      tuiOutputText("a", heightPercent = 0.7),
+      tuiOutputText("b", heightPercent = 0.4)
+    ),
+    "Sum of `heightPercent` values in tuiColumn\\(\\) children must be <= 1."
+  )
+})
+
 test_that("tuiRun validates overflow argument", {
   app <- tuiApp(
     ui = tuiOutputText("out"),

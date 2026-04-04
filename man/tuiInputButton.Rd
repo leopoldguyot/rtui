@@ -4,7 +4,17 @@
 \alias{tuiInputButton}
 \title{Button input component}
 \usage{
-tuiInputButton(label, id, color = NULL)
+tuiInputButton(
+  label,
+  id,
+  color = NULL,
+  width = NULL,
+  height = NULL,
+  minHeight = NULL,
+  maxHeight = NULL,
+  widthPercent = NULL,
+  heightPercent = NULL
+)
 }
 \arguments{
 \item{label}{A character string shown as the button label.}
@@ -16,6 +26,14 @@ tuiInputButton(label, id, color = NULL)
 \code{"cyan"}, \code{"graylight"}, \code{"graydark"}, \code{"redlight"}, \code{"greenlight"},
 \code{"yellowlight"}, \code{"bluelight"}, \code{"magentalight"}, \code{"cyanlight"},
 \code{"white"}) or a hex string like \code{"#RRGGBB"}.}
+
+\item{width, height}{Optional fixed width/height in terminal cells.}
+
+\item{minHeight, maxHeight}{Optional min/max height in terminal cells.}
+
+\item{widthPercent, heightPercent}{Optional relative size between \code{0} and \code{1}.
+\code{widthPercent} is interpreted by \code{\link[=tuiRow]{tuiRow()}} and \code{heightPercent} by
+\code{\link[=tuiColumn]{tuiColumn()}} for strict main-axis percentages.}
 }
 \value{
 A \code{rtuiComponent} list node of type \code{"button"}.

@@ -1,20 +1,84 @@
+#' Internal helper `.rtuiValidateMainAxisPercentSum`.
+#'
+#' Ensures strict percentage children do not over-allocate the parent axis.
+#'
+#' @param children Child component list.
+#' @param field Size field to inspect (`"widthPercent"` or `"heightPercent"`).
+#' @param context Human-readable function context for error messages.
+#'
+#' @return Invisibly returns `NULL`.
+#'
+#' @keywords internal
+#' @noRd
+.rtuiValidateMainAxisPercentSum <- function(children, field, context) {
+  percents <- vapply(
+    children,
+    function(component) {
+      value <- component[[field, exact = TRUE]]
+      if (is.null(value)) {
+        return(NA_real_)
+      }
+      as.numeric(value)
+    },
+    numeric(1L)
+  )
+
+  total <- sum(percents, na.rm = TRUE)
+  if (total > 1 + 1e-9) {
+    stop(
+      "Sum of `",
+      field,
+      "` values in ",
+      context,
+      " children must be <= 1."
+    )
+  }
+
+  invisible(NULL)
+}
+
 #' Vertical box layout
 #'
 #' Stacks child components vertically.
 #'
 #' @param ... Child components built with layout or component functions.
+#' @param width,height Optional fixed width/height in terminal cells.
+#' @param minHeight,maxHeight Optional min/max height in terminal cells.
+#' @param widthPercent,heightPercent Optional relative size between `0` and `1`.
+#'   `widthPercent` is interpreted by [tuiRow()] and `heightPercent` by
+#'   [tuiColumn()] for strict main-axis percentages.
 #'
 #' @return A `rtuiComponent` list node of type `"column"`.
 #'
 #' @export
-tuiColumn <- function(...) {
+tuiColumn <- function(
+    ...,
+    width = NULL,
+    height = NULL,
+    minHeight = NULL,
+    maxHeight = NULL,
+    widthPercent = NULL,
+    heightPercent = NULL
+) {
   children <- list(...)
   lapply(children, function(c) {
     if (!inherits(c, "rtuiComponent"))
       stop("All children must be rtuiComponent objects.")
   })
-  structure(
+  .rtuiValidateMainAxisPercentSum(children, "heightPercent", "tuiColumn()")
+
+  component <- .rtuiApplySizeSpec(
     list(type = "column", children = children),
+    width = width,
+    height = height,
+    minHeight = minHeight,
+    maxHeight = maxHeight,
+    widthPercent = widthPercent,
+    heightPercent = heightPercent
+  )
+
+  structure(
+    component,
     class = "rtuiComponent"
   )
 }
@@ -24,18 +88,43 @@ tuiColumn <- function(...) {
 #' Places child components side by side horizontally.
 #'
 #' @param ... Child components built with layout or component functions.
+#' @param width,height Optional fixed width/height in terminal cells.
+#' @param minHeight,maxHeight Optional min/max height in terminal cells.
+#' @param widthPercent,heightPercent Optional relative size between `0` and `1`.
+#'   `widthPercent` is interpreted by [tuiRow()] and `heightPercent` by
+#'   [tuiColumn()] for strict main-axis percentages.
 #'
 #' @return A `rtuiComponent` list node of type `"row"`.
 #'
 #' @export
-tuiRow <- function(...) {
+tuiRow <- function(
+    ...,
+    width = NULL,
+    height = NULL,
+    minHeight = NULL,
+    maxHeight = NULL,
+    widthPercent = NULL,
+    heightPercent = NULL
+) {
   children <- list(...)
   lapply(children, function(c) {
     if (!inherits(c, "rtuiComponent"))
       stop("All children must be rtuiComponent objects.")
   })
-  structure(
+  .rtuiValidateMainAxisPercentSum(children, "widthPercent", "tuiRow()")
+
+  component <- .rtuiApplySizeSpec(
     list(type = "row", children = children),
+    width = width,
+    height = height,
+    minHeight = minHeight,
+    maxHeight = maxHeight,
+    widthPercent = widthPercent,
+    heightPercent = heightPercent
+  )
+
+  structure(
+    component,
     class = "rtuiComponent"
   )
 }
@@ -60,6 +149,11 @@ tuiRow <- function(...) {
 #' @param titleAlign Title alignment for `"header"` mode. One of `"left"`
 #'   (default), `"center"`, or `"right"`.
 #' @param margin Integer number of spaces outside the box (default `0`).
+#' @param width,height Optional fixed width/height in terminal cells.
+#' @param minHeight,maxHeight Optional min/max height in terminal cells.
+#' @param widthPercent,heightPercent Optional relative size between `0` and `1`.
+#'   `widthPercent` is interpreted by [tuiRow()] and `heightPercent` by
+#'   [tuiColumn()] for strict main-axis percentages.
 #'
 #' @return A `rtuiComponent` list node of type `"box"`.
 #'
@@ -71,7 +165,13 @@ tuiBox <- function(
     style = "rounded",
     titleStyle = "header",
     titleAlign = "left",
-    margin = 0L
+    margin = 0L,
+    width = NULL,
+    height = NULL,
+    minHeight = NULL,
+    maxHeight = NULL,
+    widthPercent = NULL,
+    heightPercent = NULL
 ) {
   if (!inherits(child, "rtuiComponent")) {
     stop("`child` must be a rtuiComponent object.")
@@ -138,6 +238,15 @@ tuiBox <- function(
   if (!is.null(color)) {
     component$color <- color
   }
+  component <- .rtuiApplySizeSpec(
+    component,
+    width = width,
+    height = height,
+    minHeight = minHeight,
+    maxHeight = maxHeight,
+    widthPercent = widthPercent,
+    heightPercent = heightPercent
+  )
 
   structure(component, class = "rtuiComponent")
 }

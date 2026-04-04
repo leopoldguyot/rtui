@@ -3,44 +3,78 @@ library(rtui)
 app <- tuiApp(
     ui = tuiColumn(
         tuiBox(
-            title = "Counter controls",
+            title = "Counter controls (size constraints demo)",
             color = "cyan",
             style = "rounded",
             titleStyle = "header",
             titleAlign = "center",
             margin = 1L,
+            heightPercent = 0.65,
+            minHeight = 12,
             child = tuiColumn(
                 tuiOutputNumeric("counter"),
-                tuiOutputText("message"),
+                tuiOutputText("message", maxHeight = 2),
                 tuiOutputText("name"),
                 tuiRow(
-                    tuiInputButton("Increment", id = "inc", color = "red"),
-                    tuiInputButton("Decrement", id = "dec"),
-                    tuiInputButton("Apply name", id = "applyName")
+                    tuiInputButton(
+                        "Increment",
+                        id = "inc",
+                        color = "red",
+                        widthPercent = 1 / 3
+                    ),
+                    tuiInputButton(
+                        "Decrement",
+                        id = "dec",
+                        widthPercent = 1 / 3
+                    ),
+                    tuiInputButton(
+                        "Apply name",
+                        id = "applyName",
+                        widthPercent = 1 / 3
+                    )
                 ),
                 tuiInputCheckbox("Enable message suffix", id = "enabledSuffix", value = TRUE),
-                tuiInputText(id = "nameInput", value = "John", multiline = FALSE)
+                tuiInputText(
+                    id = "nameInput",
+                    value = "John",
+                    multiline = FALSE,
+                    width = 32
+                )
             )
         ),
         tuiRow(
             tuiBox(
-                title = "Left",
+                title = "20%",
                 titleStyle = "border",
                 titleAlign = "left",
                 color = "green",
                 style = "light",
-                margin = 1L,
-                child = tuiOutputText("borderLeftDemo")
+                margin = 0L,
+                widthPercent = 0.2,
+                child = tuiOutputText("sizeLeftDemo", minHeight = 3)
             ),
             tuiBox(
-                title = "Center",
+                title = "50%",
                 titleStyle = "border",
                 titleAlign = "center",
                 color = "yellow",
                 style = "light",
+                margin = 0L,
+                widthPercent = 0.5,
+                child = tuiOutputText("sizeCenterDemo", minHeight = 3)
+            ),
+            tuiBox(
+                title = "30%",
+                titleStyle = "border",
+                titleAlign = "right",
+                color = "magenta",
+                style = "light",
                 margin = 1L,
-                child = tuiOutputText("borderCenterDemo")
-            )
+                widthPercent = 0.3,
+                child = tuiOutputText("sizeRightDemo", minHeight = 3)
+            ),
+            heightPercent = 0.35,
+            minHeight = 5
         )
     ),
     server = function(input, output) {
@@ -50,7 +84,8 @@ app <- tuiApp(
         })
         n <- tuiReactiveVal(0L)
 
-        tuiObserveEvent(counter(),
+        tuiObserveEvent(
+            counter(),
             {
                 n(n() + 1L)
             },
@@ -65,9 +100,9 @@ app <- tuiApp(
         })
         output$counter <- tuiRenderNumeric(counter(), digits = 0)
         output$name <- tuiRenderText(paste("Your name is:", appliedName()))
-        output$borderLeftDemo <- tuiRenderText('titleAlign = "left"')
-        output$borderCenterDemo <- tuiRenderText('titleAlign = "center"')
-        output$borderRightDemo <- tuiRenderText('titleAlign = "right"')
+        output$sizeLeftDemo <- tuiRenderText("widthPercent = 0.2")
+        output$sizeCenterDemo <- tuiRenderText("widthPercent = 0.5")
+        output$sizeRightDemo <- tuiRenderText("widthPercent = 0.3")
     }
 )
 

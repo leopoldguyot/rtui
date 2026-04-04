@@ -4,10 +4,26 @@
 \alias{tuiRow}
 \title{Horizontal box layout}
 \usage{
-tuiRow(...)
+tuiRow(
+  ...,
+  width = NULL,
+  height = NULL,
+  minHeight = NULL,
+  maxHeight = NULL,
+  widthPercent = NULL,
+  heightPercent = NULL
+)
 }
 \arguments{
 \item{...}{Child components built with layout or component functions.}
+
+\item{width, height}{Optional fixed width/height in terminal cells.}
+
+\item{minHeight, maxHeight}{Optional min/max height in terminal cells.}
+
+\item{widthPercent, heightPercent}{Optional relative size between \code{0} and \code{1}.
+\code{widthPercent} is interpreted by \code{\link[=tuiRow]{tuiRow()}} and \code{heightPercent} by
+\code{\link[=tuiColumn]{tuiColumn()}} for strict main-axis percentages.}
 }
 \value{
 A \code{rtuiComponent} list node of type \code{"row"}.

@@ -4,7 +4,18 @@
 \alias{tuiInputText}
 \title{Text input component}
 \usage{
-tuiInputText(id, placeholder = "", value = "", multiline = FALSE)
+tuiInputText(
+  id,
+  placeholder = "",
+  value = "",
+  multiline = FALSE,
+  width = NULL,
+  height = NULL,
+  minHeight = NULL,
+  maxHeight = NULL,
+  widthPercent = NULL,
+  heightPercent = NULL
+)
 }
 \arguments{
 \item{id}{A character string used as the input key (\verb{input$<id>}).}
@@ -15,6 +26,14 @@ tuiInputText(id, placeholder = "", value = "", multiline = FALSE)
 
 \item{multiline}{A single logical value. If \code{FALSE} (default), Enter does
 not modify the text content. If \code{TRUE}, Enter inserts a newline.}
+
+\item{width, height}{Optional fixed width/height in terminal cells.}
+
+\item{minHeight, maxHeight}{Optional min/max height in terminal cells.}
+
+\item{widthPercent, heightPercent}{Optional relative size between \code{0} and \code{1}.
+\code{widthPercent} is interpreted by \code{\link[=tuiRow]{tuiRow()}} and \code{heightPercent} by
+\code{\link[=tuiColumn]{tuiColumn()}} for strict main-axis percentages.}
 }
 \value{
 A \code{rtuiComponent} list node of type \code{"input"}.

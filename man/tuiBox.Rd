@@ -11,7 +11,13 @@ tuiBox(
   style = "rounded",
   titleStyle = "header",
   titleAlign = "left",
-  margin = 0L
+  margin = 0L,
+  width = NULL,
+  height = NULL,
+  minHeight = NULL,
+  maxHeight = NULL,
+  widthPercent = NULL,
+  heightPercent = NULL
 )
 }
 \arguments{
@@ -37,6 +43,14 @@ places the title inside the box as a header separated by a bar, or
 (default), \code{"center"}, or \code{"right"}.}
 
 \item{margin}{Integer number of spaces outside the box (default \code{0}).}
+
+\item{width, height}{Optional fixed width/height in terminal cells.}
+
+\item{minHeight, maxHeight}{Optional min/max height in terminal cells.}
+
+\item{widthPercent, heightPercent}{Optional relative size between \code{0} and \code{1}.
+\code{widthPercent} is interpreted by \code{\link[=tuiRow]{tuiRow()}} and \code{heightPercent} by
+\code{\link[=tuiColumn]{tuiColumn()}} for strict main-axis percentages.}
 }
 \value{
 A \code{rtuiComponent} list node of type \code{"box"}.
