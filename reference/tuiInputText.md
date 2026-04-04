@@ -8,7 +8,18 @@ without inserting a newline. Set `multiline = TRUE` to allow newlines.
 ## Usage
 
 ``` r
-tuiInputText(id, placeholder = "", value = "", multiline = FALSE)
+tuiInputText(
+  id,
+  placeholder = "",
+  value = "",
+  multiline = FALSE,
+  width = NULL,
+  height = NULL,
+  minHeight = NULL,
+  maxHeight = NULL,
+  widthPercent = NULL,
+  heightPercent = NULL
+)
 ```
 
 ## Arguments
@@ -29,6 +40,23 @@ tuiInputText(id, placeholder = "", value = "", multiline = FALSE)
 
   A single logical value. If `FALSE` (default), Enter does not modify
   the text content. If `TRUE`, Enter inserts a newline.
+
+- width, height:
+
+  Optional fixed width/height in terminal cells.
+
+- minHeight, maxHeight:
+
+  Optional min/max height in terminal cells.
+
+- widthPercent, heightPercent:
+
+  Optional relative size between `0` and `1`. `widthPercent` is
+  interpreted by
+  [`tuiRow()`](https://leopoldguyot.github.io/rtui/reference/tuiRow.md)
+  and `heightPercent` by
+  [`tuiColumn()`](https://leopoldguyot.github.io/rtui/reference/tuiColumn.md)
+  for strict main-axis percentages.
 
 ## Value
 

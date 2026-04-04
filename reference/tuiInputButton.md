@@ -6,7 +6,17 @@ and triggers a server update.
 ## Usage
 
 ``` r
-tuiInputButton(label, id, color = NULL)
+tuiInputButton(
+  label,
+  id,
+  color = NULL,
+  width = NULL,
+  height = NULL,
+  minHeight = NULL,
+  maxHeight = NULL,
+  widthPercent = NULL,
+  heightPercent = NULL
+)
 ```
 
 ## Arguments
@@ -26,6 +36,23 @@ tuiInputButton(label, id, color = NULL)
   `"graylight"`, `"graydark"`, `"redlight"`, `"greenlight"`,
   `"yellowlight"`, `"bluelight"`, `"magentalight"`, `"cyanlight"`,
   `"white"`) or a hex string like `"#RRGGBB"`.
+
+- width, height:
+
+  Optional fixed width/height in terminal cells.
+
+- minHeight, maxHeight:
+
+  Optional min/max height in terminal cells.
+
+- widthPercent, heightPercent:
+
+  Optional relative size between `0` and `1`. `widthPercent` is
+  interpreted by
+  [`tuiRow()`](https://leopoldguyot.github.io/rtui/reference/tuiRow.md)
+  and `heightPercent` by
+  [`tuiColumn()`](https://leopoldguyot.github.io/rtui/reference/tuiColumn.md)
+  for strict main-axis percentages.
 
 ## Value
 

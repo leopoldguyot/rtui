@@ -5,7 +5,15 @@ Displays the value of `output$<outputId>` as numeric text.
 ## Usage
 
 ``` r
-tuiOutputNumeric(outputId)
+tuiOutputNumeric(
+  outputId,
+  width = NULL,
+  height = NULL,
+  minHeight = NULL,
+  maxHeight = NULL,
+  widthPercent = NULL,
+  heightPercent = NULL
+)
 ```
 
 ## Arguments
@@ -13,6 +21,23 @@ tuiOutputNumeric(outputId)
 - outputId:
 
   A single character string naming the output id.
+
+- width, height:
+
+  Optional fixed width/height in terminal cells.
+
+- minHeight, maxHeight:
+
+  Optional min/max height in terminal cells.
+
+- widthPercent, heightPercent:
+
+  Optional relative size between `0` and `1`. `widthPercent` is
+  interpreted by
+  [`tuiRow()`](https://leopoldguyot.github.io/rtui/reference/tuiRow.md)
+  and `heightPercent` by
+  [`tuiColumn()`](https://leopoldguyot.github.io/rtui/reference/tuiColumn.md)
+  for strict main-axis percentages.
 
 ## Value
 
