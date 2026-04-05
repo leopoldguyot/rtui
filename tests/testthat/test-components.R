@@ -1,3 +1,22 @@
+test_that("tuiOutputText stores wrap flag", {
+  default_output <- tuiOutputText("message")
+  expect_null(default_output$wrap)
+
+  wrapped_output <- tuiOutputText("message", wrap = TRUE)
+  expect_identical(wrapped_output$wrap, TRUE)
+})
+
+test_that("tuiOutputText validates wrap argument", {
+  expect_error(
+    tuiOutputText("message", wrap = "yes"),
+    "`wrap` must be TRUE or FALSE."
+  )
+  expect_error(
+    tuiOutputText("message", wrap = NA),
+    "`wrap` must be TRUE or FALSE."
+  )
+})
+
 test_that("tuiInputButton stores optional color", {
   button <- tuiInputButton("Apply", id = "apply", color = "blue")
   expect_identical(button$color, "blue")

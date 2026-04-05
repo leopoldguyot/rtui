@@ -41,16 +41,21 @@ class OffsetFrame : public NodeDecorator {
 
     const int viewport_w = std::max(1, box.x_max - box.x_min + 1);
     const int viewport_h = std::max(1, box.y_max - box.y_min + 1);
-    const int content_w = std::max(requirement_.min_x, viewport_w);
+    const int intrinsic_w = std::max(requirement_.min_x, viewport_w);
     const int content_h = std::max(requirement_.min_y, viewport_h);
 
-    const int max_x = std::max(0, content_w - viewport_w);
+    const int max_x = std::max(0, intrinsic_w - viewport_w);
     const int max_y = std::max(0, content_h - viewport_h);
     *max_scroll_x_ = max_x;
     *max_scroll_y_ = max_y;
 
     *scroll_x_ = std::clamp(*scroll_x_, 0, max_x);
     *scroll_y_ = std::clamp(*scroll_y_, 0, max_y);
+
+    // Keep width reactive to terminal size by default (scroll_x == 0), so
+    // wrapped text can reflow. When panning horizontally, expand to intrinsic
+    // width to reveal off-screen content.
+    const int content_w = *scroll_x_ > 0 ? intrinsic_w : viewport_w;
 
     child_box.x_min = box.x_min - *scroll_x_;
     child_box.x_max = child_box.x_min + content_w - 1;

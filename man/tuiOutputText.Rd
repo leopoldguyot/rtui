@@ -6,6 +6,7 @@
 \usage{
 tuiOutputText(
   outputId,
+  wrap = FALSE,
   width = NULL,
   height = NULL,
   minHeight = NULL,
@@ -16,6 +17,9 @@ tuiOutputText(
 }
 \arguments{
 \item{outputId}{A single character string naming the output id.}
+
+\item{wrap}{A single logical value. If \code{TRUE}, text wraps to the available
+width. If \code{FALSE} (default), text keeps its original line breaks only.}
 
 \item{width, height}{Optional fixed width/height in terminal cells.}
 

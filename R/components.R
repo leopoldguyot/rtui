@@ -3,6 +3,8 @@
 #' Displays the value of `output$<outputId>` as text.
 #'
 #' @param outputId A single character string naming the output id.
+#' @param wrap A single logical value. If `TRUE`, text wraps to the available
+#'   width. If `FALSE` (default), text keeps its original line breaks only.
 #' @param width,height Optional fixed width/height in terminal cells.
 #' @param minHeight,maxHeight Optional min/max height in terminal cells.
 #' @param widthPercent,heightPercent Optional relative size between `0` and `1`.
@@ -14,6 +16,7 @@
 #' @export
 tuiOutputText <- function(
     outputId,
+    wrap = FALSE,
     width = NULL,
     height = NULL,
     minHeight = NULL,
@@ -23,9 +26,15 @@ tuiOutputText <- function(
 ) {
   if (!is.character(outputId) || length(outputId) != 1L || is.na(outputId))
     stop("`outputId` must be a single character string.")
+  if (!is.logical(wrap) || length(wrap) != 1L || is.na(wrap))
+    stop("`wrap` must be TRUE or FALSE.")
 
+  component <- list(type = "outputText", outputId = outputId)
+  if (isTRUE(wrap)) {
+    component$wrap <- TRUE
+  }
   component <- .rtuiApplySizeSpec(
-    list(type = "outputText", outputId = outputId),
+    component,
     width = width,
     height = height,
     minHeight = minHeight,

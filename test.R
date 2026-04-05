@@ -13,7 +13,7 @@ app <- tuiApp(
             minHeight = 12,
             child = tuiColumn(
                 tuiOutputNumeric("counter"),
-                tuiOutputText("message", maxHeight = 2),
+                tuiOutputText("message", wrap = TRUE),
                 tuiOutputText("name"),
                 tuiRow(
                     tuiInputButton(

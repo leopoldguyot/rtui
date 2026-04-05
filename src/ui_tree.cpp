@@ -708,6 +708,26 @@ Element apply_size_constraints(Element element, const NodeSizeSpec& spec) {
   return std::make_shared<SizeConstraintElement>(std::move(element), spec);
 }
 
+class WrappedTextElement : public NodeDecorator {
+ public:
+  explicit WrappedTextElement(Element child)
+      : NodeDecorator(std::move(child)) {}
+
+  void ComputeRequirement() override {
+    NodeDecorator::ComputeRequirement();
+    requirement_ = children_[0]->requirement();
+
+    // Let wrapping text shrink to the actual available width instead of
+    // enforcing its full unwrapped line width upstream.
+    requirement_.min_x = std::min(requirement_.min_x, 1);
+    requirement_.flex_shrink_x = std::max(requirement_.flex_shrink_x, 1);
+  }
+};
+
+Element wrapped_text(Element element) {
+  return std::make_shared<WrappedTextElement>(std::move(element));
+}
+
 std::vector<int> allocate_axis_sizes(
     int total_size,
     const std::vector<int>& min_sizes,
@@ -985,18 +1005,30 @@ Component apply_node_size_spec(Component component, const Rcpp::List& node) {
   });
 }
 
-bool parse_input_multiline(const Rcpp::List& node) {
-  if (!node.containsElementNamed("multiline")) {
+bool parse_optional_flag(
+    const Rcpp::List& node,
+    const char* field_name,
+    const char* arg_name
+) {
+  if (!node.containsElementNamed(field_name)) {
     return false;
   }
 
-  SEXP candidate = node["multiline"];
+  SEXP candidate = node[field_name];
   if (TYPEOF(candidate) != LGLSXP ||
       Rf_length(candidate) != 1 ||
       LOGICAL(candidate)[0] == NA_LOGICAL) {
-    Rcpp::stop("`multiline` must be TRUE or FALSE.");
+    Rcpp::stop("`%s` must be TRUE or FALSE.", arg_name);
   }
   return Rcpp::as<bool>(candidate);
+}
+
+bool parse_input_multiline(const Rcpp::List& node) {
+  return parse_optional_flag(node, "multiline", "multiline");
+}
+
+bool parse_output_wrap(const Rcpp::List& node) {
+  return parse_optional_flag(node, "wrap", "wrap");
 }
 
 }  // namespace
@@ -1053,9 +1085,14 @@ ftxui::Component build_component(
 
   if (type == "outputText" || type == "outputNumeric") {
     std::string output_id = Rcpp::as<std::string>(node["outputId"]);
-    Component component = Renderer([state, output_id] {
+    const bool wrap = type == "outputText" ? parse_output_wrap(node) : false;
+    Component component = Renderer([state, output_id, wrap] {
       SEXP val = get_output_value(state, output_id);
-      return text(value_to_string(val));
+      const std::string output_value = value_to_string(val);
+      if (wrap) {
+        return wrapped_text(paragraph(output_value));
+      }
+      return text(output_value);
     });
     return apply_node_size_spec(std::move(component), node);
   }
