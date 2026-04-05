@@ -39,7 +39,7 @@ app <- tuiApp(
           tuiInputText(id = "scrollFocus4", value = "focus field 4", width = 60),
           tuiInputText(id = "scrollFocus5", value = "focus field 5", width = 60),
           tuiInputText(id = "scrollFocus6", value = "focus field 6", width = 60),
-          tuiOutputText("scrollOut", overflow = "clip")
+          tuiOutputText("scrollOut", overflow = "clip", height = 14)
         )
       ),
       minHeight = 16
@@ -50,7 +50,8 @@ app <- tuiApp(
       paste(
         "Left uses overflow visible and intentionally over-wide text.",
         "Middle uses overflow clip with the same over-wide text.",
-        "Right is scrollable: use Tab to move focus through its fields."
+        "Right is scrollable: use Tab to move focus, then Ctrl+Arrow/PageUp/PageDown/Home/End,",
+        "mouse wheel, or drag the scrollbar."
       )
     )
     output$visibleOut <- tuiRenderText(long_block)

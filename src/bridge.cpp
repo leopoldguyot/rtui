@@ -195,6 +195,7 @@ void runTuiApp(
   auto scroll_y = std::make_shared<int>(0);
   auto max_scroll_x = std::make_shared<int>(0);
   auto max_scroll_y = std::make_shared<int>(0);
+  auto block_active = std::make_shared<bool>(false);
 
   if (overflow == "scroll") {
     root = Renderer(root, [root, scroll_x, scroll_y, max_scroll_x, max_scroll_y] {
@@ -237,8 +238,53 @@ void runTuiApp(
 
       return dbox({std::move(content), std::move(overlay)});
     });
+  } else if (overflow == "block") {
+    root = Renderer(root, [root, state, block_active] {
+      Element content = root->Render();
+      content->ComputeRequirement();
+      const Requirement requirement = content->requirement();
+
+      const Rcpp::List input_values = get_sublist_or_empty(state->values, "input");
+      const int current_width = std::max(
+        0,
+        get_input_integer(input_values, kTerminalWidthId, 0)
+      );
+      const int current_height = std::max(
+        0,
+        get_input_integer(input_values, kTerminalHeightId, 0)
+      );
+      const int required_width = std::max(0, requirement.min_x);
+      const int required_height = std::max(0, requirement.min_y);
+
+      const bool blocked =
+        current_width < required_width ||
+        current_height < required_height;
+      *block_active = blocked;
+      if (!blocked) {
+        return content;
+      }
+
+      const std::string warning_text =
+          " Terminal too small: current " +
+          std::to_string(current_width) + "x" +
+          std::to_string(current_height) +
+          ", need at least " +
+          std::to_string(required_width) + "x" +
+          std::to_string(required_height) + " ";
+
+      Element warning = text(warning_text) |
+          color(Color::Black) |
+          bgcolor(Color::Yellow) |
+          bold;
+
+      return vbox({
+        filler(),
+        hbox({filler(), std::move(warning), filler()}),
+        filler()
+      });
+    });
   } else if (overflow != "clip") {
-    Rcpp::stop("`overflow` must be one of 'clip' or 'scroll'.");
+    Rcpp::stop("`overflow` must be one of 'clip', 'scroll', or 'block'.");
   }
 
   // Wrap root in a CatchEvent component that handles Ctrl+Q / Escape to quit.
@@ -246,8 +292,18 @@ void runTuiApp(
 
   Component app = CatchEvent(
     root,
-    [&screen, overflow, scroll_x, scroll_y, max_scroll_x, max_scroll_y, state, handlers](Event event) -> bool {
+    [&screen, overflow, scroll_x, scroll_y, max_scroll_x, max_scroll_y, block_active, state, handlers](Event event) -> bool {
     sync_terminal_size(state, handlers, false);
+
+    if (event == Event::Escape ||
+        event == Event::CtrlQ) {
+      screen.ExitLoopClosure()();
+      return true;
+    }
+
+    if (overflow == "block" && *block_active) {
+      return true;
+    }
 
     if (overflow == "scroll") {
       if (event == Event::ArrowUpCtrl) {
@@ -312,12 +368,6 @@ void runTuiApp(
           return true;
         }
       }
-    }
-
-    if (event == Event::Escape ||
-        event == Event::CtrlQ) {
-      screen.ExitLoopClosure()();
-      return true;
     }
     return false;
   });

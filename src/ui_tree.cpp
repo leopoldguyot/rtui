@@ -3,6 +3,7 @@
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/component_options.hpp>
 #include <ftxui/component/component_base.hpp>
+#include <ftxui/component/event.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/dom/node.hpp>
 #include <ftxui/dom/node_decorator.hpp>
@@ -880,22 +881,217 @@ Element clip_axes(Element element, bool clip_x, bool clip_y) {
   );
 }
 
-Element apply_overflow_constraints(Element element, const NodeOverflowSpec& spec) {
-  if (spec.overflow_x == OverflowMode::Scroll &&
-      spec.overflow_y == OverflowMode::Scroll) {
-    element = frame(std::move(element));
-  } else {
-    if (spec.overflow_x == OverflowMode::Scroll) {
-      element = xframe(std::move(element));
+struct OverflowScrollState {
+  std::shared_ptr<int> scroll_x = std::make_shared<int>(0);
+  std::shared_ptr<int> scroll_y = std::make_shared<int>(0);
+  std::shared_ptr<int> max_scroll_x = std::make_shared<int>(0);
+  std::shared_ptr<int> max_scroll_y = std::make_shared<int>(0);
+};
+
+class ManualOverflowFrameElement : public NodeDecorator {
+ public:
+  ManualOverflowFrameElement(
+      Element child,
+      bool scroll_x,
+      bool scroll_y,
+      bool clip_x,
+      bool clip_y,
+      OverflowScrollState state
+  )
+      : NodeDecorator(std::move(child)),
+        scroll_x_enabled_(scroll_x),
+        scroll_y_enabled_(scroll_y),
+        clip_x_(clip_x),
+        clip_y_(clip_y),
+        state_(std::move(state)) {}
+
+  void ComputeRequirement() override {
+    NodeDecorator::ComputeRequirement();
+    requirement_ = children_[0]->requirement();
+  }
+
+  void SetBox(Box box) override {
+    box_ = box;
+    Box child_box = box;
+
+    const int viewport_width = std::max(0, box.x_max - box.x_min + 1);
+    const int viewport_height = std::max(0, box.y_max - box.y_min + 1);
+    const int vertical_slider_width = scroll_y_enabled_ ? 1 : 0;
+    const int horizontal_slider_height = scroll_x_enabled_ ? 1 : 0;
+
+    child_viewport_width_ = std::max(0, viewport_width - vertical_slider_width);
+    child_viewport_height_ = std::max(0, viewport_height - horizontal_slider_height);
+
+    intrinsic_width_ = std::max(requirement_.min_x, child_viewport_width_);
+    intrinsic_height_ = std::max(requirement_.min_y, child_viewport_height_);
+
+    const int max_x = scroll_x_enabled_
+        ? std::max(0, intrinsic_width_ - child_viewport_width_)
+        : 0;
+    const int max_y = scroll_y_enabled_
+        ? std::max(0, intrinsic_height_ - child_viewport_height_)
+        : 0;
+    *state_.max_scroll_x = max_x;
+    *state_.max_scroll_y = max_y;
+
+    *state_.scroll_x = std::clamp(*state_.scroll_x, 0, max_x);
+    *state_.scroll_y = std::clamp(*state_.scroll_y, 0, max_y);
+
+    child_box.x_min = box.x_min - (scroll_x_enabled_ ? *state_.scroll_x : 0);
+    child_box.x_max = child_box.x_min + intrinsic_width_ - 1;
+    child_box.y_min = box.y_min - (scroll_y_enabled_ ? *state_.scroll_y : 0);
+    child_box.y_max = child_box.y_min + intrinsic_height_ - 1;
+    children_[0]->SetBox(child_box);
+  }
+
+  void Render(Screen& screen) override {
+    Box stencil = screen.stencil;
+    if (clip_x_) {
+      stencil.x_min = std::max(stencil.x_min, box_.x_min);
+      stencil.x_max = std::min(stencil.x_max, box_.x_max);
     }
-    if (spec.overflow_y == OverflowMode::Scroll) {
-      element = yframe(std::move(element));
+    if (clip_y_) {
+      stencil.y_min = std::max(stencil.y_min, box_.y_min);
+      stencil.y_max = std::min(stencil.y_max, box_.y_max);
+    }
+    const AutoReset<Box> reset(
+      &screen.stencil,
+      Box::Intersection(stencil, screen.stencil)
+    );
+    children_[0]->Render(screen);
+    render_vertical_slider(screen);
+    render_horizontal_slider(screen);
+  }
+
+ private:
+  void render_vertical_slider(Screen& screen) const {
+    if (!scroll_y_enabled_) {
+      return;
+    }
+
+    const int track_x = box_.x_max;
+    const int track_top = box_.y_min;
+    const int track_bottom = box_.y_max - (scroll_x_enabled_ ? 1 : 0);
+    const int track_size = track_bottom - track_top + 1;
+    if (track_size <= 0 || child_viewport_height_ <= 0) {
+      return;
+    }
+
+    const bool has_overflow = *state_.max_scroll_y > 0;
+    int thumb_size = track_size;
+    int thumb_start = 0;
+    if (has_overflow) {
+      thumb_size = std::max(
+        1,
+        (child_viewport_height_ * track_size) / std::max(1, intrinsic_height_)
+      );
+      const int max_thumb_start = std::max(0, track_size - thumb_size);
+      thumb_start = (*state_.scroll_y * max_thumb_start) / std::max(1, *state_.max_scroll_y);
+    }
+
+    for (int y = track_top; y <= track_bottom; ++y) {
+      const int offset = y - track_top;
+      const bool in_thumb = has_overflow &&
+        offset >= thumb_start &&
+        offset < thumb_start + thumb_size;
+      Pixel& pixel = screen.PixelAt(track_x, y);
+      pixel.character = in_thumb ? "█" : "│";
     }
   }
 
-  const bool clip_x = spec.overflow_x == OverflowMode::Clip;
-  const bool clip_y = spec.overflow_y == OverflowMode::Clip;
-  return clip_axes(std::move(element), clip_x, clip_y);
+  void render_horizontal_slider(Screen& screen) const {
+    if (!scroll_x_enabled_) {
+      return;
+    }
+
+    const int track_y = box_.y_max;
+    const int track_left = box_.x_min;
+    const int track_right = box_.x_max - (scroll_y_enabled_ ? 1 : 0);
+    const int track_size = track_right - track_left + 1;
+    if (track_size <= 0 || child_viewport_width_ <= 0) {
+      return;
+    }
+
+    const bool has_overflow = *state_.max_scroll_x > 0;
+    int thumb_size = track_size;
+    int thumb_start = 0;
+    if (has_overflow) {
+      thumb_size = std::max(
+        1,
+        (child_viewport_width_ * track_size) / std::max(1, intrinsic_width_)
+      );
+      const int max_thumb_start = std::max(0, track_size - thumb_size);
+      thumb_start = (*state_.scroll_x * max_thumb_start) / std::max(1, *state_.max_scroll_x);
+    }
+
+    for (int x = track_left; x <= track_right; ++x) {
+      const int offset = x - track_left;
+      const bool in_thumb = has_overflow &&
+        offset >= thumb_start &&
+        offset < thumb_start + thumb_size;
+      Pixel& pixel = screen.PixelAt(x, track_y);
+      pixel.character = in_thumb ? "█" : "─";
+    }
+  }
+
+  bool scroll_x_enabled_;
+  bool scroll_y_enabled_;
+  bool clip_x_;
+  bool clip_y_;
+  OverflowScrollState state_;
+  int child_viewport_width_ = 0;
+  int child_viewport_height_ = 0;
+  int intrinsic_width_ = 0;
+  int intrinsic_height_ = 0;
+};
+
+Element manual_overflow_frame(
+    Element element,
+    bool scroll_x,
+    bool scroll_y,
+    bool clip_x,
+    bool clip_y,
+    const OverflowScrollState& state
+) {
+  return std::make_shared<ManualOverflowFrameElement>(
+    std::move(element),
+    scroll_x,
+    scroll_y,
+    clip_x,
+    clip_y,
+    state
+  );
+}
+
+Element apply_overflow_constraints(
+    Element element,
+    const NodeOverflowSpec& spec,
+    const OverflowScrollState* state = nullptr
+) {
+  const bool scroll_x = spec.overflow_x == OverflowMode::Scroll;
+  const bool scroll_y = spec.overflow_y == OverflowMode::Scroll;
+  const bool clip_x = spec.overflow_x != OverflowMode::Visible;
+  const bool clip_y = spec.overflow_y != OverflowMode::Visible;
+
+  if (scroll_x || scroll_y) {
+    if (state == nullptr) {
+      return element;
+    }
+    return manual_overflow_frame(
+      std::move(element),
+      scroll_x,
+      scroll_y,
+      clip_x,
+      clip_y,
+      *state
+    );
+  }
+
+  return clip_axes(
+    std::move(element),
+    spec.overflow_x == OverflowMode::Clip,
+    spec.overflow_y == OverflowMode::Clip
+  );
 }
 
 class ShowIfElement : public NodeDecorator {
@@ -1343,9 +1539,166 @@ Component apply_node_overflow_spec(Component component, const Rcpp::List& node) 
     return component;
   }
 
-  return Renderer(component, [component, spec] {
+  const bool scroll_x = spec.overflow_x == OverflowMode::Scroll;
+  const bool scroll_y = spec.overflow_y == OverflowMode::Scroll;
+  OverflowScrollState state;
+  auto reflected_box = std::make_shared<Box>();
+
+  Component rendered = Renderer(component, [component, spec, state, reflected_box] {
     Element content = component->Render();
-    return apply_overflow_constraints(std::move(content), spec);
+    content = apply_overflow_constraints(std::move(content), spec, &state);
+    content |= reflect(*reflected_box);
+    return content;
+  });
+
+  if (!scroll_x && !scroll_y) {
+    return rendered;
+  }
+
+  return CatchEvent(rendered, [component, reflected_box, state, scroll_x, scroll_y](Event event) {
+    auto clamp = [](std::shared_ptr<int> value, std::shared_ptr<int> max_value) {
+      *value = std::clamp(*value, 0, *max_value);
+    };
+    auto shift_x = [&](int delta) {
+      if (!scroll_x || *state.max_scroll_x <= 0) {
+        return false;
+      }
+      const int previous = *state.scroll_x;
+      *state.scroll_x += delta;
+      clamp(state.scroll_x, state.max_scroll_x);
+      return *state.scroll_x != previous;
+    };
+    auto shift_y = [&](int delta) {
+      if (!scroll_y || *state.max_scroll_y <= 0) {
+        return false;
+      }
+      const int previous = *state.scroll_y;
+      *state.scroll_y += delta;
+      clamp(state.scroll_y, state.max_scroll_y);
+      return *state.scroll_y != previous;
+    };
+
+    if (component->Focused()) {
+      if (event == Event::ArrowUpCtrl) {
+        return shift_y(-1);
+      }
+      if (event == Event::ArrowDownCtrl) {
+        return shift_y(1);
+      }
+      if (event == Event::ArrowLeftCtrl) {
+        return shift_x(-1);
+      }
+      if (event == Event::ArrowRightCtrl) {
+        return shift_x(1);
+      }
+      if (event == Event::PageUp) {
+        const int step = std::max(1, reflected_box->y_max - reflected_box->y_min);
+        return shift_y(-step);
+      }
+      if (event == Event::PageDown) {
+        const int step = std::max(1, reflected_box->y_max - reflected_box->y_min);
+        return shift_y(step);
+      }
+      if (event == Event::Home) {
+        bool changed = false;
+        if (scroll_x && *state.scroll_x != 0) {
+          *state.scroll_x = 0;
+          changed = true;
+        }
+        if (scroll_y && *state.scroll_y != 0) {
+          *state.scroll_y = 0;
+          changed = true;
+        }
+        return changed;
+      }
+      if (event == Event::End) {
+        bool changed = false;
+        if (scroll_x && *state.scroll_x != *state.max_scroll_x) {
+          *state.scroll_x = *state.max_scroll_x;
+          changed = true;
+        }
+        if (scroll_y && *state.scroll_y != *state.max_scroll_y) {
+          *state.scroll_y = *state.max_scroll_y;
+          changed = true;
+        }
+        return changed;
+      }
+    }
+
+    if (!event.is_mouse()) {
+      return false;
+    }
+
+    const Mouse& mouse = event.mouse();
+    const bool has_box =
+      reflected_box->x_max >= reflected_box->x_min &&
+      reflected_box->y_max >= reflected_box->y_min;
+    if (!has_box) {
+      return false;
+    }
+
+    const bool inside_box =
+      mouse.x >= reflected_box->x_min &&
+      mouse.x <= reflected_box->x_max &&
+      mouse.y >= reflected_box->y_min &&
+      mouse.y <= reflected_box->y_max;
+    if (!inside_box) {
+      return false;
+    }
+
+    if (mouse.button == Mouse::WheelUp) {
+      return shift_y(-3);
+    }
+    if (mouse.button == Mouse::WheelDown) {
+      return shift_y(3);
+    }
+    if (mouse.button == Mouse::WheelLeft) {
+      return shift_x(-3);
+    }
+    if (mouse.button == Mouse::WheelRight) {
+      return shift_x(3);
+    }
+
+    if ((mouse.motion == Mouse::Pressed || mouse.motion == Mouse::Moved) &&
+        mouse.button == Mouse::Left) {
+      bool changed = false;
+      if (scroll_y && *state.max_scroll_y > 0) {
+        const int slider_x = reflected_box->x_max;
+        const int slider_top = reflected_box->y_min;
+        const int slider_bottom = reflected_box->y_max - (scroll_x ? 1 : 0);
+        if (mouse.x == slider_x && mouse.y >= slider_top && mouse.y <= slider_bottom) {
+          const int slider_size = slider_bottom - slider_top + 1;
+          if (slider_size > 1) {
+            const int offset = mouse.y - slider_top;
+            const int target = (offset * *state.max_scroll_y) / (slider_size - 1);
+            if (*state.scroll_y != target) {
+              *state.scroll_y = target;
+              changed = true;
+            }
+          }
+        }
+      }
+
+      if (scroll_x && *state.max_scroll_x > 0) {
+        const int slider_y = reflected_box->y_max;
+        const int slider_left = reflected_box->x_min;
+        const int slider_right = reflected_box->x_max - (scroll_y ? 1 : 0);
+        if (mouse.y == slider_y && mouse.x >= slider_left && mouse.x <= slider_right) {
+          const int slider_size = slider_right - slider_left + 1;
+          if (slider_size > 1) {
+            const int offset = mouse.x - slider_left;
+            const int target = (offset * *state.max_scroll_x) / (slider_size - 1);
+            if (*state.scroll_x != target) {
+              *state.scroll_x = target;
+              changed = true;
+            }
+          }
+        }
+      }
+      return changed;
+    }
+
+    return false;
   });
 }
 
@@ -1544,6 +1897,8 @@ ftxui::Component build_component(
     }
 
     Component child = build_component(Rcpp::as<Rcpp::List>(node["child"]), state, handlers);
+    // Box overflow should affect the inner content viewport, not the outer border.
+    Component overflow_child = apply_node_overflow_spec(std::move(child), node);
     BorderStyle style = parse_box_style(node);
     std::optional<Color> box_color = parse_optional_color(node);
     std::optional<std::string> title = parse_optional_title(node);
@@ -1552,9 +1907,9 @@ ftxui::Component build_component(
     int margin = parse_box_margin(node);
 
     Component component = Renderer(
-        child,
-        [child, style, box_color, title, title_style, title_align, margin] {
-      Element content = child->Render() | xflex | yflex;
+        overflow_child,
+        [overflow_child, style, box_color, title, title_style, title_align, margin] {
+      Element content = overflow_child->Render() | xflex | yflex;
 
       if (title.has_value()) {
         if (title_style == "border") {
@@ -1600,7 +1955,7 @@ ftxui::Component build_component(
       return apply_margin(std::move(bordered), margin);
     });
     Component with_size = apply_node_size_spec(std::move(component), node);
-    return apply_node_overflow_spec(std::move(with_size), node);
+    return with_size;
   }
 
   // ── Text input ───────────────────────────────────────────────────────────

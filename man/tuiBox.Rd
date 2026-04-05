@@ -57,7 +57,8 @@ places the title inside the box as a header separated by a bar, or
 \item{overflowX, overflowY}{Container overflow policy for each axis.
 Use \code{"visible"} (default) to keep normal flow, \code{"clip"} to crop child
 drawing to the container box on that axis, or \code{"scroll"} to enable a
-focus-driven scrollable viewport on that axis.}
+scrollable viewport on that axis (Ctrl+Arrow, PageUp/PageDown, Home/End,
+mouse wheel, and draggable scrollbar).}
 }
 \value{
 A \code{rtuiComponent} list node of type \code{"box"}.

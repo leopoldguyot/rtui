@@ -350,4 +350,8 @@ test_that("tuiRun validates overflow argument", {
     tuiRun(app, overflow = "invalid"),
     "`overflow` must be one of"
   )
+  expect_error(
+    tuiRun(app, overflow = "invalid"),
+    "block"
+  )
 })
