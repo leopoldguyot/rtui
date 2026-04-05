@@ -75,7 +75,7 @@ tuiRun(app, overflow = "clip")  # press Escape or Ctrl+Q to quit
 | Function                                                                                                               | Description                                                                                    |
 |------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------|
 | `tuiApp(ui, server)`                                                                                                   | Define a TUI application                                                                       |
-| `tuiRun(app, overflow = "clip")`                                                                                       | Start the app (blocking), with terminal overflow policy (`"clip"` or `"scroll"`)               |
+| `tuiRun(app, overflow = "clip")`                                                                                       | Start the app (blocking), with terminal overflow policy (`"clip"`, `"scroll"`, or `"block"`)   |
 | `tuiColumn(...)`                                                                                                       | Stack components vertically                                                                    |
 | `tuiRow(...)`                                                                                                          | Place components side by side                                                                  |
 | `tuiShowIf(child, ...)`                                                                                                | Conditionally show a subtree based on terminal-size breakpoints                                |
@@ -101,7 +101,8 @@ inputs) accept optional sizing arguments: `width`, `height`,
 and
 [`tuiBox()`](https://leopoldguyot.github.io/rtui/reference/tuiBox.md)
 also accept per-axis overflow policies with `overflowX`/`overflowY`
-(`"visible"`, `"clip"`, `"scroll"`). During runtime,
+(`"visible"`, `"clip"`, `"scroll"`). Scroll containers expose in-place
+scrollbars and support keyboard/mouse scrolling. During runtime,
 `input$terminalWidth` and `input$terminalHeight` are available as
 reactive inputs so server logic can react to terminal resizing.
 

@@ -21,7 +21,10 @@ tuiRun(app, overflow = "clip")
 
   Overflow handling strategy when content exceeds terminal size. Use
   `"clip"` (default) to crop content to the visible terminal viewport,
-  or `"scroll"` to wrap the app in a global scrollable viewport.
+  or `"scroll"` to wrap the app in a global scrollable viewport. Use
+  `"block"` to temporarily block interaction and show only a warning
+  message while the terminal is smaller than the app's minimum required
+  size.
 
   This setting is global to the whole app. Per-container overflow can be
   configured independently with `overflowX` / `overflowY` on

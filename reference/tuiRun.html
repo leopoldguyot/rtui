@@ -54,7 +54,9 @@ it takes over the terminal until the user presses <code>Escape</code> or <code>C
 <dt id="arg-overflow">overflow<a class="anchor" aria-label="anchor" href="#arg-overflow"></a></dt>
 <dd><p>Overflow handling strategy when content exceeds terminal size.
 Use <code>"clip"</code> (default) to crop content to the visible terminal viewport, or
-<code>"scroll"</code> to wrap the app in a global scrollable viewport.</p>
+<code>"scroll"</code> to wrap the app in a global scrollable viewport.
+Use <code>"block"</code> to temporarily block interaction and show only a warning
+message while the terminal is smaller than the app's minimum required size.</p>
 <p>This setting is global to the whole app. Per-container overflow can be
 configured independently with <code>overflowX</code> / <code>overflowY</code> on <code><a href="tuiRow.html">tuiRow()</a></code>,
 <code><a href="tuiColumn.html">tuiColumn()</a></code>, and <code><a href="tuiBox.html">tuiBox()</a></code>.</p></dd>

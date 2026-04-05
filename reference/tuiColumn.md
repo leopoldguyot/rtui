@@ -43,8 +43,9 @@ tuiColumn(
 
   Container overflow policy for each axis. Use `"visible"` (default) to
   keep normal flow, `"clip"` to crop child drawing to the container
-  bounds on that axis, or `"scroll"` to enable a focus-driven scrollable
-  viewport on that axis.
+  bounds on that axis, or `"scroll"` to enable a scrollable viewport on
+  that axis (Ctrl+Arrow, PageUp/PageDown, Home/End, mouse wheel, and
+  draggable scrollbar).
 
 ## Value
 
