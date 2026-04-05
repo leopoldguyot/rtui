@@ -62,6 +62,8 @@ graph nodes for each input event.</p>
 <dt id="arg-server">server<a class="anchor" aria-label="anchor" href="#arg-server"></a></dt>
 <dd><p>A function called as <code>server(input, output)</code>. Both <code>input</code>
 and <code>output</code> are environments:</p><ul><li><p><code>input$&lt;id&gt;</code> is updated automatically from buttons and text inputs.</p></li>
+<li><p><code>input$terminalWidth</code> and <code>input$terminalHeight</code> are automatically
+managed read-only reactive inputs reflecting the current terminal size.</p></li>
 <li><p>assign rendered outputs with <code>output$&lt;name&gt; &lt;- tuiRenderText(...)</code> or
 <code>output$&lt;name&gt; &lt;- tuiRenderNumeric(...)</code>.</p></li>
 <li><p>use <code><a href="tuiObserve.html">tuiObserve()</a></code> / <code><a href="tuiObserveEvent.html">tuiObserveEvent()</a></code> for reactive side effects.</p></li>

@@ -18,7 +18,9 @@ tuiBox(
   minHeight = NULL,
   maxHeight = NULL,
   widthPercent = NULL,
-  heightPercent = NULL
+  heightPercent = NULL,
+  overflowX = "visible",
+  overflowY = "visible"
 )
 ```
 
@@ -77,6 +79,13 @@ tuiBox(
   and `heightPercent` by
   [`tuiColumn()`](https://leopoldguyot.github.io/rtui/reference/tuiColumn.md)
   for strict main-axis percentages.
+
+- overflowX, overflowY:
+
+  Container overflow policy for each axis. Use `"visible"` (default) to
+  keep normal flow, `"clip"` to crop child drawing to the container box
+  on that axis, or `"scroll"` to enable a focus-driven scrollable
+  viewport on that axis.
 
 ## Value
 

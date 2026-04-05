@@ -44,7 +44,9 @@
 <span>  minHeight <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  maxHeight <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  widthPercent <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  heightPercent <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  heightPercent <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  overflowX <span class="op">=</span> <span class="st">"visible"</span>,</span>
+<span>  overflowY <span class="op">=</span> <span class="st">"visible"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -68,6 +70,13 @@
 <dd><p>Optional relative size between <code>0</code> and <code>1</code>.
 <code>widthPercent</code> is interpreted by <code>tuiRow()</code> and <code>heightPercent</code> by
 <code><a href="tuiColumn.html">tuiColumn()</a></code> for strict main-axis percentages.</p></dd>
+
+
+<dt id="arg-overflowx-overflowy">overflowX, overflowY<a class="anchor" aria-label="anchor" href="#arg-overflowx-overflowy"></a></dt>
+<dd><p>Container overflow policy for each axis.
+Use <code>"visible"</code> (default) to keep normal flow, <code>"clip"</code> to crop child
+drawing to the container box on that axis, or <code>"scroll"</code> to enable a
+focus-driven scrollable viewport on that axis.</p></dd>
 
 </dl></div>
     <div class="section level2">

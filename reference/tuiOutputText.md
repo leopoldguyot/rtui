@@ -8,6 +8,7 @@ Displays the value of `output$<outputId>` as text.
 tuiOutputText(
   outputId,
   wrap = FALSE,
+  overflow = NULL,
   width = NULL,
   height = NULL,
   minHeight = NULL,
@@ -25,8 +26,16 @@ tuiOutputText(
 
 - wrap:
 
-  A single logical value. If `TRUE`, text wraps to the available width.
-  If `FALSE` (default), text keeps its original line breaks only.
+  Backward-compatible shortcut for wrapped text. If `TRUE`, this behaves
+  like `overflow = "wrap"`. If `FALSE` (default), behavior is controlled
+  by `overflow`.
+
+- overflow:
+
+  Text overflow policy. Use `"clip"` (default) to keep a single line
+  clipped to available width, `"wrap"` to wrap text to available width,
+  or `"ellipsis"` to keep one line and truncate with an ellipsis when
+  content exceeds the available width.
 
 - width, height:
 

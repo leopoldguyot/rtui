@@ -62,3 +62,6 @@
 
 - [`tuiRun()`](https://leopoldguyot.github.io/rtui/reference/tuiRun.md)
   : Run a TUI application
+
+- [`tuiShowIf()`](https://leopoldguyot.github.io/rtui/reference/tuiShowIf.md)
+  : Conditionally render a child component by terminal size

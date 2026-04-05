@@ -33,6 +33,10 @@ tuiApp(ui, server)
 
   - `input$<id>` is updated automatically from buttons and text inputs.
 
+  - `input$terminalWidth` and `input$terminalHeight` are automatically
+    managed read-only reactive inputs reflecting the current terminal
+    size.
+
   - assign rendered outputs with `output$<name> <- tuiRenderText(...)`
     or `output$<name> <- tuiRenderNumeric(...)`.
 

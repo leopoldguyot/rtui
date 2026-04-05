@@ -141,63 +141,68 @@
 <td>Place components side by side</td>
 </tr>
 <tr class="odd">
+<td><code>tuiShowIf(child, ...)</code></td>
+<td>Conditionally show a subtree based on terminal-size breakpoints</td>
+</tr>
+<tr class="even">
 <td><code>tuiBox(child, title = NULL, color = NULL, style = "rounded", titleStyle = "header", titleAlign = "left", margin = 0)</code></td>
 <td>Wrap a component in a configurable border with title/layout options</td>
 </tr>
-<tr class="even">
-<td>
-<code>tuiOutputText("id", wrap = FALSE)</code> / <code>tuiOutputNumeric("id")</code>
-</td>
-<td>Display <code>output$id</code> in the UI (<code>wrap = TRUE</code> wraps text to available width)</td>
-</tr>
 <tr class="odd">
+<td>
+<code>tuiOutputText("id", overflow = "clip")</code> / <code>tuiOutputNumeric("id")</code>
+</td>
+<td>Display <code>output$id</code> in the UI with text overflow policies (<code>"clip"</code>, <code>"wrap"</code>, <code>"ellipsis"</code>)</td>
+</tr>
+<tr class="even">
 <td><code>tuiInputButton(label, id, color = NULL)</code></td>
 <td>Button that triggers a handler (optional text color)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>tuiInputCheckbox(label, id, value = FALSE)</code></td>
 <td>Checkbox that toggles a logical <code>input$id</code> value</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>tuiInputText(id, placeholder, value, multiline = FALSE)</code></td>
 <td>One-line text input by default (<code>multiline = TRUE</code> allows newlines)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>
 <code>tuiRenderText(expr)</code> / <code>tuiRenderNumeric(expr, digits = NULL)</code>
 </td>
 <td>Build renderers assigned to <code>output$...</code>
 </td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>
 <code>tuiReactive(expr)</code> / <code>tuiReactiveVal(value)</code>
 </td>
 <td>Define graph-tracked reactive expressions and mutable values (auto invalidation of dependents)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>tuiReactiveEvent(event, expr, runAtInit = FALSE)</code></td>
 <td>Event-scoped reactive expression that re-runs when its event source invalidates</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>tuiReq(...)</code></td>
 <td>Stop current reactive/render evaluation when required values are falsy</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>tuiIsolate(expr)</code></td>
 <td>Read reactive values without registering graph dependencies</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>tuiObserve(expr)</code></td>
 <td>Register an observer that runs when its dependencies invalidate</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>tuiObserveEvent(event, expr, runAtInit = FALSE)</code></td>
 <td>Register an observer that runs only when the event source invalidates</td>
 </tr>
 </tbody>
 </table>
 <p>All exported UI builders (<code>tuiRow</code>, <code>tuiColumn</code>, <code>tuiBox</code>, outputs, and inputs) accept optional sizing arguments: <code>width</code>, <code>height</code>, <code>minHeight</code>, <code>maxHeight</code>, <code>widthPercent</code>, and <code>heightPercent</code>.</p>
+<p><code><a href="reference/tuiRow.html">tuiRow()</a></code>, <code><a href="reference/tuiColumn.html">tuiColumn()</a></code>, and <code><a href="reference/tuiBox.html">tuiBox()</a></code> also accept per-axis overflow policies with <code>overflowX</code>/<code>overflowY</code> (<code>"visible"</code>, <code>"clip"</code>, <code>"scroll"</code>). During runtime, <code>input$terminalWidth</code> and <code>input$terminalHeight</code> are available as reactive inputs so server logic can react to terminal resizing.</p>
 <p>Navigate with <strong>Tab</strong> / <strong>arrow keys</strong>, activate buttons with <strong>Enter</strong>.</p>
 </div>
 </div>

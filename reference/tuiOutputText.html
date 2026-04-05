@@ -40,6 +40,7 @@
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">tuiOutputText</span><span class="op">(</span></span>
 <span>  <span class="va">outputId</span>,</span>
 <span>  wrap <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  overflow <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  width <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  height <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  minHeight <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -58,8 +59,16 @@
 
 
 <dt id="arg-wrap">wrap<a class="anchor" aria-label="anchor" href="#arg-wrap"></a></dt>
-<dd><p>A single logical value. If <code>TRUE</code>, text wraps to the available
-width. If <code>FALSE</code> (default), text keeps its original line breaks only.</p></dd>
+<dd><p>Backward-compatible shortcut for wrapped text. If <code>TRUE</code>,
+this behaves like <code>overflow = "wrap"</code>. If <code>FALSE</code> (default), behavior is
+controlled by <code>overflow</code>.</p></dd>
+
+
+<dt id="arg-overflow">overflow<a class="anchor" aria-label="anchor" href="#arg-overflow"></a></dt>
+<dd><p>Text overflow policy. Use <code>"clip"</code> (default) to keep a
+single line clipped to available width, <code>"wrap"</code> to wrap text to available
+width, or <code>"ellipsis"</code> to keep one line and truncate with an ellipsis when
+content exceeds the available width.</p></dd>
 
 
 <dt id="arg-width-height">width, height<a class="anchor" aria-label="anchor" href="#arg-width-height"></a></dt>
