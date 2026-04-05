@@ -2,7 +2,7 @@
 % Please edit documentation in R/layout.R
 \name{tuiColumn}
 \alias{tuiColumn}
-\title{Vertical box layout}
+\title{Vertical layout container}
 \usage{
 tuiColumn(
   ...,
@@ -29,7 +29,7 @@ tuiColumn(
 
 \item{overflowX, overflowY}{Container overflow policy for each axis.
 Use \code{"visible"} (default) to keep normal flow, \code{"clip"} to crop child
-drawing to the container box on that axis, or \code{"scroll"} to enable a
+drawing to the container bounds on that axis, or \code{"scroll"} to enable a
 focus-driven scrollable viewport on that axis.}
 }
 \value{
