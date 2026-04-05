@@ -13,7 +13,7 @@ app <- tuiApp(
             minHeight = 12,
             child = tuiColumn(
                 tuiOutputNumeric("counter"),
-                tuiOutputText("message", wrap = TRUE),
+                tuiOutputText("message", overflow = "wrap"),
                 tuiOutputText("name"),
                 tuiRow(
                     tuiInputButton(
@@ -61,18 +61,22 @@ app <- tuiApp(
                 style = "light",
                 margin = 0L,
                 widthPercent = 0.5,
-                child = tuiOutputText("sizeCenterDemo", minHeight = 3)
+                child = tuiOutputText("sizeCenterDemo", overflow = "ellipsis", minHeight = 3)
             ),
-            tuiBox(
-                title = "30%",
-                titleStyle = "border",
-                titleAlign = "right",
-                color = "magenta",
-                style = "light",
-                margin = 1L,
-                widthPercent = 0.3,
-                child = tuiOutputText("sizeRightDemo", minHeight = 3)
+            tuiShowIf(
+                tuiBox(
+                    title = "30%",
+                    titleStyle = "border",
+                    titleAlign = "right",
+                    color = "magenta",
+                    style = "light",
+                    margin = 1L,
+                    widthPercent = 0.3,
+                    child = tuiOutputText("sizeRightDemo", minHeight = 3)
+                ),
+                minTerminalWidth = 90
             ),
+            overflowX = "clip",
             heightPercent = 0.35,
             minHeight = 5
         )

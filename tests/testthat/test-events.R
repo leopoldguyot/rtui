@@ -192,3 +192,35 @@ test_that("recreating app for run resets initial input defaults", {
   expect_identical(rerun$state$input$name, "John")
   expect_identical(rerun$state$output$out, "John")
 })
+
+test_that("terminal size inputs are reactive and trigger dependent outputs", {
+  app <- tuiApp(
+    ui = tuiOutputText("out"),
+    server = function(input, output) {
+      output$out <- tuiRenderText(
+        paste0(input$terminalWidth, "x", input$terminalHeight)
+      )
+    }
+  )
+
+  expect_identical(app$state$input$terminalWidth, 0L)
+  expect_identical(app$state$input$terminalHeight, 0L)
+  expect_identical(app$state$output$out, "0x0")
+
+  app <- resize_terminal_input(app, 120, 40)
+  expect_identical(app$state$input$terminalWidth, 120L)
+  expect_identical(app$state$input$terminalHeight, 40L)
+  expect_identical(app$state$output$out, "120x40")
+})
+
+test_that("terminal size input ids are reserved", {
+  expect_error(
+    tuiApp(
+      ui = tuiInputText(id = "terminalWidth"),
+      server = function(input, output) {
+        output$noop <- tuiRenderText(input$terminalWidth)
+      }
+    ),
+    "reserved runtime input ids"
+  )
+})

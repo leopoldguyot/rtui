@@ -37,6 +37,40 @@
   invisible(NULL)
 }
 
+#' Internal helper `.rtuiApplyContainerOverflowSpec`.
+#'
+#' Validates and attaches container overflow policy fields to a component node.
+#'
+#' @param component Component node list.
+#' @param overflowX Horizontal overflow policy (`"visible"`, `"clip"`, `"scroll"`).
+#' @param overflowY Vertical overflow policy (`"visible"`, `"clip"`, `"scroll"`).
+#'
+#' @return Updated component node list.
+#'
+#' @keywords internal
+#' @noRd
+.rtuiApplyContainerOverflowSpec <- function(
+    component,
+    overflowX = "visible",
+    overflowY = "visible"
+) {
+  overflowX <- .rtuiNormalizeOverflowChoice(
+    overflowX,
+    "overflowX",
+    c("visible", "clip", "scroll")
+  )
+  overflowY <- .rtuiNormalizeOverflowChoice(
+    overflowY,
+    "overflowY",
+    c("visible", "clip", "scroll")
+  )
+
+  if (!identical(overflowX, "visible")) component$overflowX <- overflowX
+  if (!identical(overflowY, "visible")) component$overflowY <- overflowY
+
+  component
+}
+
 #' Vertical box layout
 #'
 #' Stacks child components vertically.
@@ -47,6 +81,10 @@
 #' @param widthPercent,heightPercent Optional relative size between `0` and `1`.
 #'   `widthPercent` is interpreted by [tuiRow()] and `heightPercent` by
 #'   [tuiColumn()] for strict main-axis percentages.
+#' @param overflowX,overflowY Container overflow policy for each axis.
+#'   Use `"visible"` (default) to keep normal flow, `"clip"` to crop child
+#'   drawing to the container box on that axis, or `"scroll"` to enable a
+#'   focus-driven scrollable viewport on that axis.
 #'
 #' @return A `rtuiComponent` list node of type `"column"`.
 #'
@@ -58,7 +96,9 @@ tuiColumn <- function(
     minHeight = NULL,
     maxHeight = NULL,
     widthPercent = NULL,
-    heightPercent = NULL
+    heightPercent = NULL,
+    overflowX = "visible",
+    overflowY = "visible"
 ) {
   children <- list(...)
   lapply(children, function(c) {
@@ -75,6 +115,11 @@ tuiColumn <- function(
     maxHeight = maxHeight,
     widthPercent = widthPercent,
     heightPercent = heightPercent
+  )
+  component <- .rtuiApplyContainerOverflowSpec(
+    component,
+    overflowX = overflowX,
+    overflowY = overflowY
   )
 
   structure(
@@ -93,6 +138,10 @@ tuiColumn <- function(
 #' @param widthPercent,heightPercent Optional relative size between `0` and `1`.
 #'   `widthPercent` is interpreted by [tuiRow()] and `heightPercent` by
 #'   [tuiColumn()] for strict main-axis percentages.
+#' @param overflowX,overflowY Container overflow policy for each axis.
+#'   Use `"visible"` (default) to keep normal flow, `"clip"` to crop child
+#'   drawing to the container box on that axis, or `"scroll"` to enable a
+#'   focus-driven scrollable viewport on that axis.
 #'
 #' @return A `rtuiComponent` list node of type `"row"`.
 #'
@@ -104,7 +153,9 @@ tuiRow <- function(
     minHeight = NULL,
     maxHeight = NULL,
     widthPercent = NULL,
-    heightPercent = NULL
+    heightPercent = NULL,
+    overflowX = "visible",
+    overflowY = "visible"
 ) {
   children <- list(...)
   lapply(children, function(c) {
@@ -122,11 +173,70 @@ tuiRow <- function(
     widthPercent = widthPercent,
     heightPercent = heightPercent
   )
+  component <- .rtuiApplyContainerOverflowSpec(
+    component,
+    overflowX = overflowX,
+    overflowY = overflowY
+  )
 
   structure(
     component,
     class = "rtuiComponent"
   )
+}
+
+#' Conditionally render a child component by terminal size
+#'
+#' Wraps a single child component and shows it only when terminal dimensions
+#' satisfy the specified constraints. This is useful for responsive breakpoints
+#' (for example, hiding secondary panels on narrow terminals) while keeping a
+#' declarative static UI tree.
+#'
+#' Conditions are evaluated against the **current terminal size** and rechecked
+#' during rendering, so visibility updates automatically when the terminal is
+#' resized.
+#'
+#' @param child A single `rtuiComponent` to conditionally render.
+#' @param minTerminalWidth,maxTerminalWidth Optional minimum/maximum terminal
+#'   width (in terminal cells) required to show `child`.
+#' @param minTerminalHeight,maxTerminalHeight Optional minimum/maximum terminal
+#'   height (in terminal cells) required to show `child`.
+#'
+#' @return A `rtuiComponent` list node of type `"showIf"`.
+#'
+#' @export
+tuiShowIf <- function(
+    child,
+    minTerminalWidth = NULL,
+    maxTerminalWidth = NULL,
+    minTerminalHeight = NULL,
+    maxTerminalHeight = NULL
+) {
+  if (!inherits(child, "rtuiComponent")) {
+    stop("`child` must be a rtuiComponent object.")
+  }
+
+  minTerminalWidth <- .rtuiNormalizeSizeInteger(minTerminalWidth, "minTerminalWidth")
+  maxTerminalWidth <- .rtuiNormalizeSizeInteger(maxTerminalWidth, "maxTerminalWidth")
+  minTerminalHeight <- .rtuiNormalizeSizeInteger(minTerminalHeight, "minTerminalHeight")
+  maxTerminalHeight <- .rtuiNormalizeSizeInteger(maxTerminalHeight, "maxTerminalHeight")
+
+  if (!is.null(minTerminalWidth) && !is.null(maxTerminalWidth) &&
+      minTerminalWidth > maxTerminalWidth) {
+    stop("`minTerminalWidth` must be less than or equal to `maxTerminalWidth`.")
+  }
+  if (!is.null(minTerminalHeight) && !is.null(maxTerminalHeight) &&
+      minTerminalHeight > maxTerminalHeight) {
+    stop("`minTerminalHeight` must be less than or equal to `maxTerminalHeight`.")
+  }
+
+  component <- list(type = "showIf", child = child)
+  if (!is.null(minTerminalWidth)) component$minTerminalWidth <- minTerminalWidth
+  if (!is.null(maxTerminalWidth)) component$maxTerminalWidth <- maxTerminalWidth
+  if (!is.null(minTerminalHeight)) component$minTerminalHeight <- minTerminalHeight
+  if (!is.null(maxTerminalHeight)) component$maxTerminalHeight <- maxTerminalHeight
+
+  structure(component, class = "rtuiComponent")
 }
 
 #' Box layout wrapper
@@ -154,6 +264,10 @@ tuiRow <- function(
 #' @param widthPercent,heightPercent Optional relative size between `0` and `1`.
 #'   `widthPercent` is interpreted by [tuiRow()] and `heightPercent` by
 #'   [tuiColumn()] for strict main-axis percentages.
+#' @param overflowX,overflowY Container overflow policy for each axis.
+#'   Use `"visible"` (default) to keep normal flow, `"clip"` to crop child
+#'   drawing to the container box on that axis, or `"scroll"` to enable a
+#'   focus-driven scrollable viewport on that axis.
 #'
 #' @return A `rtuiComponent` list node of type `"box"`.
 #'
@@ -171,7 +285,9 @@ tuiBox <- function(
     minHeight = NULL,
     maxHeight = NULL,
     widthPercent = NULL,
-    heightPercent = NULL
+    heightPercent = NULL,
+    overflowX = "visible",
+    overflowY = "visible"
 ) {
   if (!inherits(child, "rtuiComponent")) {
     stop("`child` must be a rtuiComponent object.")
@@ -246,6 +362,11 @@ tuiBox <- function(
     maxHeight = maxHeight,
     widthPercent = widthPercent,
     heightPercent = heightPercent
+  )
+  component <- .rtuiApplyContainerOverflowSpec(
+    component,
+    overflowX = overflowX,
+    overflowY = overflowY
   )
 
   structure(component, class = "rtuiComponent")

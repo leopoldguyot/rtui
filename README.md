@@ -78,8 +78,9 @@ tuiRun(app, overflow = "clip")  # press Escape or Ctrl+Q to quit
 | `tuiRun(app, overflow = "clip")` | Start the app (blocking), with terminal overflow policy (`"clip"` or `"scroll"`) |
 | `tuiColumn(...)` | Stack components vertically |
 | `tuiRow(...)` | Place components side by side |
+| `tuiShowIf(child, ...)` | Conditionally show a subtree based on terminal-size breakpoints |
 | `tuiBox(child, title = NULL, color = NULL, style = "rounded", titleStyle = "header", titleAlign = "left", margin = 0)` | Wrap a component in a configurable border with title/layout options |
-| `tuiOutputText("id", wrap = FALSE)` / `tuiOutputNumeric("id")` | Display `output$id` in the UI (`wrap = TRUE` wraps text to available width) |
+| `tuiOutputText("id", overflow = "clip")` / `tuiOutputNumeric("id")` | Display `output$id` in the UI with text overflow policies (`"clip"`, `"wrap"`, `"ellipsis"`) |
 | `tuiInputButton(label, id, color = NULL)` | Button that triggers a handler (optional text color) |
 | `tuiInputCheckbox(label, id, value = FALSE)` | Checkbox that toggles a logical `input$id` value |
 | `tuiInputText(id, placeholder, value, multiline = FALSE)` | One-line text input by default (`multiline = TRUE` allows newlines) |
@@ -92,5 +93,7 @@ tuiRun(app, overflow = "clip")  # press Escape or Ctrl+Q to quit
 | `tuiObserveEvent(event, expr, runAtInit = FALSE)` | Register an observer that runs only when the event source invalidates |
 
 All exported UI builders (`tuiRow`, `tuiColumn`, `tuiBox`, outputs, and inputs) accept optional sizing arguments: `width`, `height`, `minHeight`, `maxHeight`, `widthPercent`, and `heightPercent`.
+
+`tuiRow()`, `tuiColumn()`, and `tuiBox()` also accept per-axis overflow policies with `overflowX`/`overflowY` (`"visible"`, `"clip"`, `"scroll"`). During runtime, `input$terminalWidth` and `input$terminalHeight` are available as reactive inputs so server logic can react to terminal resizing.
 
 Navigate with **Tab** / **arrow keys**, activate buttons with **Enter**.

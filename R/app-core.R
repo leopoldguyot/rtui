@@ -1,3 +1,7 @@
+.rtuiTerminalWidthId <- "terminalWidth"
+.rtuiTerminalHeightId <- "terminalHeight"
+.rtuiTerminalResizeHandlerId <- ".rtui_terminal_resize"
+
 #' Create a TUI application
 #'
 #' Defines a terminal UI application from a UI tree and a server function.
@@ -11,6 +15,8 @@
 #' @param server A function called as `server(input, output)`. Both `input`
 #'   and `output` are environments:
 #'   - `input$<id>` is updated automatically from buttons and text inputs.
+#'   - `input$terminalWidth` and `input$terminalHeight` are automatically
+#'     managed read-only reactive inputs reflecting the current terminal size.
 #'   - assign rendered outputs with `output$<name> <- tuiRenderText(...)` or
 #'     `output$<name> <- tuiRenderNumeric(...)`.
 #'   - use [tuiObserve()] / [tuiObserveEvent()] for reactive side effects.
@@ -44,6 +50,15 @@ tuiApp <- function(ui, server) {
     stop(
       "Component ids must be unique across buttons, text inputs, and checkboxes. Duplicates: ",
       paste(duplicatedIds, collapse = ", ")
+    )
+  }
+  reservedInputIds <- c(.rtuiTerminalWidthId, .rtuiTerminalHeightId)
+  conflictingReservedIds <- intersect(inputIds, reservedInputIds)
+  if (length(conflictingReservedIds) > 0L) {
+    stop(
+      "Component ids cannot use reserved runtime input ids: ",
+      paste(conflictingReservedIds, collapse = ", "),
+      "."
     )
   }
 
@@ -83,6 +98,23 @@ tuiApp <- function(ui, server) {
         state
       }
     })
+  }
+
+  handlers[[.rtuiTerminalResizeHandlerId]] <- function(state) {
+    runtime$currentInputState <- state$input
+    .rtuiWithRuntime(runtime, {
+      .rtuiGraphInvalidateDependents(
+        runtime,
+        .rtuiInputNodeId(.rtuiTerminalWidthId)
+      )
+      .rtuiGraphInvalidateDependents(
+        runtime,
+        .rtuiInputNodeId(.rtuiTerminalHeightId)
+      )
+      .rtuiFlushRuntime(runtime, eventId = NULL, forceAll = FALSE)
+    })
+    state$output <- runtime$currentOutputState
+    state
   }
 
   structure(
@@ -169,6 +201,7 @@ tuiApp <- function(ui, server) {
 #' @noRd
 .rtuiInitialInput <- function(meta) {
   ids <- c(meta$buttonIds, meta$textInputIds, meta$checkboxIds)
+  ids <- c(ids, .rtuiTerminalWidthId, .rtuiTerminalHeightId)
   input <- stats::setNames(vector("list", length(ids)), ids)
 
   for (id in meta$buttonIds) {
@@ -184,6 +217,9 @@ tuiApp <- function(ui, server) {
   for (id in meta$checkboxIds) {
     input[[id]] <- if (!is.null(checkboxDefaults[[id]])) isTRUE(checkboxDefaults[[id]]) else FALSE
   }
+
+  input[[.rtuiTerminalWidthId]] <- 0L
+  input[[.rtuiTerminalHeightId]] <- 0L
 
   input
 }

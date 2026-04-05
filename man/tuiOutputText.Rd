@@ -7,6 +7,7 @@
 tuiOutputText(
   outputId,
   wrap = FALSE,
+  overflow = NULL,
   width = NULL,
   height = NULL,
   minHeight = NULL,
@@ -18,8 +19,14 @@ tuiOutputText(
 \arguments{
 \item{outputId}{A single character string naming the output id.}
 
-\item{wrap}{A single logical value. If \code{TRUE}, text wraps to the available
-width. If \code{FALSE} (default), text keeps its original line breaks only.}
+\item{wrap}{Backward-compatible shortcut for wrapped text. If \code{TRUE},
+this behaves like \code{overflow = "wrap"}. If \code{FALSE} (default), behavior is
+controlled by \code{overflow}.}
+
+\item{overflow}{Text overflow policy. Use \code{"clip"} (default) to keep a
+single line clipped to available width, \code{"wrap"} to wrap text to available
+width, or \code{"ellipsis"} to keep one line and truncate with an ellipsis when
+content exceeds the available width.}
 
 \item{width, height}{Optional fixed width/height in terminal cells.}
 

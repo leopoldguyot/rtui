@@ -1,12 +1,20 @@
-test_that("tuiOutputText stores wrap flag", {
+test_that("tuiOutputText stores wrap and overflow policies", {
   default_output <- tuiOutputText("message")
   expect_null(default_output$wrap)
+  expect_null(default_output$overflow)
 
   wrapped_output <- tuiOutputText("message", wrap = TRUE)
   expect_identical(wrapped_output$wrap, TRUE)
+  expect_identical(wrapped_output$overflow, "wrap")
+
+  clipped_output <- tuiOutputText("message", overflow = "clip")
+  expect_null(clipped_output$overflow)
+
+  ellipsis_output <- tuiOutputText("message", overflow = "ellipsis")
+  expect_identical(ellipsis_output$overflow, "ellipsis")
 })
 
-test_that("tuiOutputText validates wrap argument", {
+test_that("tuiOutputText validates wrap and overflow arguments", {
   expect_error(
     tuiOutputText("message", wrap = "yes"),
     "`wrap` must be TRUE or FALSE."
@@ -14,6 +22,18 @@ test_that("tuiOutputText validates wrap argument", {
   expect_error(
     tuiOutputText("message", wrap = NA),
     "`wrap` must be TRUE or FALSE."
+  )
+  expect_error(
+    tuiOutputText("message", overflow = 1),
+    "`overflow` must be a single character string."
+  )
+  expect_error(
+    tuiOutputText("message", overflow = "invalid"),
+    "`overflow` must be one of"
+  )
+  expect_error(
+    tuiOutputText("message", wrap = TRUE, overflow = "clip"),
+    "`wrap = TRUE` requires `overflow` to be NULL or \"wrap\"."
   )
 })
 
@@ -103,7 +123,9 @@ test_that("tuiBox stores configuration and validates inputs", {
     style = "double",
     titleStyle = "border",
     titleAlign = "center",
-    margin = 1L
+    margin = 1L,
+    overflowX = "clip",
+    overflowY = "scroll"
   )
 
   expect_identical(wrapped$type, "box")
@@ -113,6 +135,8 @@ test_that("tuiBox stores configuration and validates inputs", {
   expect_identical(wrapped$titleStyle, "border")
   expect_identical(wrapped$titleAlign, "center")
   expect_identical(wrapped$margin, 1L)
+  expect_identical(wrapped$overflowX, "clip")
+  expect_identical(wrapped$overflowY, "scroll")
   expect_s3_class(wrapped$child, "rtuiComponent")
 
   default_box <- tuiBox(tuiOutputText("out"))
@@ -122,6 +146,8 @@ test_that("tuiBox stores configuration and validates inputs", {
   expect_identical(default_box$margin, 0L)
   expect_null(default_box[["title"]])
   expect_null(default_box$color)
+  expect_null(default_box$overflowX)
+  expect_null(default_box$overflowY)
 
   expect_error(
     tuiBox(child = "not-a-component"),
@@ -155,6 +181,14 @@ test_that("tuiBox stores configuration and validates inputs", {
     tuiBox(child = tuiOutputText("out"), color = "not-a-color"),
     "`color` must be one of"
   )
+  expect_error(
+    tuiBox(child = tuiOutputText("out"), overflowX = "invalid"),
+    "`overflowX` must be one of"
+  )
+  expect_error(
+    tuiBox(child = tuiOutputText("out"), overflowY = 1),
+    "`overflowY` must be a single character string."
+  )
 })
 
 test_that("size arguments are stored on components and layouts", {
@@ -180,12 +214,33 @@ test_that("size arguments are stored on components and layouts", {
     width = 40,
     minHeight = 2,
     maxHeight = 8,
-    heightPercent = 0.5
+    heightPercent = 0.5,
+    overflowX = "clip",
+    overflowY = "scroll"
   )
   expect_identical(sized_box$width, 40L)
   expect_identical(sized_box$minHeight, 2L)
   expect_identical(sized_box$maxHeight, 8L)
   expect_identical(sized_box$heightPercent, 0.5)
+  expect_identical(sized_box$overflowX, "clip")
+  expect_identical(sized_box$overflowY, "scroll")
+
+  sized_row <- tuiRow(
+    tuiOutputText("a"),
+    tuiOutputText("b"),
+    overflowX = "scroll",
+    overflowY = "clip"
+  )
+  expect_identical(sized_row$overflowX, "scroll")
+  expect_identical(sized_row$overflowY, "clip")
+
+  sized_column <- tuiColumn(
+    tuiOutputText("a"),
+    overflowX = "clip",
+    overflowY = "scroll"
+  )
+  expect_identical(sized_column$overflowX, "clip")
+  expect_identical(sized_column$overflowY, "scroll")
 })
 
 test_that("size argument validation and strict percent sums are enforced", {
@@ -205,6 +260,20 @@ test_that("size argument validation and strict percent sums are enforced", {
     tuiOutputText("out", height = 2, minHeight = 4),
     "`height` must be greater than or equal to `minHeight`."
   )
+  expect_error(
+    tuiRow(
+      tuiOutputText("a"),
+      overflowX = "invalid"
+    ),
+    "`overflowX` must be one of"
+  )
+  expect_error(
+    tuiColumn(
+      tuiOutputText("a"),
+      overflowY = NA_character_
+    ),
+    "`overflowY` must be a single character string."
+  )
 
   expect_error(
     tuiRow(
@@ -219,6 +288,48 @@ test_that("size argument validation and strict percent sums are enforced", {
       tuiOutputText("b", heightPercent = 0.4)
     ),
     "Sum of `heightPercent` values in tuiColumn\\(\\) children must be <= 1."
+  )
+})
+
+test_that("tuiShowIf stores constraints and validates inputs", {
+  visible <- tuiShowIf(
+    child = tuiOutputText("out"),
+    minTerminalWidth = 80,
+    maxTerminalWidth = 140,
+    minTerminalHeight = 24,
+    maxTerminalHeight = 60
+  )
+
+  expect_identical(visible$type, "showIf")
+  expect_s3_class(visible$child, "rtuiComponent")
+  expect_identical(visible$minTerminalWidth, 80L)
+  expect_identical(visible$maxTerminalWidth, 140L)
+  expect_identical(visible$minTerminalHeight, 24L)
+  expect_identical(visible$maxTerminalHeight, 60L)
+
+  expect_error(
+    tuiShowIf(child = "not-a-component"),
+    "`child` must be a rtuiComponent object."
+  )
+  expect_error(
+    tuiShowIf(child = tuiOutputText("out"), minTerminalWidth = -1),
+    "`minTerminalWidth` must be NULL or a single non-negative integer."
+  )
+  expect_error(
+    tuiShowIf(
+      child = tuiOutputText("out"),
+      minTerminalWidth = 120,
+      maxTerminalWidth = 100
+    ),
+    "`minTerminalWidth` must be less than or equal to `maxTerminalWidth`."
+  )
+  expect_error(
+    tuiShowIf(
+      child = tuiOutputText("out"),
+      minTerminalHeight = 50,
+      maxTerminalHeight = 40
+    ),
+    "`minTerminalHeight` must be less than or equal to `maxTerminalHeight`."
   )
 })
 

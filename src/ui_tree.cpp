@@ -7,7 +7,9 @@
 #include <ftxui/dom/node.hpp>
 #include <ftxui/dom/node_decorator.hpp>
 #include <ftxui/screen/color.hpp>
+#include <ftxui/screen/terminal.hpp>
 #include <ftxui/screen/string.hpp>
+#include <ftxui/util/autoreset.hpp>
 
 #include <algorithm>
 #include <cctype>
@@ -21,6 +23,9 @@
 using namespace ftxui;
 
 namespace {
+
+constexpr const char* kTerminalWidthId = "terminalWidth";
+constexpr const char* kTerminalHeightId = "terminalHeight";
 
 Rcpp::List get_sublist_or_empty(const Rcpp::List& values, const char* name) {
   if (values.containsElementNamed(name)) {
@@ -123,6 +128,29 @@ void increment_button_input(
 
   input_values[id] = current + 1;
   state->values["input"] = input_values;
+}
+
+int get_input_integer(
+    const std::shared_ptr<AppState>& state,
+    const std::string& id,
+    int fallback
+) {
+  Rcpp::List input_values = get_sublist_or_empty(state->values, "input");
+  if (!input_values.containsElementNamed(id.c_str())) {
+    return fallback;
+  }
+
+  SEXP val = input_values[id];
+  if (TYPEOF(val) == INTSXP && Rf_length(val) == 1 && INTEGER(val)[0] != NA_INTEGER) {
+    return INTEGER(val)[0];
+  }
+  if (TYPEOF(val) == REALSXP && Rf_length(val) == 1 && !ISNAN(REAL(val)[0])) {
+    return static_cast<int>(REAL(val)[0]);
+  }
+  if (TYPEOF(val) == LGLSXP && Rf_length(val) == 1 && LOGICAL(val)[0] != NA_LOGICAL) {
+    return LOGICAL(val)[0] == TRUE ? 1 : 0;
+  }
+  return fallback;
 }
 
 bool get_input_bool(
@@ -417,6 +445,107 @@ std::optional<double> parse_optional_percent(
   return value;
 }
 
+enum class OverflowMode {
+  Visible,
+  Clip,
+  Scroll
+};
+
+OverflowMode parse_optional_overflow_mode(
+    const Rcpp::List& node,
+    const char* field_name,
+    const char* arg_name
+) {
+  if (!node.containsElementNamed(field_name)) {
+    return OverflowMode::Visible;
+  }
+
+  SEXP candidate = node[field_name];
+  if (!is_single_string(candidate)) {
+    Rcpp::stop("`%s` must be a single character string.", arg_name);
+  }
+
+  const std::string mode = ascii_lower(Rcpp::as<std::string>(candidate));
+  if (mode == "visible") return OverflowMode::Visible;
+  if (mode == "clip") return OverflowMode::Clip;
+  if (mode == "scroll") return OverflowMode::Scroll;
+
+  Rcpp::stop(
+    "`%s` must be one of 'visible', 'clip', or 'scroll'.",
+    arg_name
+  );
+  return OverflowMode::Visible;
+}
+
+struct NodeOverflowSpec {
+  OverflowMode overflow_x = OverflowMode::Visible;
+  OverflowMode overflow_y = OverflowMode::Visible;
+
+  bool has_overflow() const {
+    return overflow_x != OverflowMode::Visible ||
+      overflow_y != OverflowMode::Visible;
+  }
+};
+
+NodeOverflowSpec parse_node_overflow_spec(const Rcpp::List& node) {
+  return NodeOverflowSpec{
+    parse_optional_overflow_mode(node, "overflowX", "overflowX"),
+    parse_optional_overflow_mode(node, "overflowY", "overflowY")
+  };
+}
+
+struct ShowIfSpec {
+  std::optional<int> min_terminal_width;
+  std::optional<int> max_terminal_width;
+  std::optional<int> min_terminal_height;
+  std::optional<int> max_terminal_height;
+
+  bool has_constraints() const {
+    return min_terminal_width.has_value() ||
+      max_terminal_width.has_value() ||
+      min_terminal_height.has_value() ||
+      max_terminal_height.has_value();
+  }
+};
+
+ShowIfSpec parse_show_if_spec(const Rcpp::List& node) {
+  ShowIfSpec spec{
+    parse_optional_non_negative_integer(
+      node,
+      "minTerminalWidth",
+      "minTerminalWidth"
+    ),
+    parse_optional_non_negative_integer(
+      node,
+      "maxTerminalWidth",
+      "maxTerminalWidth"
+    ),
+    parse_optional_non_negative_integer(
+      node,
+      "minTerminalHeight",
+      "minTerminalHeight"
+    ),
+    parse_optional_non_negative_integer(
+      node,
+      "maxTerminalHeight",
+      "maxTerminalHeight"
+    )
+  };
+
+  if (spec.min_terminal_width.has_value() &&
+      spec.max_terminal_width.has_value() &&
+      *spec.min_terminal_width > *spec.max_terminal_width) {
+    Rcpp::stop("`minTerminalWidth` must be less than or equal to `maxTerminalWidth`.");
+  }
+  if (spec.min_terminal_height.has_value() &&
+      spec.max_terminal_height.has_value() &&
+      *spec.min_terminal_height > *spec.max_terminal_height) {
+    Rcpp::stop("`minTerminalHeight` must be less than or equal to `maxTerminalHeight`.");
+  }
+
+  return spec;
+}
+
 struct NodeSizeSpec {
   std::optional<int> width;
   std::optional<int> height;
@@ -673,7 +802,7 @@ class SizeConstraintElement : public NodeDecorator {
       if (max_value.has_value()) {
         size = std::min(size, *max_value);
       }
-      return std::clamp(size, 0, available);
+      return std::max(0, size);
     };
 
     const int available_width = std::max(0, box.x_max - box.x_min + 1);
@@ -708,6 +837,158 @@ Element apply_size_constraints(Element element, const NodeSizeSpec& spec) {
   return std::make_shared<SizeConstraintElement>(std::move(element), spec);
 }
 
+class AxisClipElement : public NodeDecorator {
+ public:
+  AxisClipElement(Element child, bool clip_x, bool clip_y)
+      : NodeDecorator(std::move(child)), clip_x_(clip_x), clip_y_(clip_y) {}
+
+  void ComputeRequirement() override {
+    NodeDecorator::ComputeRequirement();
+    requirement_ = children_[0]->requirement();
+  }
+
+  void Render(Screen& screen) override {
+    Box stencil = screen.stencil;
+    if (clip_x_) {
+      stencil.x_min = std::max(stencil.x_min, box_.x_min);
+      stencil.x_max = std::min(stencil.x_max, box_.x_max);
+    }
+    if (clip_y_) {
+      stencil.y_min = std::max(stencil.y_min, box_.y_min);
+      stencil.y_max = std::min(stencil.y_max, box_.y_max);
+    }
+    const AutoReset<Box> reset(
+      &screen.stencil,
+      Box::Intersection(stencil, screen.stencil)
+    );
+    children_[0]->Render(screen);
+  }
+
+ private:
+  bool clip_x_;
+  bool clip_y_;
+};
+
+Element clip_axes(Element element, bool clip_x, bool clip_y) {
+  if (!clip_x && !clip_y) {
+    return element;
+  }
+  return std::make_shared<AxisClipElement>(
+    std::move(element),
+    clip_x,
+    clip_y
+  );
+}
+
+Element apply_overflow_constraints(Element element, const NodeOverflowSpec& spec) {
+  if (spec.overflow_x == OverflowMode::Scroll &&
+      spec.overflow_y == OverflowMode::Scroll) {
+    element = frame(std::move(element));
+  } else {
+    if (spec.overflow_x == OverflowMode::Scroll) {
+      element = xframe(std::move(element));
+    }
+    if (spec.overflow_y == OverflowMode::Scroll) {
+      element = yframe(std::move(element));
+    }
+  }
+
+  const bool clip_x = spec.overflow_x == OverflowMode::Clip;
+  const bool clip_y = spec.overflow_y == OverflowMode::Clip;
+  return clip_axes(std::move(element), clip_x, clip_y);
+}
+
+class ShowIfElement : public NodeDecorator {
+ public:
+  ShowIfElement(
+      Element child,
+      ShowIfSpec spec,
+      std::shared_ptr<AppState> state
+  )
+      : NodeDecorator(std::move(child)),
+        spec_(std::move(spec)),
+        state_(std::move(state)) {}
+
+  bool should_show() const {
+    const Dimensions terminal = Terminal::Size();
+    int width = std::max(0, terminal.dimx);
+    int height = std::max(0, terminal.dimy);
+
+    if (state_) {
+      width = std::max(
+        0,
+        get_input_integer(state_, kTerminalWidthId, width)
+      );
+      height = std::max(
+        0,
+        get_input_integer(state_, kTerminalHeightId, height)
+      );
+    }
+
+    if (spec_.min_terminal_width.has_value() && width < *spec_.min_terminal_width) {
+      return false;
+    }
+    if (spec_.max_terminal_width.has_value() && width > *spec_.max_terminal_width) {
+      return false;
+    }
+    if (spec_.min_terminal_height.has_value() && height < *spec_.min_terminal_height) {
+      return false;
+    }
+    if (spec_.max_terminal_height.has_value() && height > *spec_.max_terminal_height) {
+      return false;
+    }
+    return true;
+  }
+
+  void ComputeRequirement() override {
+    if (!should_show()) {
+      requirement_ = Requirement{};
+      return;
+    }
+
+    NodeDecorator::ComputeRequirement();
+    requirement_ = children_[0]->requirement();
+  }
+
+  void SetBox(Box box) override {
+    box_ = box;
+    if (!should_show()) {
+      Box hidden = box;
+      hidden.x_max = hidden.x_min - 1;
+      hidden.y_max = hidden.y_min - 1;
+      children_[0]->SetBox(hidden);
+      return;
+    }
+    children_[0]->SetBox(box);
+  }
+
+  void Render(Screen& screen) override {
+    if (!should_show()) {
+      return;
+    }
+    children_[0]->Render(screen);
+  }
+
+ private:
+  ShowIfSpec spec_;
+  std::shared_ptr<AppState> state_;
+};
+
+Element show_if(
+    Element element,
+    const ShowIfSpec& spec,
+    std::shared_ptr<AppState> state
+) {
+  if (!spec.has_constraints()) {
+    return element;
+  }
+  return std::make_shared<ShowIfElement>(
+    std::move(element),
+    spec,
+    std::move(state)
+  );
+}
+
 class WrappedTextElement : public NodeDecorator {
  public:
   explicit WrappedTextElement(Element child)
@@ -726,6 +1007,57 @@ class WrappedTextElement : public NodeDecorator {
 
 Element wrapped_text(Element element) {
   return std::make_shared<WrappedTextElement>(std::move(element));
+}
+
+class EllipsisTextElement : public Node {
+ public:
+  explicit EllipsisTextElement(std::string text)
+      : text_(std::move(text)) {}
+
+  void ComputeRequirement() override {
+    requirement_.min_x = 1;
+    requirement_.min_y = 1;
+    requirement_.flex_shrink_x = 1;
+  }
+
+  void Render(Screen& screen) override {
+    const int y = box_.y_min;
+    const int width = box_.x_max - box_.x_min + 1;
+    if (y > box_.y_max || width <= 0) {
+      return;
+    }
+
+    std::string line = text_;
+    const std::string::size_type newline = line.find('\n');
+    if (newline != std::string::npos) {
+      line = line.substr(0, newline);
+    }
+
+    const std::vector<std::string> glyphs = Utf8ToGlyphs(line);
+    const bool truncated = static_cast<int>(glyphs.size()) > width;
+    const int visible_glyph_count = truncated
+        ? std::max(0, width - 1)
+        : std::min(width, static_cast<int>(glyphs.size()));
+
+    int x = box_.x_min;
+    for (int i = 0; i < visible_glyph_count && x <= box_.x_max; ++i, ++x) {
+      if (glyphs[static_cast<size_t>(i)] == "\n") {
+        continue;
+      }
+      screen.PixelAt(x, y).character = glyphs[static_cast<size_t>(i)];
+    }
+
+    if (truncated && x <= box_.x_max) {
+      screen.PixelAt(x, y).character = "…";
+    }
+  }
+
+ private:
+  std::string text_;
+};
+
+Element ellipsis_text(const std::string& text) {
+  return std::make_shared<EllipsisTextElement>(text);
 }
 
 std::vector<int> allocate_axis_sizes(
@@ -1005,6 +1337,18 @@ Component apply_node_size_spec(Component component, const Rcpp::List& node) {
   });
 }
 
+Component apply_node_overflow_spec(Component component, const Rcpp::List& node) {
+  const NodeOverflowSpec spec = parse_node_overflow_spec(node);
+  if (!spec.has_overflow()) {
+    return component;
+  }
+
+  return Renderer(component, [component, spec] {
+    Element content = component->Render();
+    return apply_overflow_constraints(std::move(content), spec);
+  });
+}
+
 bool parse_optional_flag(
     const Rcpp::List& node,
     const char* field_name,
@@ -1029,6 +1373,33 @@ bool parse_input_multiline(const Rcpp::List& node) {
 
 bool parse_output_wrap(const Rcpp::List& node) {
   return parse_optional_flag(node, "wrap", "wrap");
+}
+
+enum class TextOverflowPolicy {
+  Clip,
+  Wrap,
+  Ellipsis
+};
+
+TextOverflowPolicy parse_text_overflow_policy(const Rcpp::List& node) {
+  if (!node.containsElementNamed("overflow")) {
+    return parse_output_wrap(node)
+      ? TextOverflowPolicy::Wrap
+      : TextOverflowPolicy::Clip;
+  }
+
+  SEXP candidate = node["overflow"];
+  if (!is_single_string(candidate)) {
+    Rcpp::stop("`overflow` must be a single character string.");
+  }
+
+  const std::string policy = ascii_lower(Rcpp::as<std::string>(candidate));
+  if (policy == "clip") return TextOverflowPolicy::Clip;
+  if (policy == "wrap") return TextOverflowPolicy::Wrap;
+  if (policy == "ellipsis") return TextOverflowPolicy::Ellipsis;
+
+  Rcpp::stop("`overflow` must be one of 'clip', 'wrap', or 'ellipsis'.");
+  return TextOverflowPolicy::Clip;
 }
 
 }  // namespace
@@ -1078,23 +1449,46 @@ ftxui::Component build_component(
         return strict_percent_hbox(std::move(elements), main_axis_percents);
       }
     );
-    return apply_node_size_spec(std::move(rendered), node);
+    Component with_size = apply_node_size_spec(std::move(rendered), node);
+    return apply_node_overflow_spec(std::move(with_size), node);
+  }
+
+  if (type == "showIf") {
+    if (!node.containsElementNamed("child")) {
+      Rcpp::stop("`showIf` component requires a `child` field.");
+    }
+
+    Component child = build_component(Rcpp::as<Rcpp::List>(node["child"]), state, handlers);
+    ShowIfSpec show_if_spec = parse_show_if_spec(node);
+    Component rendered = Renderer(child, [child, show_if_spec, state] {
+      Element content = child->Render();
+      return show_if(std::move(content), show_if_spec, state);
+    });
+    Component with_size = apply_node_size_spec(std::move(rendered), node);
+    return apply_node_overflow_spec(std::move(with_size), node);
   }
 
   // ── Output text / numeric (reads from state$output) ──────────────────────
 
   if (type == "outputText" || type == "outputNumeric") {
     std::string output_id = Rcpp::as<std::string>(node["outputId"]);
-    const bool wrap = type == "outputText" ? parse_output_wrap(node) : false;
-    Component component = Renderer([state, output_id, wrap] {
+    const TextOverflowPolicy overflow_policy =
+      type == "outputText"
+        ? parse_text_overflow_policy(node)
+        : TextOverflowPolicy::Clip;
+    Component component = Renderer([state, output_id, overflow_policy] {
       SEXP val = get_output_value(state, output_id);
       const std::string output_value = value_to_string(val);
-      if (wrap) {
-        return wrapped_text(paragraph(output_value));
+      if (overflow_policy == TextOverflowPolicy::Wrap) {
+        return wrapped_text(paragraph(output_value)) | xflex;
+      }
+      if (overflow_policy == TextOverflowPolicy::Ellipsis) {
+        return ellipsis_text(output_value) | xflex;
       }
       return text(output_value);
     });
-    return apply_node_size_spec(std::move(component), node);
+    Component with_size = apply_node_size_spec(std::move(component), node);
+    return apply_node_overflow_spec(std::move(with_size), node);
   }
 
   // ── Button ───────────────────────────────────────────────────────────────
@@ -1121,7 +1515,8 @@ ftxui::Component build_component(
       increment_button_input(state, id);
       run_handler_if_present(handlers, id, state);
     }, option);
-    return apply_node_size_spec(std::move(component), node);
+    Component with_size = apply_node_size_spec(std::move(component), node);
+    return apply_node_overflow_spec(std::move(with_size), node);
   }
 
   // ── Checkbox ──────────────────────────────────────────────────────────────
@@ -1137,7 +1532,8 @@ ftxui::Component build_component(
     };
 
     Component component = Checkbox(label, checked.get(), option);
-    return apply_node_size_spec(std::move(component), node);
+    Component with_size = apply_node_size_spec(std::move(component), node);
+    return apply_node_overflow_spec(std::move(with_size), node);
   }
 
   // ── Box wrapper ───────────────────────────────────────────────────────────
@@ -1203,7 +1599,8 @@ ftxui::Component build_component(
       bordered |= yflex;
       return apply_margin(std::move(bordered), margin);
     });
-    return apply_node_size_spec(std::move(component), node);
+    Component with_size = apply_node_size_spec(std::move(component), node);
+    return apply_node_overflow_spec(std::move(with_size), node);
   }
 
   // ── Text input ───────────────────────────────────────────────────────────
@@ -1224,7 +1621,8 @@ ftxui::Component build_component(
     };
 
     Component component = Input(content.get(), opts);
-    return apply_node_size_spec(std::move(component), node);
+    Component with_size = apply_node_size_spec(std::move(component), node);
+    return apply_node_overflow_spec(std::move(with_size), node);
   }
 
   // Fallback: empty renderer for unknown types

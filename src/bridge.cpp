@@ -15,6 +15,78 @@ using namespace ftxui;
 
 namespace {
 
+constexpr const char* kTerminalWidthId = "terminalWidth";
+constexpr const char* kTerminalHeightId = "terminalHeight";
+constexpr const char* kTerminalResizeHandlerId = ".rtui_terminal_resize";
+
+Rcpp::List get_sublist_or_empty(const Rcpp::List& values, const char* name) {
+  if (values.containsElementNamed(name)) {
+    SEXP candidate = values[name];
+    if (TYPEOF(candidate) == VECSXP) {
+      return Rcpp::as<Rcpp::List>(candidate);
+    }
+  }
+  return Rcpp::List::create();
+}
+
+int get_input_integer(const Rcpp::List& input_values, const char* id, int fallback) {
+  if (!input_values.containsElementNamed(id)) {
+    return fallback;
+  }
+
+  SEXP value = input_values[id];
+  if (TYPEOF(value) == INTSXP && Rf_length(value) == 1 && INTEGER(value)[0] != NA_INTEGER) {
+    return INTEGER(value)[0];
+  }
+  if (TYPEOF(value) == REALSXP && Rf_length(value) == 1 && !ISNAN(REAL(value)[0])) {
+    return static_cast<int>(REAL(value)[0]);
+  }
+  return fallback;
+}
+
+void run_handler_if_present(
+    const Rcpp::List& handlers,
+    const char* id,
+    const std::shared_ptr<AppState>& state
+) {
+  if (!handlers.containsElementNamed(id)) {
+    return;
+  }
+
+  Rcpp::Function fn = handlers[id];
+  Rcpp::List new_state = fn(state->values);
+  state->values = new_state;
+}
+
+bool sync_terminal_size(
+    const std::shared_ptr<AppState>& state,
+    const Rcpp::List& handlers,
+    bool force = false
+) {
+  Dimensions terminal = Terminal::Size();
+  if (auto* active = ScreenInteractive::Active()) {
+    if (active->dimx() > 0 && active->dimy() > 0) {
+      terminal = Dimensions{active->dimx(), active->dimy()};
+    }
+  }
+  const int width = std::max(0, terminal.dimx);
+  const int height = std::max(0, terminal.dimy);
+
+  Rcpp::List input_values = get_sublist_or_empty(state->values, "input");
+  const int previous_width = get_input_integer(input_values, kTerminalWidthId, -1);
+  const int previous_height = get_input_integer(input_values, kTerminalHeightId, -1);
+  const bool changed = force || previous_width != width || previous_height != height;
+  if (!changed) {
+    return false;
+  }
+
+  input_values[kTerminalWidthId] = width;
+  input_values[kTerminalHeightId] = height;
+  state->values["input"] = input_values;
+  run_handler_if_present(handlers, kTerminalResizeHandlerId, state);
+  return true;
+}
+
 class OffsetFrame : public NodeDecorator {
  public:
   OffsetFrame(
@@ -111,9 +183,14 @@ void runTuiApp(
   // Shared state — all component lambdas capture this by shared_ptr.
   auto state = std::make_shared<AppState>();
   state->values = stateList;
+  sync_terminal_size(state, handlers, true);
 
   // Build the FTXUI component tree from the R UI list tree.
   Component root = build_component(uiList, state, handlers);
+  root = Renderer(root, [root, state, handlers] {
+    sync_terminal_size(state, handlers, false);
+    return root->Render();
+  });
   auto scroll_x = std::make_shared<int>(0);
   auto scroll_y = std::make_shared<int>(0);
   auto max_scroll_x = std::make_shared<int>(0);
@@ -169,7 +246,9 @@ void runTuiApp(
 
   Component app = CatchEvent(
     root,
-    [&screen, overflow, scroll_x, scroll_y, max_scroll_x, max_scroll_y](Event event) -> bool {
+    [&screen, overflow, scroll_x, scroll_y, max_scroll_x, max_scroll_y, state, handlers](Event event) -> bool {
+    sync_terminal_size(state, handlers, false);
+
     if (overflow == "scroll") {
       if (event == Event::ArrowUpCtrl) {
         *scroll_y -= 1;

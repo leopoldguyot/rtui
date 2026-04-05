@@ -11,7 +11,11 @@ tuiRun(app, overflow = "clip")
 
 \item{overflow}{Overflow handling strategy when content exceeds terminal size.
 Use \code{"clip"} (default) to crop content to the visible terminal viewport, or
-\code{"scroll"} to wrap the app in a global scrollable viewport.}
+\code{"scroll"} to wrap the app in a global scrollable viewport.
+
+This setting is global to the whole app. Per-container overflow can be
+configured independently with \code{overflowX} / \code{overflowY} on \code{\link[=tuiRow]{tuiRow()}},
+\code{\link[=tuiColumn]{tuiColumn()}}, and \code{\link[=tuiBox]{tuiBox()}}.}
 }
 \value{
 Invisibly returns \code{NULL}.

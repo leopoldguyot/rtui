@@ -8,6 +8,10 @@
 #'   Use `"clip"` (default) to crop content to the visible terminal viewport, or
 #'   `"scroll"` to wrap the app in a global scrollable viewport.
 #'
+#'   This setting is global to the whole app. Per-container overflow can be
+#'   configured independently with `overflowX` / `overflowY` on [tuiRow()],
+#'   [tuiColumn()], and [tuiBox()].
+#'
 #' @return Invisibly returns `NULL`.
 #'
 #' @export

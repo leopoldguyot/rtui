@@ -3,8 +3,13 @@
 #' Displays the value of `output$<outputId>` as text.
 #'
 #' @param outputId A single character string naming the output id.
-#' @param wrap A single logical value. If `TRUE`, text wraps to the available
-#'   width. If `FALSE` (default), text keeps its original line breaks only.
+#' @param wrap Backward-compatible shortcut for wrapped text. If `TRUE`,
+#'   this behaves like `overflow = "wrap"`. If `FALSE` (default), behavior is
+#'   controlled by `overflow`.
+#' @param overflow Text overflow policy. Use `"clip"` (default) to keep a
+#'   single line clipped to available width, `"wrap"` to wrap text to available
+#'   width, or `"ellipsis"` to keep one line and truncate with an ellipsis when
+#'   content exceeds the available width.
 #' @param width,height Optional fixed width/height in terminal cells.
 #' @param minHeight,maxHeight Optional min/max height in terminal cells.
 #' @param widthPercent,heightPercent Optional relative size between `0` and `1`.
@@ -17,6 +22,7 @@
 tuiOutputText <- function(
     outputId,
     wrap = FALSE,
+    overflow = NULL,
     width = NULL,
     height = NULL,
     minHeight = NULL,
@@ -28,10 +34,27 @@ tuiOutputText <- function(
     stop("`outputId` must be a single character string.")
   if (!is.logical(wrap) || length(wrap) != 1L || is.na(wrap))
     stop("`wrap` must be TRUE or FALSE.")
+  overflow <- .rtuiNormalizeOverflowChoice(
+    overflow,
+    "overflow",
+    c("clip", "wrap", "ellipsis"),
+    allowNull = TRUE
+  )
+  if (!is.null(overflow) && isTRUE(wrap) && !identical(overflow, "wrap")) {
+    stop("`wrap = TRUE` requires `overflow` to be NULL or \"wrap\".")
+  }
+  effectiveOverflow <- if (is.null(overflow)) {
+    if (isTRUE(wrap)) "wrap" else "clip"
+  } else {
+    overflow
+  }
 
   component <- list(type = "outputText", outputId = outputId)
   if (isTRUE(wrap)) {
     component$wrap <- TRUE
+  }
+  if (!identical(effectiveOverflow, "clip")) {
+    component$overflow <- effectiveOverflow
   }
   component <- .rtuiApplySizeSpec(
     component,
@@ -190,6 +213,50 @@ tuiOutputNumeric <- function(
   }
 
   as.numeric(value)
+}
+
+#' Internal helper `.rtuiNormalizeOverflowChoice`.
+#'
+#' Validates and normalizes overflow policy arguments.
+#'
+#' @param value Optional overflow policy value.
+#' @param arg Argument name (for error messages).
+#' @param allowed Character vector of allowed values.
+#' @param allowNull Whether `NULL` is accepted.
+#'
+#' @return `NULL` or a normalized lowercase overflow policy.
+#'
+#' @keywords internal
+#' @noRd
+.rtuiNormalizeOverflowChoice <- function(
+    value,
+    arg,
+    allowed,
+    allowNull = FALSE
+) {
+  if (is.null(value)) {
+    if (isTRUE(allowNull)) {
+      return(NULL)
+    }
+    stop("`", arg, "` must be a single character string.")
+  }
+
+  if (!is.character(value) || length(value) != 1L || is.na(value)) {
+    stop("`", arg, "` must be a single character string.")
+  }
+
+  normalized <- tolower(trimws(value))
+  if (nchar(normalized) == 0L || !normalized %in% allowed) {
+    stop(
+      "`",
+      arg,
+      "` must be one of ",
+      paste(shQuote(allowed), collapse = ", "),
+      "."
+    )
+  }
+
+  normalized
 }
 
 #' Internal helper `.rtuiApplySizeSpec`.

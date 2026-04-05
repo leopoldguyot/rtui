@@ -15,6 +15,8 @@ tuiApp(ui, server)
 and \code{output} are environments:
 \itemize{
 \item \verb{input$<id>} is updated automatically from buttons and text inputs.
+\item \code{input$terminalWidth} and \code{input$terminalHeight} are automatically
+managed read-only reactive inputs reflecting the current terminal size.
 \item assign rendered outputs with \verb{output$<name> <- tuiRenderText(...)} or
 \verb{output$<name> <- tuiRenderNumeric(...)}.
 \item use \code{\link[=tuiObserve]{tuiObserve()}} / \code{\link[=tuiObserveEvent]{tuiObserveEvent()}} for reactive side effects.

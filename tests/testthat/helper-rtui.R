@@ -15,3 +15,10 @@ toggle_checkbox_input <- function(app, id) {
   app$state <- app$handlers[[id]](app$state)
   app
 }
+
+resize_terminal_input <- function(app, width, height) {
+  app$state$input$terminalWidth <- as.integer(width)
+  app$state$input$terminalHeight <- as.integer(height)
+  app$state <- app$handlers[[".rtui_terminal_resize"]](app$state)
+  app
+}

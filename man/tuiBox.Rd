@@ -17,7 +17,9 @@ tuiBox(
   minHeight = NULL,
   maxHeight = NULL,
   widthPercent = NULL,
-  heightPercent = NULL
+  heightPercent = NULL,
+  overflowX = "visible",
+  overflowY = "visible"
 )
 }
 \arguments{
@@ -51,6 +53,11 @@ places the title inside the box as a header separated by a bar, or
 \item{widthPercent, heightPercent}{Optional relative size between \code{0} and \code{1}.
 \code{widthPercent} is interpreted by \code{\link[=tuiRow]{tuiRow()}} and \code{heightPercent} by
 \code{\link[=tuiColumn]{tuiColumn()}} for strict main-axis percentages.}
+
+\item{overflowX, overflowY}{Container overflow policy for each axis.
+Use \code{"visible"} (default) to keep normal flow, \code{"clip"} to crop child
+drawing to the container box on that axis, or \code{"scroll"} to enable a
+focus-driven scrollable viewport on that axis.}
 }
 \value{
 A \code{rtuiComponent} list node of type \code{"box"}.
