@@ -1,4 +1,4 @@
-# Vertical box layout
+# Vertical layout container
 
 Stacks child components vertically.
 
@@ -42,8 +42,8 @@ tuiColumn(
 - overflowX, overflowY:
 
   Container overflow policy for each axis. Use `"visible"` (default) to
-  keep normal flow, `"clip"` to crop child drawing to the container box
-  on that axis, or `"scroll"` to enable a focus-driven scrollable
+  keep normal flow, `"clip"` to crop child drawing to the container
+  bounds on that axis, or `"scroll"` to enable a focus-driven scrollable
   viewport on that axis.
 
 ## Value

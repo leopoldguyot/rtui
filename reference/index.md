@@ -9,7 +9,7 @@
   : Box layout wrapper
 
 - [`tuiColumn()`](https://leopoldguyot.github.io/rtui/reference/tuiColumn.md)
-  : Vertical box layout
+  : Vertical layout container
 
 - [`tuiInputButton()`](https://leopoldguyot.github.io/rtui/reference/tuiInputButton.md)
   : Button input component
@@ -58,7 +58,7 @@
   : Require values to be available/truthy in reactive code
 
 - [`tuiRow()`](https://leopoldguyot.github.io/rtui/reference/tuiRow.md)
-  : Horizontal box layout
+  : Horizontal layout container
 
 - [`tuiRun()`](https://leopoldguyot.github.io/rtui/reference/tuiRun.md)
   : Run a TUI application
