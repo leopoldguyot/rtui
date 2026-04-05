@@ -7,6 +7,7 @@ Displays the value of `output$<outputId>` as text.
 ``` r
 tuiOutputText(
   outputId,
+  wrap = FALSE,
   width = NULL,
   height = NULL,
   minHeight = NULL,
@@ -21,6 +22,11 @@ tuiOutputText(
 - outputId:
 
   A single character string naming the output id.
+
+- wrap:
+
+  A single logical value. If `TRUE`, text wraps to the available width.
+  If `FALSE` (default), text keeps its original line breaks only.
 
 - width, height:
 
