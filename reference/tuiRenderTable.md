@@ -12,7 +12,8 @@ tuiRenderTable(
   outerBorder = TRUE,
   rowBorder = FALSE,
   colBorder = TRUE,
-  headerBorder = TRUE,
+  headerRowBorder = TRUE,
+  headerColBorder = TRUE,
   borderStyle = "light",
   borderColor = NULL,
   headerBorderColor = NULL,
@@ -50,10 +51,16 @@ tuiRenderTable(
 
   Whether to draw the table outer border.
 
-- rowBorder, colBorder, headerBorder:
+- rowBorder, colBorder:
 
-  Whether to draw row separators, column separators, and the header
-  separator.
+  Whether to draw row and column separators.
+
+- headerRowBorder, headerColBorder:
+
+  Header-only separators. They are applied only when the corresponding
+  global separator is disabled: `headerRowBorder` only when
+  `rowBorder = FALSE`, and `headerColBorder` only when
+  `colBorder = FALSE`.
 
 - borderStyle:
 

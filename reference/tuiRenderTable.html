@@ -44,7 +44,8 @@
 <span>  outerBorder <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  rowBorder <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  colBorder <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  headerBorder <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  headerRowBorder <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  headerColBorder <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  borderStyle <span class="op">=</span> <span class="st">"light"</span>,</span>
 <span>  borderColor <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  headerBorderColor <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -84,9 +85,15 @@
 <dd><p>Whether to draw the table outer border.</p></dd>
 
 
-<dt id="arg-rowborder-colborder-headerborder">rowBorder, colBorder, headerBorder<a class="anchor" aria-label="anchor" href="#arg-rowborder-colborder-headerborder"></a></dt>
-<dd><p>Whether to draw row separators,
-column separators, and the header separator.</p></dd>
+<dt id="arg-rowborder-colborder">rowBorder, colBorder<a class="anchor" aria-label="anchor" href="#arg-rowborder-colborder"></a></dt>
+<dd><p>Whether to draw row and column separators.</p></dd>
+
+
+<dt id="arg-headerrowborder-headercolborder">headerRowBorder, headerColBorder<a class="anchor" aria-label="anchor" href="#arg-headerrowborder-headercolborder"></a></dt>
+<dd><p>Header-only separators. They are
+applied only when the corresponding global separator is disabled:
+<code>headerRowBorder</code> only when <code>rowBorder = FALSE</code>, and <code>headerColBorder</code>
+only when <code>colBorder = FALSE</code>.</p></dd>
 
 
 <dt id="arg-borderstyle">borderStyle<a class="anchor" aria-label="anchor" href="#arg-borderstyle"></a></dt>
