@@ -72,25 +72,25 @@ tuiRun(app, overflow = "clip")  # press Escape or Ctrl+Q to quit
 
 ## API
 
-| Function                                                                                                               | Description                                                                                    |
-|------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------|
-| `tuiApp(ui, server)`                                                                                                   | Define a TUI application                                                                       |
-| `tuiRun(app, overflow = "clip")`                                                                                       | Start the app (blocking), with terminal overflow policy (`"clip"`, `"scroll"`, or `"block"`)   |
-| `tuiColumn(...)`                                                                                                       | Stack components vertically                                                                    |
-| `tuiRow(...)`                                                                                                          | Place components side by side                                                                  |
-| `tuiShowIf(child, ...)`                                                                                                | Conditionally show a subtree based on terminal-size breakpoints                                |
-| `tuiBox(child, title = NULL, color = NULL, style = "rounded", titleStyle = "header", titleAlign = "left", margin = 0)` | Wrap a component in a configurable border with title/layout options                            |
-| `tuiOutputText("id", overflow = "clip")` / `tuiOutputNumeric("id")` / `tuiOutputTable("id")`                           | Display `output$id` in the UI as text/numeric/table output                                     |
-| `tuiInputButton(label, id, color = NULL)`                                                                              | Button that triggers a handler (optional text color)                                           |
-| `tuiInputCheckbox(label, id, value = FALSE)`                                                                           | Checkbox that toggles a logical `input$id` value                                               |
-| `tuiInputText(id, placeholder, value, multiline = FALSE)`                                                              | One-line text input by default (`multiline = TRUE` allows newlines)                            |
-| `tuiRenderText(expr)` / `tuiRenderNumeric(expr, digits = NULL)` / `tuiRenderTable(expr)`                               | Build renderers assigned to `output$...`                                                       |
-| `tuiReactive(expr)` / `tuiReactiveVal(value)`                                                                          | Define graph-tracked reactive expressions and mutable values (auto invalidation of dependents) |
-| `tuiReactiveEvent(event, expr, runAtInit = FALSE)`                                                                     | Event-scoped reactive expression that re-runs when its event source invalidates                |
-| `tuiReq(...)`                                                                                                          | Stop current reactive/render evaluation when required values are falsy                         |
-| `tuiIsolate(expr)`                                                                                                     | Read reactive values without registering graph dependencies                                    |
-| `tuiObserve(expr)`                                                                                                     | Register an observer that runs when its dependencies invalidate                                |
-| `tuiObserveEvent(event, expr, runAtInit = FALSE)`                                                                      | Register an observer that runs only when the event source invalidates                          |
+| Function                                                                                                               | Description                                                                                      |
+|------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
+| `tuiApp(ui, server)`                                                                                                   | Define a TUI application                                                                         |
+| `tuiRun(app, overflow = "clip")`                                                                                       | Start the app (blocking), with terminal overflow policy (`"clip"`, `"scroll"`, or `"block"`)     |
+| `tuiColumn(...)`                                                                                                       | Stack components vertically                                                                      |
+| `tuiRow(...)`                                                                                                          | Place components side by side                                                                    |
+| `tuiShowIf(child, ...)`                                                                                                | Conditionally show a subtree based on terminal-size breakpoints                                  |
+| `tuiBox(child, title = NULL, color = NULL, style = "rounded", titleStyle = "header", titleAlign = "left", margin = 0)` | Wrap a component in a configurable border with title/layout options                              |
+| `tuiOutputText("id", overflow = "clip")` / `tuiOutputNumeric("id")` / `tuiOutputTable("id", headerClickId = NULL)`     | Display `output$id` in the UI as text/numeric/table output (table headers can emit click events) |
+| `tuiInputButton(label, id, color = NULL)`                                                                              | Button that triggers a handler (optional text color)                                             |
+| `tuiInputCheckbox(label, id, value = FALSE)`                                                                           | Checkbox that toggles a logical `input$id` value                                                 |
+| `tuiInputText(id, placeholder, value, multiline = FALSE)`                                                              | One-line text input by default (`multiline = TRUE` allows newlines)                              |
+| `tuiRenderText(expr)` / `tuiRenderNumeric(expr, digits = NULL)` / `tuiRenderTable(expr)`                               | Build renderers assigned to `output$...`                                                         |
+| `tuiReactive(expr)` / `tuiReactiveVal(value)`                                                                          | Define graph-tracked reactive expressions and mutable values (auto invalidation of dependents)   |
+| `tuiReactiveEvent(event, expr, runAtInit = FALSE)`                                                                     | Event-scoped reactive expression that re-runs when its event source invalidates                  |
+| `tuiReq(...)`                                                                                                          | Stop current reactive/render evaluation when required values are falsy                           |
+| `tuiIsolate(expr)`                                                                                                     | Read reactive values without registering graph dependencies                                      |
+| `tuiObserve(expr)`                                                                                                     | Register an observer that runs when its dependencies invalidate                                  |
+| `tuiObserveEvent(event, expr, runAtInit = FALSE)`                                                                      | Register an observer that runs only when the event source invalidates                            |
 
 All exported UI builders (`tuiRow`, `tuiColumn`, `tuiBox`, outputs, and
 inputs) accept optional sizing arguments: `width`, `height`,
@@ -108,7 +108,11 @@ reactive inputs so server logic can react to terminal resizing.
 
 [`tuiOutputTable()`](https://leopoldguyot.github.io/rtui/reference/tuiOutputTable.md)
 defaults to `overflowX = "scroll"` and `overflowY = "scroll"` so wide or
-tall data frames stay navigable inside constrained layouts. Use
+tall data frames stay navigable inside constrained layouts. Set
+`headerClickId` on
+[`tuiOutputTable()`](https://leopoldguyot.github.io/rtui/reference/tuiOutputTable.md)
+to receive header click payloads in `input$...` (`column`,
+`columnIndex`) for behaviors like server-side sorting. Use
 [`tuiRenderTable()`](https://leopoldguyot.github.io/rtui/reference/tuiRenderTable.md)
 options (for example `rowBorder`, `colBorder`, `headerRowBorder`,
 `headerColBorder`, `borderStyle`, `columnAlign`, and `cellOverflow`) to

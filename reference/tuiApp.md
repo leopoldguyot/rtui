@@ -32,7 +32,8 @@ tuiApp(ui, server)
   A function called as `server(input, output)`. Both `input` and
   `output` are environments:
 
-  - `input$<id>` is updated automatically from buttons and text inputs.
+  - `input$<id>` is updated automatically from buttons, text inputs,
+    checkboxes, and table header click events.
 
   - `input$terminalWidth` and `input$terminalHeight` are automatically
     managed read-only reactive inputs reflecting the current terminal

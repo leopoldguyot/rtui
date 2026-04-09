@@ -11,6 +11,7 @@ tuiOutputTable(
   outputId,
   overflowX = "scroll",
   overflowY = "scroll",
+  headerClickId = NULL,
   width = NULL,
   height = NULL,
   minHeight = NULL,
@@ -31,6 +32,12 @@ tuiOutputTable(
   Overflow policy for table clipping/scrolling on each axis. Use
   `"scroll"` (default) to make wide/tall tables navigable, `"clip"` to
   crop to viewport bounds, or `"visible"` to allow overflow.
+
+- headerClickId:
+
+  Optional input id for header click events. When set, clicking a table
+  header cell updates `input$<headerClickId>` with a list containing
+  `column` (name) and `columnIndex` (1-based position).
 
 - width, height:
 

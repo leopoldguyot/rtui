@@ -150,9 +150,9 @@
 </tr>
 <tr class="odd">
 <td>
-<code>tuiOutputText("id", overflow = "clip")</code> / <code>tuiOutputNumeric("id")</code> / <code>tuiOutputTable("id")</code>
+<code>tuiOutputText("id", overflow = "clip")</code> / <code>tuiOutputNumeric("id")</code> / <code>tuiOutputTable("id", headerClickId = NULL)</code>
 </td>
-<td>Display <code>output$id</code> in the UI as text/numeric/table output</td>
+<td>Display <code>output$id</code> in the UI as text/numeric/table output (table headers can emit click events)</td>
 </tr>
 <tr class="even">
 <td><code>tuiInputButton(label, id, color = NULL)</code></td>
@@ -203,7 +203,7 @@
 </table>
 <p>All exported UI builders (<code>tuiRow</code>, <code>tuiColumn</code>, <code>tuiBox</code>, outputs, and inputs) accept optional sizing arguments: <code>width</code>, <code>height</code>, <code>minHeight</code>, <code>maxHeight</code>, <code>widthPercent</code>, and <code>heightPercent</code>.</p>
 <p><code><a href="reference/tuiRow.html">tuiRow()</a></code>, <code><a href="reference/tuiColumn.html">tuiColumn()</a></code>, and <code><a href="reference/tuiBox.html">tuiBox()</a></code> also accept per-axis overflow policies with <code>overflowX</code>/<code>overflowY</code> (<code>"visible"</code>, <code>"clip"</code>, <code>"scroll"</code>). Scroll containers expose in-place scrollbars and support keyboard/mouse scrolling. During runtime, <code>input$terminalWidth</code> and <code>input$terminalHeight</code> are available as reactive inputs so server logic can react to terminal resizing.</p>
-<p><code><a href="reference/tuiOutputTable.html">tuiOutputTable()</a></code> defaults to <code>overflowX = "scroll"</code> and <code>overflowY = "scroll"</code> so wide or tall data frames stay navigable inside constrained layouts. Use <code><a href="reference/tuiRenderTable.html">tuiRenderTable()</a></code> options (for example <code>rowBorder</code>, <code>colBorder</code>, <code>headerRowBorder</code>, <code>headerColBorder</code>, <code>borderStyle</code>, <code>columnAlign</code>, and <code>cellOverflow</code>) to control table styling server-side.</p>
+<p><code><a href="reference/tuiOutputTable.html">tuiOutputTable()</a></code> defaults to <code>overflowX = "scroll"</code> and <code>overflowY = "scroll"</code> so wide or tall data frames stay navigable inside constrained layouts. Set <code>headerClickId</code> on <code><a href="reference/tuiOutputTable.html">tuiOutputTable()</a></code> to receive header click payloads in <code>input$...</code> (<code>column</code>, <code>columnIndex</code>) for behaviors like server-side sorting. Use <code><a href="reference/tuiRenderTable.html">tuiRenderTable()</a></code> options (for example <code>rowBorder</code>, <code>colBorder</code>, <code>headerRowBorder</code>, <code>headerColBorder</code>, <code>borderStyle</code>, <code>columnAlign</code>, and <code>cellOverflow</code>) to control table styling server-side.</p>
 <p>Navigate with <strong>Tab</strong> / <strong>arrow keys</strong>, activate buttons with <strong>Enter</strong>.</p>
 </div>
 </div>
