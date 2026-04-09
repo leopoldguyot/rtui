@@ -83,7 +83,40 @@ SEXP get_output_value(
 struct SerializedTableOutput {
   std::vector<std::string> columns;
   std::vector<std::vector<std::string>> rows;
+  Rcpp::List options = Rcpp::List::create();
 };
+
+enum class TableCellOverflowPolicy {
+  Clip,
+  Wrap,
+  Ellipsis
+};
+
+struct TableRenderSpec {
+  bool show_header = true;
+  bool outer_border = true;
+  bool row_border = false;
+  bool col_border = true;
+  bool header_border = true;
+  BorderStyle border_style = LIGHT;
+  std::optional<Color> border_color;
+  std::optional<Color> header_border_color;
+  bool header_bold = true;
+  std::optional<Color> header_color;
+  std::optional<Color> header_bg_color;
+  bool zebra_rows = false;
+  std::optional<Color> zebra_color_odd;
+  std::optional<Color> zebra_color_even;
+  int cell_padding_x = 0;
+  int cell_padding_y = 0;
+  TableCellOverflowPolicy cell_overflow = TableCellOverflowPolicy::Clip;
+  std::optional<int> min_col_width;
+  std::optional<int> max_col_width;
+  std::vector<std::string> column_align;
+};
+
+Element wrapped_text(Element element);
+Element ellipsis_text(const std::string& text);
 
 std::vector<std::string> parse_string_cells(SEXP value) {
   std::vector<std::string> cells;
@@ -139,9 +172,6 @@ SerializedTableOutput parse_serialized_table_output(SEXP value) {
   }
 
   table.columns = parse_string_cells(serialized["columns"]);
-  if (table.columns.empty()) {
-    return table;
-  }
 
   SEXP rows_value = serialized["rows"];
   if (TYPEOF(rows_value) != VECSXP) {
@@ -160,27 +190,166 @@ SerializedTableOutput parse_serialized_table_output(SEXP value) {
     table.rows.push_back(std::move(row));
   }
 
+  if (serialized.containsElementNamed("options") &&
+      TYPEOF(serialized["options"]) == VECSXP) {
+    table.options = Rcpp::as<Rcpp::List>(serialized["options"]);
+  }
+
   return table;
 }
 
-Element render_serialized_table_output(SEXP value) {
-  SerializedTableOutput table_data = parse_serialized_table_output(value);
-  if (table_data.columns.empty()) {
+Element build_table_cell_element(
+    const std::string& value,
+    const TableRenderSpec& spec,
+    const std::string& align
+) {
+  Element cell;
+  if (spec.cell_overflow == TableCellOverflowPolicy::Wrap) {
+    cell = paragraph(value);
+  } else if (spec.cell_overflow == TableCellOverflowPolicy::Ellipsis) {
+    cell = ellipsis_text(value);
+  } else {
+    cell = text(value);
+  }
+
+  if (spec.min_col_width.has_value()) {
+    cell |= size(WIDTH, GREATER_THAN, *spec.min_col_width);
+  } else if (spec.cell_overflow != TableCellOverflowPolicy::Clip) {
+    // Prevent wrap/ellipsis mode from collapsing short columns to 1 character.
+    cell |= size(WIDTH, GREATER_THAN, 3);
+  }
+  if (spec.max_col_width.has_value()) {
+    cell |= size(WIDTH, LESS_THAN, *spec.max_col_width);
+  }
+
+  if (align == "right") {
+    cell = align_right(std::move(cell));
+  } else if (align == "center") {
+    cell = hcenter(std::move(cell));
+  }
+
+  if (spec.cell_padding_x > 0) {
+    const std::string pad(static_cast<size_t>(spec.cell_padding_x), ' ');
+    cell = hbox({text(pad), std::move(cell), text(pad)});
+  }
+
+  if (spec.cell_padding_y > 0) {
+    Elements rows;
+    rows.reserve(static_cast<size_t>(spec.cell_padding_y * 2 + 1));
+    for (int i = 0; i < spec.cell_padding_y; ++i) {
+      rows.push_back(text(""));
+    }
+    rows.push_back(std::move(cell));
+    for (int i = 0; i < spec.cell_padding_y; ++i) {
+      rows.push_back(text(""));
+    }
+    cell = vbox(std::move(rows));
+  }
+
+  return cell;
+}
+
+Element render_serialized_table_output(
+    const SerializedTableOutput& table_data,
+    const TableRenderSpec& spec
+) {
+  const size_t column_count = table_data.columns.size();
+  if (column_count == 0) {
     return text("");
   }
 
-  std::vector<std::vector<std::string>> rows;
-  rows.reserve(table_data.rows.size() + 1);
-  rows.push_back(table_data.columns);
-  for (const auto& row : table_data.rows) {
-    rows.push_back(row);
+  std::vector<std::vector<Element>> rows;
+  rows.reserve(table_data.rows.size() + (spec.show_header ? 1 : 0));
+
+  if (spec.show_header) {
+    std::vector<Element> header_row;
+    header_row.reserve(column_count);
+    for (size_t col = 0; col < column_count; ++col) {
+      const std::string align = col < spec.column_align.size()
+          ? spec.column_align[col]
+          : "left";
+      header_row.push_back(
+        build_table_cell_element(table_data.columns[col], spec, align)
+      );
+    }
+    rows.push_back(std::move(header_row));
+  }
+
+  for (const auto& input_row : table_data.rows) {
+    std::vector<Element> row;
+    row.reserve(column_count);
+    for (size_t col = 0; col < column_count; ++col) {
+      const std::string value = col < input_row.size() ? input_row[col] : "";
+      const std::string align = col < spec.column_align.size()
+          ? spec.column_align[col]
+          : "left";
+      row.push_back(build_table_cell_element(value, spec, align));
+    }
+    rows.push_back(std::move(row));
+  }
+
+  if (rows.empty()) {
+    return text("");
   }
 
   Table table(std::move(rows));
-  table.SelectAll().Border(LIGHT);
-  table.SelectAll().SeparatorVertical(LIGHT);
-  table.SelectRow(0).Decorate(bold);
-  table.SelectRow(0).SeparatorHorizontal(LIGHT);
+  if (spec.outer_border) {
+    table.SelectAll().Border(spec.border_style);
+  }
+  if (spec.col_border) {
+    table.SelectAll().SeparatorVertical(spec.border_style);
+  }
+  const bool has_header = spec.show_header && !table_data.columns.empty();
+  if (spec.row_border) {
+    if (has_header) {
+      const int data_rows = static_cast<int>(table_data.rows.size());
+      if (data_rows > 1) {
+        table.SelectRows(1, data_rows).SeparatorHorizontal(spec.border_style);
+      }
+    } else {
+      table.SelectAll().SeparatorHorizontal(spec.border_style);
+    }
+  }
+  if (has_header && !table_data.rows.empty() && spec.header_border) {
+    table.SelectRow(0).BorderBottom(spec.border_style);
+  }
+
+  if (spec.border_color.has_value()) {
+    table.SelectAll().Decorate(color(*spec.border_color));
+  }
+  if (has_header &&
+      spec.header_border &&
+      spec.header_border_color.has_value()) {
+    table.SelectRow(0).Decorate(color(*spec.header_border_color));
+  }
+  if (spec.border_color.has_value() || spec.header_border_color.has_value()) {
+    table.SelectAll().DecorateCells(color(Color::Default));
+  }
+
+  const int data_start_row = has_header ? 1 : 0;
+  if (spec.zebra_rows) {
+    const int total_rows = data_start_row + static_cast<int>(table_data.rows.size());
+    for (int row = data_start_row; row < total_rows; ++row) {
+      const bool odd = ((row - data_start_row) % 2) == 0;
+      if (odd && spec.zebra_color_odd.has_value()) {
+        table.SelectRow(row).DecorateCells(bgcolor(*spec.zebra_color_odd));
+      } else if (!odd && spec.zebra_color_even.has_value()) {
+        table.SelectRow(row).DecorateCells(bgcolor(*spec.zebra_color_even));
+      }
+    }
+  }
+
+  if (has_header) {
+    if (spec.header_bold) {
+      table.SelectRow(0).DecorateCells(bold);
+    }
+    if (spec.header_color.has_value()) {
+      table.SelectRow(0).DecorateCells(color(*spec.header_color));
+    }
+    if (spec.header_bg_color.has_value()) {
+      table.SelectRow(0).DecorateCells(bgcolor(*spec.header_bg_color));
+    }
+  }
 
   return table.Render() | xflex;
 }
@@ -1834,6 +2003,208 @@ bool parse_output_wrap(const Rcpp::List& node) {
   return parse_optional_flag(node, "wrap", "wrap");
 }
 
+bool parse_optional_flag_with_default(
+    const Rcpp::List& node,
+    const char* field_name,
+    const char* arg_name,
+    bool default_value
+) {
+  if (!node.containsElementNamed(field_name)) {
+    return default_value;
+  }
+  return parse_optional_flag(node, field_name, arg_name);
+}
+
+BorderStyle parse_table_border_style(const Rcpp::List& options) {
+  if (!options.containsElementNamed("borderStyle")) {
+    return LIGHT;
+  }
+
+  SEXP candidate = options["borderStyle"];
+  if (!is_single_string(candidate)) {
+    Rcpp::stop("`borderStyle` must be a single character string.");
+  }
+
+  const std::string style = ascii_lower(Rcpp::as<std::string>(candidate));
+  if (style == "light") return LIGHT;
+  if (style == "dashed") return DASHED;
+  if (style == "heavy") return HEAVY;
+  if (style == "double") return DOUBLE;
+  if (style == "rounded") return ROUNDED;
+  if (style == "empty") return EMPTY;
+
+  Rcpp::stop(
+    "`borderStyle` must be one of 'light', 'dashed', 'heavy', 'double', 'rounded', or 'empty'."
+  );
+  return LIGHT;
+}
+
+TableCellOverflowPolicy parse_table_cell_overflow(const Rcpp::List& options) {
+  if (!options.containsElementNamed("cellOverflow")) {
+    return TableCellOverflowPolicy::Clip;
+  }
+
+  SEXP candidate = options["cellOverflow"];
+  if (!is_single_string(candidate)) {
+    Rcpp::stop("`cellOverflow` must be a single character string.");
+  }
+
+  const std::string overflow = ascii_lower(Rcpp::as<std::string>(candidate));
+  if (overflow == "clip") return TableCellOverflowPolicy::Clip;
+  if (overflow == "wrap") return TableCellOverflowPolicy::Wrap;
+  if (overflow == "ellipsis") return TableCellOverflowPolicy::Ellipsis;
+
+  Rcpp::stop("`cellOverflow` must be one of 'clip', 'wrap', or 'ellipsis'.");
+  return TableCellOverflowPolicy::Clip;
+}
+
+std::vector<std::string> parse_table_column_align(
+    const Rcpp::List& options,
+    size_t column_count
+) {
+  std::vector<std::string> aligns(column_count, "left");
+  if (column_count == 0 || !options.containsElementNamed("columnAlign")) {
+    return aligns;
+  }
+
+  SEXP candidate = options["columnAlign"];
+  if (TYPEOF(candidate) != STRSXP || Rf_length(candidate) == 0) {
+    Rcpp::stop("`columnAlign` must be a non-empty character vector.");
+  }
+
+  Rcpp::CharacterVector values(candidate);
+  const int length = values.size();
+  if (length != 1 && static_cast<size_t>(length) != column_count) {
+    Rcpp::stop("`columnAlign` must have length 1 or match the number of table columns.");
+  }
+
+  auto parse_align = [](SEXP value) {
+    if (value == NA_STRING) {
+      Rcpp::stop("`columnAlign` entries cannot be NA.");
+    }
+    const std::string normalized = ascii_lower(Rcpp::as<std::string>(value));
+    if (normalized != "left" &&
+        normalized != "center" &&
+        normalized != "right") {
+      Rcpp::stop("`columnAlign` entries must be one of 'left', 'center', or 'right'.");
+    }
+    return normalized;
+  };
+
+  if (length == 1) {
+    const std::string align = parse_align(values[0]);
+    std::fill(aligns.begin(), aligns.end(), align);
+    return aligns;
+  }
+
+  for (size_t i = 0; i < column_count; ++i) {
+    aligns[i] = parse_align(values[static_cast<int>(i)]);
+  }
+  return aligns;
+}
+
+TableRenderSpec parse_output_table_render_spec(
+    const Rcpp::List& options,
+    size_t column_count
+) {
+  TableRenderSpec spec;
+  spec.show_header = parse_optional_flag_with_default(
+    options,
+    "showHeader",
+    "showHeader",
+    true
+  );
+  spec.outer_border = parse_optional_flag_with_default(
+    options,
+    "outerBorder",
+    "outerBorder",
+    true
+  );
+  spec.row_border = parse_optional_flag_with_default(
+    options,
+    "rowBorder",
+    "rowBorder",
+    false
+  );
+  spec.col_border = parse_optional_flag_with_default(
+    options,
+    "colBorder",
+    "colBorder",
+    true
+  );
+  spec.header_border = parse_optional_flag_with_default(
+    options,
+    "headerBorder",
+    "headerBorder",
+    true
+  );
+  spec.header_bold = parse_optional_flag_with_default(
+    options,
+    "headerBold",
+    "headerBold",
+    true
+  );
+  spec.zebra_rows = parse_optional_flag_with_default(
+    options,
+    "zebraRows",
+    "zebraRows",
+    false
+  );
+
+  spec.border_style = parse_table_border_style(options);
+  spec.border_color = parse_optional_color(options, "borderColor", "borderColor");
+  spec.header_border_color = parse_optional_color(
+    options,
+    "headerBorderColor",
+    "headerBorderColor"
+  );
+  spec.header_color = parse_optional_color(options, "headerColor", "headerColor");
+  spec.header_bg_color = parse_optional_color(options, "headerBgColor", "headerBgColor");
+  spec.zebra_color_odd = parse_optional_color(
+    options,
+    "zebraColorOdd",
+    "zebraColorOdd"
+  );
+  spec.zebra_color_even = parse_optional_color(
+    options,
+    "zebraColorEven",
+    "zebraColorEven"
+  );
+
+  if (auto value = parse_optional_non_negative_integer(
+      options,
+      "cellPaddingX",
+      "cellPaddingX")) {
+    spec.cell_padding_x = *value;
+  }
+  if (auto value = parse_optional_non_negative_integer(
+      options,
+      "cellPaddingY",
+      "cellPaddingY")) {
+    spec.cell_padding_y = *value;
+  }
+
+  spec.cell_overflow = parse_table_cell_overflow(options);
+  spec.min_col_width = parse_optional_non_negative_integer(
+    options,
+    "minColWidth",
+    "minColWidth"
+  );
+  spec.max_col_width = parse_optional_non_negative_integer(
+    options,
+    "maxColWidth",
+    "maxColWidth"
+  );
+  if (spec.min_col_width.has_value() &&
+      spec.max_col_width.has_value() &&
+      *spec.min_col_width > *spec.max_col_width) {
+    Rcpp::stop("`minColWidth` must be less than or equal to `maxColWidth`.");
+  }
+
+  spec.column_align = parse_table_column_align(options, column_count);
+  return spec;
+}
+
 enum class TextOverflowPolicy {
   Clip,
   Wrap,
@@ -1933,7 +2304,12 @@ ftxui::Component build_component(
     std::string output_id = Rcpp::as<std::string>(node["outputId"]);
     Component component = Renderer([state, output_id](bool) {
       SEXP val = get_output_value(state, output_id);
-      return render_serialized_table_output(val);
+      const SerializedTableOutput table_data = parse_serialized_table_output(val);
+      const TableRenderSpec spec = parse_output_table_render_spec(
+        table_data.options,
+        table_data.columns.size()
+      );
+      return render_serialized_table_output(table_data, spec);
     });
     Component with_size = apply_node_size_spec(std::move(component), node);
     return apply_node_overflow_spec(std::move(with_size), node);

@@ -65,10 +65,66 @@ test_that("tuiOutputTable stores overflow and validates inputs", {
   )
 })
 
-test_that("tuiRenderTable validates rowNames argument", {
+test_that("tuiRenderTable stores and validates table customization options", {
+  renderer <- tuiRenderTable(
+    data.frame(x = 1),
+    showRowNames = TRUE,
+    showHeader = TRUE,
+    outerBorder = TRUE,
+    rowBorder = TRUE,
+    colBorder = FALSE,
+    headerBorder = TRUE,
+    borderStyle = "double",
+    borderColor = "green",
+    headerBorderColor = "yellow",
+    headerBold = FALSE,
+    headerColor = "cyan",
+    headerBgColor = "black",
+    zebraRows = TRUE,
+    zebraColorOdd = "graydark",
+    zebraColorEven = "default",
+    cellPaddingX = 1,
+    cellPaddingY = 0,
+    cellOverflow = "ellipsis",
+    minColWidth = 4,
+    maxColWidth = 12,
+    columnAlign = c(x = "right"),
+    naText = "-"
+  )
+  expect_identical(renderer$showRowNames, TRUE)
+  expect_identical(renderer$rowBorder, TRUE)
+  expect_identical(renderer$colBorder, FALSE)
+  expect_identical(renderer$borderStyle, "double")
+  expect_identical(renderer$cellOverflow, "ellipsis")
+  expect_identical(renderer$naText, "-")
+
   expect_error(
-    tuiRenderTable(data.frame(x = 1), rowNames = "yes"),
-    "`rowNames` must be TRUE or FALSE."
+    tuiRenderTable(data.frame(x = 1), showRowNames = "yes"),
+    "`showRowNames` must be TRUE or FALSE."
+  )
+  expect_error(
+    tuiRenderTable(data.frame(x = 1), rowBorder = NA),
+    "`rowBorder` must be TRUE or FALSE."
+  )
+  expect_error(
+    tuiRenderTable(data.frame(x = 1), borderStyle = "unknown"),
+    "`borderStyle` must be one of"
+  )
+  expect_error(
+    tuiRenderTable(data.frame(x = 1), cellOverflow = "unknown"),
+    "`cellOverflow` must be one of"
+  )
+  expect_error(
+    tuiRenderTable(data.frame(x = 1), minColWidth = 8, maxColWidth = 4),
+    "`minColWidth` must be less than or equal to `maxColWidth`."
+  )
+  expect_error(
+    tuiRenderTable(data.frame(x = 1), columnAlign = 1),
+    "`columnAlign` must be NULL, a character vector, or a named list."
+  )
+  expect_error(
+    tuiRenderTable(data.frame(x = 1), naText = NA_character_),
+    "`naText` must be a single character string."
   )
 })
 

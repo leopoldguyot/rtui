@@ -49,12 +49,27 @@ test_that("tuiRenderTable stores serialized table output and updates on events",
           value = seq.int(0L, input$inc),
           label = paste0("row-", seq.int(0L, input$inc)),
           stringsAsFactors = FALSE
-        )
+        ),
+        rowBorder = TRUE,
+        colBorder = TRUE,
+        headerBorder = FALSE,
+        borderStyle = "double",
+        cellOverflow = "ellipsis",
+        minColWidth = 4,
+        maxColWidth = 20,
+        columnAlign = c("right", "left"),
+        naText = "-"
       )
     }
   )
 
   expect_identical(app$state$output$tableOut$columns, c("value", "label"))
+  expect_identical(app$state$output$tableOut$options$rowBorder, TRUE)
+  expect_identical(app$state$output$tableOut$options$colBorder, TRUE)
+  expect_identical(app$state$output$tableOut$options$headerBorder, FALSE)
+  expect_identical(app$state$output$tableOut$options$borderStyle, "double")
+  expect_identical(app$state$output$tableOut$options$cellOverflow, "ellipsis")
+  expect_identical(app$state$output$tableOut$options$columnAlign, c("right", "left"))
   expect_length(app$state$output$tableOut$rows, 1L)
   expect_identical(app$state$output$tableOut$rows[[1]], c("0", "row-0"))
 
@@ -69,7 +84,7 @@ test_that("tuiRenderTable can include row names", {
     server = function(input, output) {
       df <- data.frame(value = c(10L, 20L), stringsAsFactors = FALSE)
       rownames(df) <- c("first", "second")
-      output$tableOut <- tuiRenderTable(df, rowNames = TRUE)
+      output$tableOut <- tuiRenderTable(df, showRowNames = TRUE)
     }
   )
 

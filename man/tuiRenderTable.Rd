@@ -4,13 +4,68 @@
 \alias{tuiRenderTable}
 \title{Create a data-frame table renderer for \code{output$...}}
 \usage{
-tuiRenderTable(expr, rowNames = FALSE)
+tuiRenderTable(
+  expr,
+  showRowNames = FALSE,
+  showHeader = TRUE,
+  outerBorder = TRUE,
+  rowBorder = FALSE,
+  colBorder = TRUE,
+  headerBorder = TRUE,
+  borderStyle = "light",
+  borderColor = NULL,
+  headerBorderColor = NULL,
+  headerBold = TRUE,
+  headerColor = NULL,
+  headerBgColor = NULL,
+  zebraRows = FALSE,
+  zebraColorOdd = NULL,
+  zebraColorEven = NULL,
+  cellPaddingX = 0L,
+  cellPaddingY = 0L,
+  cellOverflow = "clip",
+  minColWidth = NULL,
+  maxColWidth = NULL,
+  columnAlign = NULL,
+  naText = "NA"
+)
 }
 \arguments{
 \item{expr}{An expression returning a data frame (or tibble).}
 
-\item{rowNames}{A single logical value. If \code{TRUE}, row names are added as
-the first column.}
+\item{showRowNames}{Whether to prepend row names as the first column.}
+
+\item{showHeader}{Whether the header row should be shown.}
+
+\item{outerBorder}{Whether to draw the table outer border.}
+
+\item{rowBorder, colBorder, headerBorder}{Whether to draw row separators,
+column separators, and the header separator.}
+
+\item{borderStyle}{Border style (\code{"light"}, \code{"dashed"}, \code{"heavy"},
+\code{"double"}, \code{"rounded"}, \code{"empty"}).}
+
+\item{borderColor, headerBorderColor}{Optional border colors.}
+
+\item{headerBold}{Whether header cells are bold.}
+
+\item{headerColor, headerBgColor}{Optional header text/background colors.}
+
+\item{zebraRows}{Whether alternating row backgrounds are enabled.}
+
+\item{zebraColorOdd, zebraColorEven}{Optional alternating row background
+colors.}
+
+\item{cellPaddingX, cellPaddingY}{Cell horizontal/vertical padding.}
+
+\item{cellOverflow}{Cell overflow policy (\code{"clip"}, \code{"wrap"}, \code{"ellipsis"}).}
+
+\item{minColWidth, maxColWidth}{Optional global min/max column width.}
+
+\item{columnAlign}{Optional per-column alignment (\code{"left"}, \code{"center"},
+\code{"right"}), as a scalar, vector, or named vector/list.}
+
+\item{naText}{Replacement text for \code{NA} values in table cells.}
 }
 \value{
 A table renderer object for assignment in \code{output$...}.
