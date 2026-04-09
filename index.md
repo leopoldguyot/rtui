@@ -108,6 +108,10 @@ reactive inputs so server logic can react to terminal resizing.
 
 [`tuiOutputTable()`](https://leopoldguyot.github.io/rtui/reference/tuiOutputTable.md)
 defaults to `overflowX = "scroll"` and `overflowY = "scroll"` so wide or
-tall data frames stay navigable inside constrained layouts.
+tall data frames stay navigable inside constrained layouts. Use
+[`tuiRenderTable()`](https://leopoldguyot.github.io/rtui/reference/tuiRenderTable.md)
+options (for example `rowBorder`, `colBorder`, `headerBorder`,
+`borderStyle`, `columnAlign`, and `cellOverflow`) to control table
+styling server-side.
 
 Navigate with **Tab** / **arrow keys**, activate buttons with **Enter**.

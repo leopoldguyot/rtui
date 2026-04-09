@@ -5,7 +5,31 @@ Create a data-frame table renderer for `output$...`
 ## Usage
 
 ``` r
-tuiRenderTable(expr, rowNames = FALSE)
+tuiRenderTable(
+  expr,
+  showRowNames = FALSE,
+  showHeader = TRUE,
+  outerBorder = TRUE,
+  rowBorder = FALSE,
+  colBorder = TRUE,
+  headerBorder = TRUE,
+  borderStyle = "light",
+  borderColor = NULL,
+  headerBorderColor = NULL,
+  headerBold = TRUE,
+  headerColor = NULL,
+  headerBgColor = NULL,
+  zebraRows = FALSE,
+  zebraColorOdd = NULL,
+  zebraColorEven = NULL,
+  cellPaddingX = 0L,
+  cellPaddingY = 0L,
+  cellOverflow = "clip",
+  minColWidth = NULL,
+  maxColWidth = NULL,
+  columnAlign = NULL,
+  naText = "NA"
+)
 ```
 
 ## Arguments
@@ -14,10 +38,68 @@ tuiRenderTable(expr, rowNames = FALSE)
 
   An expression returning a data frame (or tibble).
 
-- rowNames:
+- showRowNames:
 
-  A single logical value. If `TRUE`, row names are added as the first
-  column.
+  Whether to prepend row names as the first column.
+
+- showHeader:
+
+  Whether the header row should be shown.
+
+- outerBorder:
+
+  Whether to draw the table outer border.
+
+- rowBorder, colBorder, headerBorder:
+
+  Whether to draw row separators, column separators, and the header
+  separator.
+
+- borderStyle:
+
+  Border style (`"light"`, `"dashed"`, `"heavy"`, `"double"`,
+  `"rounded"`, `"empty"`).
+
+- borderColor, headerBorderColor:
+
+  Optional border colors.
+
+- headerBold:
+
+  Whether header cells are bold.
+
+- headerColor, headerBgColor:
+
+  Optional header text/background colors.
+
+- zebraRows:
+
+  Whether alternating row backgrounds are enabled.
+
+- zebraColorOdd, zebraColorEven:
+
+  Optional alternating row background colors.
+
+- cellPaddingX, cellPaddingY:
+
+  Cell horizontal/vertical padding.
+
+- cellOverflow:
+
+  Cell overflow policy (`"clip"`, `"wrap"`, `"ellipsis"`).
+
+- minColWidth, maxColWidth:
+
+  Optional global min/max column width.
+
+- columnAlign:
+
+  Optional per-column alignment (`"left"`, `"center"`, `"right"`), as a
+  scalar, vector, or named vector/list.
+
+- naText:
+
+  Replacement text for `NA` values in table cells.
 
 ## Value
 

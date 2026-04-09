@@ -37,7 +37,31 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">tuiRenderTable</span><span class="op">(</span><span class="va">expr</span>, rowNames <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">tuiRenderTable</span><span class="op">(</span></span>
+<span>  <span class="va">expr</span>,</span>
+<span>  showRowNames <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  showHeader <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  outerBorder <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  rowBorder <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  colBorder <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  headerBorder <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  borderStyle <span class="op">=</span> <span class="st">"light"</span>,</span>
+<span>  borderColor <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  headerBorderColor <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  headerBold <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  headerColor <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  headerBgColor <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  zebraRows <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  zebraColorOdd <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  zebraColorEven <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  cellPaddingX <span class="op">=</span> <span class="fl">0L</span>,</span>
+<span>  cellPaddingY <span class="op">=</span> <span class="fl">0L</span>,</span>
+<span>  cellOverflow <span class="op">=</span> <span class="st">"clip"</span>,</span>
+<span>  minColWidth <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  maxColWidth <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  columnAlign <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  naText <span class="op">=</span> <span class="st">"NA"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -48,9 +72,68 @@
 <dd><p>An expression returning a data frame (or tibble).</p></dd>
 
 
-<dt id="arg-rownames">rowNames<a class="anchor" aria-label="anchor" href="#arg-rownames"></a></dt>
-<dd><p>A single logical value. If <code>TRUE</code>, row names are added as
-the first column.</p></dd>
+<dt id="arg-showrownames">showRowNames<a class="anchor" aria-label="anchor" href="#arg-showrownames"></a></dt>
+<dd><p>Whether to prepend row names as the first column.</p></dd>
+
+
+<dt id="arg-showheader">showHeader<a class="anchor" aria-label="anchor" href="#arg-showheader"></a></dt>
+<dd><p>Whether the header row should be shown.</p></dd>
+
+
+<dt id="arg-outerborder">outerBorder<a class="anchor" aria-label="anchor" href="#arg-outerborder"></a></dt>
+<dd><p>Whether to draw the table outer border.</p></dd>
+
+
+<dt id="arg-rowborder-colborder-headerborder">rowBorder, colBorder, headerBorder<a class="anchor" aria-label="anchor" href="#arg-rowborder-colborder-headerborder"></a></dt>
+<dd><p>Whether to draw row separators,
+column separators, and the header separator.</p></dd>
+
+
+<dt id="arg-borderstyle">borderStyle<a class="anchor" aria-label="anchor" href="#arg-borderstyle"></a></dt>
+<dd><p>Border style (<code>"light"</code>, <code>"dashed"</code>, <code>"heavy"</code>,
+<code>"double"</code>, <code>"rounded"</code>, <code>"empty"</code>).</p></dd>
+
+
+<dt id="arg-bordercolor-headerbordercolor">borderColor, headerBorderColor<a class="anchor" aria-label="anchor" href="#arg-bordercolor-headerbordercolor"></a></dt>
+<dd><p>Optional border colors.</p></dd>
+
+
+<dt id="arg-headerbold">headerBold<a class="anchor" aria-label="anchor" href="#arg-headerbold"></a></dt>
+<dd><p>Whether header cells are bold.</p></dd>
+
+
+<dt id="arg-headercolor-headerbgcolor">headerColor, headerBgColor<a class="anchor" aria-label="anchor" href="#arg-headercolor-headerbgcolor"></a></dt>
+<dd><p>Optional header text/background colors.</p></dd>
+
+
+<dt id="arg-zebrarows">zebraRows<a class="anchor" aria-label="anchor" href="#arg-zebrarows"></a></dt>
+<dd><p>Whether alternating row backgrounds are enabled.</p></dd>
+
+
+<dt id="arg-zebracolorodd-zebracoloreven">zebraColorOdd, zebraColorEven<a class="anchor" aria-label="anchor" href="#arg-zebracolorodd-zebracoloreven"></a></dt>
+<dd><p>Optional alternating row background
+colors.</p></dd>
+
+
+<dt id="arg-cellpaddingx-cellpaddingy">cellPaddingX, cellPaddingY<a class="anchor" aria-label="anchor" href="#arg-cellpaddingx-cellpaddingy"></a></dt>
+<dd><p>Cell horizontal/vertical padding.</p></dd>
+
+
+<dt id="arg-celloverflow">cellOverflow<a class="anchor" aria-label="anchor" href="#arg-celloverflow"></a></dt>
+<dd><p>Cell overflow policy (<code>"clip"</code>, <code>"wrap"</code>, <code>"ellipsis"</code>).</p></dd>
+
+
+<dt id="arg-mincolwidth-maxcolwidth">minColWidth, maxColWidth<a class="anchor" aria-label="anchor" href="#arg-mincolwidth-maxcolwidth"></a></dt>
+<dd><p>Optional global min/max column width.</p></dd>
+
+
+<dt id="arg-columnalign">columnAlign<a class="anchor" aria-label="anchor" href="#arg-columnalign"></a></dt>
+<dd><p>Optional per-column alignment (<code>"left"</code>, <code>"center"</code>,
+<code>"right"</code>), as a scalar, vector, or named vector/list.</p></dd>
+
+
+<dt id="arg-natext">naText<a class="anchor" aria-label="anchor" href="#arg-natext"></a></dt>
+<dd><p>Replacement text for <code>NA</code> values in table cells.</p></dd>
 
 </dl></div>
     <div class="section level2">
