@@ -14,7 +14,8 @@ tuiApp(ui, server)
 \item{server}{A function called as \code{server(input, output)}. Both \code{input}
 and \code{output} are environments:
 \itemize{
-\item \verb{input$<id>} is updated automatically from buttons and text inputs.
+\item \verb{input$<id>} is updated automatically from buttons, text inputs,
+checkboxes, and table header click events.
 \item \code{input$terminalWidth} and \code{input$terminalHeight} are automatically
 managed read-only reactive inputs reflecting the current terminal size.
 \item assign rendered outputs with \verb{output$<name> <- tuiRenderText(...)} or

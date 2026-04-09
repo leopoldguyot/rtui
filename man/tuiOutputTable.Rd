@@ -8,6 +8,7 @@ tuiOutputTable(
   outputId,
   overflowX = "scroll",
   overflowY = "scroll",
+  headerClickId = NULL,
   width = NULL,
   height = NULL,
   minHeight = NULL,
@@ -22,6 +23,10 @@ tuiOutputTable(
 \item{overflowX, overflowY}{Overflow policy for table clipping/scrolling on
 each axis. Use \code{"scroll"} (default) to make wide/tall tables navigable,
 \code{"clip"} to crop to viewport bounds, or \code{"visible"} to allow overflow.}
+
+\item{headerClickId}{Optional input id for header click events. When set,
+clicking a table header cell updates \verb{input$<headerClickId>} with a list
+containing \code{column} (name) and \code{columnIndex} (1-based position).}
 
 \item{width, height}{Optional fixed width/height in terminal cells.}
 

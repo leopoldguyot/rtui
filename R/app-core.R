@@ -14,7 +14,8 @@
 #'   [tuiInputButton()], [tuiInputText()], or `tuiInputCheckbox()`.
 #' @param server A function called as `server(input, output)`. Both `input`
 #'   and `output` are environments:
-#'   - `input$<id>` is updated automatically from buttons and text inputs.
+#'   - `input$<id>` is updated automatically from buttons, text inputs,
+#'     checkboxes, and table header click events.
 #'   - `input$terminalWidth` and `input$terminalHeight` are automatically
 #'     managed read-only reactive inputs reflecting the current terminal size.
 #'   - assign rendered outputs with `output$<name> <- tuiRenderText(...)` or
@@ -45,11 +46,16 @@ tuiApp <- function(ui, server) {
   }
 
   meta <- .rtuiCollectUiMeta(ui)
-  inputIds <- c(meta$buttonIds, meta$textInputIds, meta$checkboxIds)
+  inputIds <- c(
+    meta$buttonIds,
+    meta$textInputIds,
+    meta$checkboxIds,
+    meta$tableHeaderClickIds
+  )
   duplicatedIds <- unique(inputIds[duplicated(inputIds)])
   if (length(duplicatedIds) > 0L) {
     stop(
-      "Component ids must be unique across buttons, text inputs, and checkboxes. Duplicates: ",
+      "Component ids must be unique across buttons, text inputs, checkboxes, and table header click ids. Duplicates: ",
       paste(duplicatedIds, collapse = ", ")
     )
   }
@@ -85,7 +91,12 @@ tuiApp <- function(ui, server) {
     output = runtime$currentOutputState
   )
 
-  handlerIds <- unique(c(meta$buttonIds, meta$textInputIds, meta$checkboxIds))
+  handlerIds <- unique(c(
+    meta$buttonIds,
+    meta$textInputIds,
+    meta$checkboxIds,
+    meta$tableHeaderClickIds
+  ))
   handlers <- stats::setNames(vector("list", length(handlerIds)), handlerIds)
   for (id in handlerIds) {
     handlers[[id]] <- local({
@@ -141,12 +152,16 @@ tuiApp <- function(ui, server) {
   textInputDefaults <- list()
   checkboxIds <- character()
   checkboxDefaults <- list()
+  tableHeaderClickIds <- character()
 
   walk <- function(x) {
     type <- x[["type"]]
 
     if (type %in% c("outputText", "outputNumeric", "outputTable")) {
       outputIds <<- c(outputIds, x[["outputId"]])
+    }
+    if (identical(type, "outputTable") && !is.null(x[["headerClickId"]])) {
+      tableHeaderClickIds <<- c(tableHeaderClickIds, x[["headerClickId"]])
     }
     if (identical(type, "button")) {
       buttonIds <<- c(buttonIds, x[["id"]])
@@ -179,6 +194,7 @@ tuiApp <- function(ui, server) {
 
   textInputIds <- unique(textInputIds)
   checkboxIds <- unique(checkboxIds)
+  tableHeaderClickIds <- unique(tableHeaderClickIds)
 
   list(
     outputIds = unique(outputIds),
@@ -186,7 +202,8 @@ tuiApp <- function(ui, server) {
     textInputIds = textInputIds,
     textInputDefaults = textInputDefaults[textInputIds],
     checkboxIds = checkboxIds,
-    checkboxDefaults = checkboxDefaults[checkboxIds]
+    checkboxDefaults = checkboxDefaults[checkboxIds],
+    tableHeaderClickIds = tableHeaderClickIds
   )
 }
 
@@ -201,7 +218,12 @@ tuiApp <- function(ui, server) {
 #' @keywords internal
 #' @noRd
 .rtuiInitialInput <- function(meta) {
-  ids <- c(meta$buttonIds, meta$textInputIds, meta$checkboxIds)
+  ids <- c(
+    meta$buttonIds,
+    meta$textInputIds,
+    meta$checkboxIds,
+    meta$tableHeaderClickIds
+  )
   ids <- c(ids, .rtuiTerminalWidthId, .rtuiTerminalHeightId)
   input <- stats::setNames(vector("list", length(ids)), ids)
 
@@ -217,6 +239,9 @@ tuiApp <- function(ui, server) {
   checkboxDefaults <- if (is.null(meta$checkboxDefaults)) list() else meta$checkboxDefaults
   for (id in meta$checkboxIds) {
     input[[id]] <- if (!is.null(checkboxDefaults[[id]])) isTRUE(checkboxDefaults[[id]]) else FALSE
+  }
+  for (id in meta$tableHeaderClickIds) {
+    input[id] <- list(NULL)
   }
 
   input[[.rtuiTerminalWidthId]] <- 0L

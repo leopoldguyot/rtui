@@ -80,7 +80,7 @@ tuiRun(app, overflow = "clip")  # press Escape or Ctrl+Q to quit
 | `tuiRow(...)` | Place components side by side |
 | `tuiShowIf(child, ...)` | Conditionally show a subtree based on terminal-size breakpoints |
 | `tuiBox(child, title = NULL, color = NULL, style = "rounded", titleStyle = "header", titleAlign = "left", margin = 0)` | Wrap a component in a configurable border with title/layout options |
-| `tuiOutputText("id", overflow = "clip")` / `tuiOutputNumeric("id")` / `tuiOutputTable("id")` | Display `output$id` in the UI as text/numeric/table output |
+| `tuiOutputText("id", overflow = "clip")` / `tuiOutputNumeric("id")` / `tuiOutputTable("id", headerClickId = NULL)` | Display `output$id` in the UI as text/numeric/table output (table headers can emit click events) |
 | `tuiInputButton(label, id, color = NULL)` | Button that triggers a handler (optional text color) |
 | `tuiInputCheckbox(label, id, value = FALSE)` | Checkbox that toggles a logical `input$id` value |
 | `tuiInputText(id, placeholder, value, multiline = FALSE)` | One-line text input by default (`multiline = TRUE` allows newlines) |
@@ -97,6 +97,7 @@ All exported UI builders (`tuiRow`, `tuiColumn`, `tuiBox`, outputs, and inputs) 
 `tuiRow()`, `tuiColumn()`, and `tuiBox()` also accept per-axis overflow policies with `overflowX`/`overflowY` (`"visible"`, `"clip"`, `"scroll"`). Scroll containers expose in-place scrollbars and support keyboard/mouse scrolling. During runtime, `input$terminalWidth` and `input$terminalHeight` are available as reactive inputs so server logic can react to terminal resizing.
 
 `tuiOutputTable()` defaults to `overflowX = "scroll"` and `overflowY = "scroll"` so wide or tall data frames stay navigable inside constrained layouts.
+Set `headerClickId` on `tuiOutputTable()` to receive header click payloads in `input$...` (`column`, `columnIndex`) for behaviors like server-side sorting.
 Use `tuiRenderTable()` options (for example `rowBorder`, `colBorder`, `headerRowBorder`, `headerColBorder`, `borderStyle`, `columnAlign`, and `cellOverflow`) to control table styling server-side.
 
 Navigate with **Tab** / **arrow keys**, activate buttons with **Enter**.

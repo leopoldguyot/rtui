@@ -294,3 +294,47 @@ test_that("terminal size input ids are reserved", {
     "reserved runtime input ids"
   )
 })
+
+test_that("table header click ids are registered as inputs and handlers", {
+  app <- tuiApp(
+    ui = tuiColumn(
+      tuiOutputTable("tableOut", headerClickId = "sortHeader"),
+      tuiOutputText("out")
+    ),
+    server = function(input, output) {
+      output$tableOut <- tuiRenderTable(data.frame(a = 1L, b = 2L))
+      output$out <- tuiRenderText({
+        click <- input$sortHeader
+        if (is.null(click) || is.null(click$column)) {
+          "none"
+        } else {
+          paste0(click$column, "@", click$columnIndex)
+        }
+      })
+    }
+  )
+
+  expect_true("sortHeader" %in% names(app$state$input))
+  expect_true("sortHeader" %in% names(app$handlers))
+  expect_null(app$state$input$sortHeader)
+  expect_identical(app$state$output$out, "none")
+
+  app$state$input$sortHeader <- list(column = "b", columnIndex = 2L)
+  app$state <- app$handlers[["sortHeader"]](app$state)
+  expect_identical(app$state$output$out, "b@2")
+})
+
+test_that("table header click ids participate in input id uniqueness checks", {
+  expect_error(
+    tuiApp(
+      ui = tuiColumn(
+        tuiInputButton("Sort", id = "sameId"),
+        tuiOutputTable("tableOut", headerClickId = "sameId")
+      ),
+      server = function(input, output) {
+        output$tableOut <- tuiRenderTable(data.frame(a = 1L))
+      }
+    ),
+    "table header click ids"
+  )
+})

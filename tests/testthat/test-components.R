@@ -42,14 +42,17 @@ test_that("tuiOutputTable stores overflow and validates inputs", {
   expect_identical(default_table$type, "outputTable")
   expect_identical(default_table$overflowX, "scroll")
   expect_identical(default_table$overflowY, "scroll")
+  expect_null(default_table$headerClickId)
 
   clipped_table <- tuiOutputTable(
     "tableOut2",
     overflowX = "clip",
-    overflowY = "visible"
+    overflowY = "visible",
+    headerClickId = "table_header_click"
   )
   expect_identical(clipped_table$overflowX, "clip")
   expect_identical(clipped_table$overflowY, "visible")
+  expect_identical(clipped_table$headerClickId, "table_header_click")
 
   expect_error(
     tuiOutputTable(1),
@@ -62,6 +65,14 @@ test_that("tuiOutputTable stores overflow and validates inputs", {
   expect_error(
     tuiOutputTable("tableOut", overflowY = "invalid"),
     "`overflowY` must be one of"
+  )
+  expect_error(
+    tuiOutputTable("tableOut", headerClickId = 1),
+    "`headerClickId` must be NULL or a single character string."
+  )
+  expect_error(
+    tuiOutputTable("tableOut", headerClickId = NA_character_),
+    "`headerClickId` must be NULL or a single character string."
   )
 })
 

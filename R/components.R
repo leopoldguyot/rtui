@@ -117,6 +117,9 @@ tuiOutputNumeric <- function(
 #' @param overflowX,overflowY Overflow policy for table clipping/scrolling on
 #'   each axis. Use `"scroll"` (default) to make wide/tall tables navigable,
 #'   `"clip"` to crop to viewport bounds, or `"visible"` to allow overflow.
+#' @param headerClickId Optional input id for header click events. When set,
+#'   clicking a table header cell updates `input$<headerClickId>` with a list
+#'   containing `column` (name) and `columnIndex` (1-based position).
 #' @param width,height Optional fixed width/height in terminal cells.
 #' @param minHeight,maxHeight Optional min/max height in terminal cells.
 #' @param widthPercent,heightPercent Optional relative size between `0` and `1`.
@@ -130,6 +133,7 @@ tuiOutputTable <- function(
     outputId,
     overflowX = "scroll",
     overflowY = "scroll",
+    headerClickId = NULL,
     width = NULL,
     height = NULL,
     minHeight = NULL,
@@ -139,6 +143,9 @@ tuiOutputTable <- function(
 ) {
   if (!is.character(outputId) || length(outputId) != 1L || is.na(outputId))
     stop("`outputId` must be a single character string.")
+  if (!is.null(headerClickId) &&
+      (!is.character(headerClickId) || length(headerClickId) != 1L || is.na(headerClickId)))
+    stop("`headerClickId` must be NULL or a single character string.")
   overflowX <- .rtuiNormalizeOverflowChoice(
     overflowX,
     "overflowX",
@@ -164,6 +171,9 @@ tuiOutputTable <- function(
     widthPercent = widthPercent,
     heightPercent = heightPercent
   )
+  if (!is.null(headerClickId)) {
+    component$headerClickId <- headerClickId
+  }
 
   structure(component, class = "rtuiComponent")
 }

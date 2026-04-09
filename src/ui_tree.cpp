@@ -252,7 +252,8 @@ Element build_table_cell_element(
 
 Element render_serialized_table_output(
     const SerializedTableOutput& table_data,
-    const TableRenderSpec& spec
+    const TableRenderSpec& spec,
+    std::vector<std::shared_ptr<Box>>* header_cell_boxes = nullptr
 ) {
   const size_t column_count = table_data.columns.size();
   if (column_count == 0) {
@@ -269,9 +270,18 @@ Element render_serialized_table_output(
       const std::string align = col < spec.column_align.size()
           ? spec.column_align[col]
           : "left";
-      header_row.push_back(
-        build_table_cell_element(table_data.columns[col], spec, align)
-      );
+      if (header_cell_boxes != nullptr) {
+        auto header_box = std::make_shared<Box>();
+        header_row.push_back(
+          build_table_cell_element(table_data.columns[col], spec, align) |
+          reflect(*header_box)
+        );
+        header_cell_boxes->push_back(header_box);
+      } else {
+        header_row.push_back(
+          build_table_cell_element(table_data.columns[col], spec, align)
+        );
+      }
     }
     rows.push_back(std::move(header_row));
   }
@@ -2327,15 +2337,83 @@ ftxui::Component build_component(
 
   if (type == "outputTable") {
     std::string output_id = Rcpp::as<std::string>(node["outputId"]);
-    Component component = Renderer([state, output_id](bool) {
+    std::optional<std::string> header_click_id;
+    if (node.containsElementNamed("headerClickId")) {
+      SEXP candidate = node["headerClickId"];
+      if (!Rf_isNull(candidate)) {
+        if (!is_single_string(candidate)) {
+          Rcpp::stop("`headerClickId` must be a single character string.");
+        }
+        header_click_id = Rcpp::as<std::string>(candidate);
+      }
+    }
+
+    auto header_cell_boxes = std::make_shared<std::vector<std::shared_ptr<Box>>>();
+    auto header_columns = std::make_shared<std::vector<std::string>>();
+
+    Component component = Renderer([state, output_id, header_cell_boxes, header_columns](bool) {
       SEXP val = get_output_value(state, output_id);
       const SerializedTableOutput table_data = parse_serialized_table_output(val);
       const TableRenderSpec spec = parse_output_table_render_spec(
         table_data.options,
         table_data.columns.size()
       );
-      return render_serialized_table_output(table_data, spec);
+      header_cell_boxes->clear();
+      header_columns->clear();
+      if (spec.show_header) {
+        *header_columns = table_data.columns;
+      }
+      return render_serialized_table_output(table_data, spec, header_cell_boxes.get());
     });
+
+    if (header_click_id.has_value()) {
+      const std::string click_id = *header_click_id;
+      component = CatchEvent(
+        component,
+        [state, handlers, click_id, header_cell_boxes, header_columns](Event event) {
+          if (!event.is_mouse()) {
+            return false;
+          }
+          const Mouse& mouse = event.mouse();
+          if (mouse.button != Mouse::Left || mouse.motion != Mouse::Pressed) {
+            return false;
+          }
+
+          const size_t cell_count = std::min(
+            header_cell_boxes->size(),
+            header_columns->size()
+          );
+          for (size_t i = 0; i < cell_count; ++i) {
+            const std::shared_ptr<Box>& box_ptr = (*header_cell_boxes)[i];
+            if (!box_ptr) {
+              continue;
+            }
+            const Box& box = *box_ptr;
+            if (box.x_max < box.x_min || box.y_max < box.y_min) {
+              continue;
+            }
+            if (mouse.x < box.x_min || mouse.x > box.x_max ||
+                mouse.y < box.y_min || mouse.y > box.y_max) {
+              continue;
+            }
+
+            set_input_value(
+              state,
+              click_id,
+              Rcpp::List::create(
+                Rcpp::Named("column") = (*header_columns)[i],
+                Rcpp::Named("columnIndex") = static_cast<int>(i + 1)
+              )
+            );
+            run_handler_if_present(handlers, click_id, state);
+            return true;
+          }
+
+          return false;
+        }
+      );
+    }
+
     Component with_size = apply_node_size_spec(std::move(component), node);
     return apply_node_overflow_spec(std::move(with_size), node);
   }
