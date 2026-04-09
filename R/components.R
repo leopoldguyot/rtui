@@ -108,6 +108,66 @@ tuiOutputNumeric <- function(
   structure(component, class = "rtuiComponent")
 }
 
+#' Table output component
+#'
+#' Displays the value of `output$<outputId>` as a table rendered from a data
+#' frame produced by [tuiRenderTable()].
+#'
+#' @param outputId A single character string naming the output id.
+#' @param overflowX,overflowY Overflow policy for table clipping/scrolling on
+#'   each axis. Use `"scroll"` (default) to make wide/tall tables navigable,
+#'   `"clip"` to crop to viewport bounds, or `"visible"` to allow overflow.
+#' @param width,height Optional fixed width/height in terminal cells.
+#' @param minHeight,maxHeight Optional min/max height in terminal cells.
+#' @param widthPercent,heightPercent Optional relative size between `0` and `1`.
+#'   `widthPercent` is interpreted by [tuiRow()] and `heightPercent` by
+#'   [tuiColumn()] for strict main-axis percentages.
+#'
+#' @return A `rtuiComponent` list node of type `"outputTable"`.
+#'
+#' @export
+tuiOutputTable <- function(
+    outputId,
+    overflowX = "scroll",
+    overflowY = "scroll",
+    width = NULL,
+    height = NULL,
+    minHeight = NULL,
+    maxHeight = NULL,
+    widthPercent = NULL,
+    heightPercent = NULL
+) {
+  if (!is.character(outputId) || length(outputId) != 1L || is.na(outputId))
+    stop("`outputId` must be a single character string.")
+  overflowX <- .rtuiNormalizeOverflowChoice(
+    overflowX,
+    "overflowX",
+    c("visible", "clip", "scroll")
+  )
+  overflowY <- .rtuiNormalizeOverflowChoice(
+    overflowY,
+    "overflowY",
+    c("visible", "clip", "scroll")
+  )
+
+  component <- .rtuiApplySizeSpec(
+    list(
+      type = "outputTable",
+      outputId = outputId,
+      overflowX = overflowX,
+      overflowY = overflowY
+    ),
+    width = width,
+    height = height,
+    minHeight = minHeight,
+    maxHeight = maxHeight,
+    widthPercent = widthPercent,
+    heightPercent = heightPercent
+  )
+
+  structure(component, class = "rtuiComponent")
+}
+
 #' Internal helper `.rtuiNormalizeColor`.
 #'
 #' Validates and normalizes a UI color argument.

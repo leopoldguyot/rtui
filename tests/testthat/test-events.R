@@ -37,6 +37,59 @@ test_that("tuiInputCheckbox toggles logical input state and output", {
   expect_identical(app$state$output$out, "off")
 })
 
+test_that("tuiRenderTable stores serialized table output and updates on events", {
+  app <- tuiApp(
+    ui = tuiColumn(
+      tuiInputButton("inc", id = "inc"),
+      tuiOutputTable("tableOut")
+    ),
+    server = function(input, output) {
+      output$tableOut <- tuiRenderTable(
+        data.frame(
+          value = seq.int(0L, input$inc),
+          label = paste0("row-", seq.int(0L, input$inc)),
+          stringsAsFactors = FALSE
+        )
+      )
+    }
+  )
+
+  expect_identical(app$state$output$tableOut$columns, c("value", "label"))
+  expect_length(app$state$output$tableOut$rows, 1L)
+  expect_identical(app$state$output$tableOut$rows[[1]], c("0", "row-0"))
+
+  app <- click_input(app, "inc")
+  expect_length(app$state$output$tableOut$rows, 2L)
+  expect_identical(app$state$output$tableOut$rows[[2]], c("1", "row-1"))
+})
+
+test_that("tuiRenderTable can include row names", {
+  app <- tuiApp(
+    ui = tuiOutputTable("tableOut"),
+    server = function(input, output) {
+      df <- data.frame(value = c(10L, 20L), stringsAsFactors = FALSE)
+      rownames(df) <- c("first", "second")
+      output$tableOut <- tuiRenderTable(df, rowNames = TRUE)
+    }
+  )
+
+  expect_identical(app$state$output$tableOut$columns, c("(row)", "value"))
+  expect_identical(app$state$output$tableOut$rows[[1]], c("first", "10"))
+  expect_identical(app$state$output$tableOut$rows[[2]], c("second", "20"))
+})
+
+test_that("tuiRenderTable requires data.frame output", {
+  expect_error(
+    tuiApp(
+      ui = tuiOutputTable("tableOut"),
+      server = function(input, output) {
+        output$tableOut <- tuiRenderTable("not-a-data-frame")
+      }
+    ),
+    "`tuiRenderTable\\(\\)` expression must return a data.frame."
+  )
+})
+
 test_that("tuiObserveEvent runs only for the selected input event", {
   app <- tuiApp(
     ui = tuiColumn(

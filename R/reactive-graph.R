@@ -517,6 +517,8 @@
                 renderName <- "tuiRenderText()"
               } else if (identical(definition$kind, "numeric")) {
                 renderName <- "tuiRenderNumeric()"
+              } else if (identical(definition$kind, "table")) {
+                renderName <- "tuiRenderTable()"
               }
             }
           }

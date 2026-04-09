@@ -7,6 +7,7 @@
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/dom/node.hpp>
 #include <ftxui/dom/node_decorator.hpp>
+#include <ftxui/dom/table.hpp>
 #include <ftxui/screen/color.hpp>
 #include <ftxui/screen/terminal.hpp>
 #include <ftxui/screen/string.hpp>
@@ -77,6 +78,111 @@ SEXP get_output_value(
     return output_values[output_id];
   }
   return R_NilValue;
+}
+
+struct SerializedTableOutput {
+  std::vector<std::string> columns;
+  std::vector<std::vector<std::string>> rows;
+};
+
+std::vector<std::string> parse_string_cells(SEXP value) {
+  std::vector<std::string> cells;
+  if (Rf_isNull(value) || Rf_length(value) == 0) {
+    return cells;
+  }
+
+  if (TYPEOF(value) == STRSXP) {
+    Rcpp::CharacterVector chars(value);
+    cells.reserve(chars.size());
+    for (int i = 0; i < chars.size(); ++i) {
+      if (chars[i] == NA_STRING) {
+        cells.push_back("NA");
+      } else {
+        cells.push_back(Rcpp::as<std::string>(chars[i]));
+      }
+    }
+    return cells;
+  }
+
+  if (TYPEOF(value) == VECSXP) {
+    Rcpp::List list(value);
+    cells.reserve(list.size());
+    for (int i = 0; i < list.size(); ++i) {
+      cells.push_back(value_to_string(list[i]));
+    }
+    return cells;
+  }
+
+  Rcpp::Function as_character("as.character");
+  Rcpp::CharacterVector chars = as_character(value);
+  cells.reserve(chars.size());
+  for (int i = 0; i < chars.size(); ++i) {
+    if (chars[i] == NA_STRING) {
+      cells.push_back("NA");
+    } else {
+      cells.push_back(Rcpp::as<std::string>(chars[i]));
+    }
+  }
+  return cells;
+}
+
+SerializedTableOutput parse_serialized_table_output(SEXP value) {
+  SerializedTableOutput table;
+  if (Rf_isNull(value) || TYPEOF(value) != VECSXP) {
+    return table;
+  }
+
+  Rcpp::List serialized(value);
+  if (!serialized.containsElementNamed("columns") ||
+      !serialized.containsElementNamed("rows")) {
+    return table;
+  }
+
+  table.columns = parse_string_cells(serialized["columns"]);
+  if (table.columns.empty()) {
+    return table;
+  }
+
+  SEXP rows_value = serialized["rows"];
+  if (TYPEOF(rows_value) != VECSXP) {
+    return table;
+  }
+
+  Rcpp::List rows(rows_value);
+  table.rows.reserve(rows.size());
+  for (int i = 0; i < rows.size(); ++i) {
+    std::vector<std::string> row = parse_string_cells(rows[i]);
+    if (row.size() < table.columns.size()) {
+      row.resize(table.columns.size(), "");
+    } else if (row.size() > table.columns.size()) {
+      row.resize(table.columns.size());
+    }
+    table.rows.push_back(std::move(row));
+  }
+
+  return table;
+}
+
+Element render_serialized_table_output(SEXP value) {
+  SerializedTableOutput table_data = parse_serialized_table_output(value);
+  if (table_data.columns.empty()) {
+    return text("");
+  }
+
+  std::vector<std::vector<std::string>> rows;
+  rows.reserve(table_data.rows.size() + 1);
+  rows.push_back(table_data.columns);
+  for (const auto& row : table_data.rows) {
+    rows.push_back(row);
+  }
+
+  Table table(std::move(rows));
+  table.SelectAll().Border(LIGHT);
+  table.SelectAll().SeparatorVertical(LIGHT);
+  table.SelectRow(0).Decorate(bold);
+  table.SelectRow(0).SeparatorHorizontal(LIGHT);
+
+  return table.Render() | xflex;
 }
 
 std::string get_input_string(
@@ -1818,6 +1924,18 @@ ftxui::Component build_component(
       return show_if(std::move(content), show_if_spec, state);
     });
     Component with_size = apply_node_size_spec(std::move(rendered), node);
+    return apply_node_overflow_spec(std::move(with_size), node);
+  }
+
+  // ── Output table (reads from state$output) ───────────────────────────────
+
+  if (type == "outputTable") {
+    std::string output_id = Rcpp::as<std::string>(node["outputId"]);
+    Component component = Renderer([state, output_id](bool) {
+      SEXP val = get_output_value(state, output_id);
+      return render_serialized_table_output(val);
+    });
+    Component with_size = apply_node_size_spec(std::move(component), node);
     return apply_node_overflow_spec(std::move(with_size), node);
   }
 

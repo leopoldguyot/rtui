@@ -37,6 +37,41 @@ test_that("tuiOutputText validates wrap and overflow arguments", {
   )
 })
 
+test_that("tuiOutputTable stores overflow and validates inputs", {
+  default_table <- tuiOutputTable("tableOut")
+  expect_identical(default_table$type, "outputTable")
+  expect_identical(default_table$overflowX, "scroll")
+  expect_identical(default_table$overflowY, "scroll")
+
+  clipped_table <- tuiOutputTable(
+    "tableOut2",
+    overflowX = "clip",
+    overflowY = "visible"
+  )
+  expect_identical(clipped_table$overflowX, "clip")
+  expect_identical(clipped_table$overflowY, "visible")
+
+  expect_error(
+    tuiOutputTable(1),
+    "`outputId` must be a single character string."
+  )
+  expect_error(
+    tuiOutputTable("tableOut", overflowX = 1),
+    "`overflowX` must be a single character string."
+  )
+  expect_error(
+    tuiOutputTable("tableOut", overflowY = "invalid"),
+    "`overflowY` must be one of"
+  )
+})
+
+test_that("tuiRenderTable validates rowNames argument", {
+  expect_error(
+    tuiRenderTable(data.frame(x = 1), rowNames = "yes"),
+    "`rowNames` must be TRUE or FALSE."
+  )
+})
+
 test_that("tuiInputButton stores optional color", {
   button <- tuiInputButton("Apply", id = "apply", color = "blue")
   expect_identical(button$color, "blue")
@@ -201,6 +236,23 @@ test_that("size arguments are stored on components and layouts", {
   expect_identical(sized_output$width, 20L)
   expect_identical(sized_output$minHeight, 1L)
   expect_identical(sized_output$maxHeight, 3L)
+
+  sized_table <- tuiOutputTable(
+    "tableOut",
+    width = 32,
+    minHeight = 2,
+    maxHeight = 6,
+    widthPercent = NULL,
+    heightPercent = 0.5,
+    overflowX = "clip",
+    overflowY = "scroll"
+  )
+  expect_identical(sized_table$width, 32L)
+  expect_identical(sized_table$minHeight, 2L)
+  expect_identical(sized_table$maxHeight, 6L)
+  expect_identical(sized_table$heightPercent, 0.5)
+  expect_identical(sized_table$overflowX, "clip")
+  expect_identical(sized_table$overflowY, "scroll")
 
   sized_button <- tuiInputButton(
     "Apply",

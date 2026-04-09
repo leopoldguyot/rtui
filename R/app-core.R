@@ -10,7 +10,7 @@
 #' graph nodes for each input event.
 #'
 #' @param ui A UI component tree built with [tuiColumn()], [tuiRow()],
-#'   [tuiBox()], [tuiOutputText()], [tuiOutputNumeric()],
+#'   [tuiBox()], [tuiOutputText()], [tuiOutputNumeric()], [tuiOutputTable()],
 #'   [tuiInputButton()], [tuiInputText()], or `tuiInputCheckbox()`.
 #' @param server A function called as `server(input, output)`. Both `input`
 #'   and `output` are environments:
@@ -18,7 +18,8 @@
 #'   - `input$terminalWidth` and `input$terminalHeight` are automatically
 #'     managed read-only reactive inputs reflecting the current terminal size.
 #'   - assign rendered outputs with `output$<name> <- tuiRenderText(...)` or
-#'     `output$<name> <- tuiRenderNumeric(...)`.
+#'     `output$<name> <- tuiRenderNumeric(...)` /
+#'     `output$<name> <- tuiRenderTable(...)`.
 #'   - use [tuiObserve()] / [tuiObserveEvent()] for reactive side effects.
 #'
 #' @return An object of class `rtuiApp`.
@@ -144,7 +145,7 @@ tuiApp <- function(ui, server) {
   walk <- function(x) {
     type <- x[["type"]]
 
-    if (type %in% c("outputText", "outputNumeric")) {
+    if (type %in% c("outputText", "outputNumeric", "outputTable")) {
       outputIds <<- c(outputIds, x[["outputId"]])
     }
     if (identical(type, "button")) {

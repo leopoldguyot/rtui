@@ -8,7 +8,7 @@ tuiApp(ui, server)
 }
 \arguments{
 \item{ui}{A UI component tree built with \code{\link[=tuiColumn]{tuiColumn()}}, \code{\link[=tuiRow]{tuiRow()}},
-\code{\link[=tuiBox]{tuiBox()}}, \code{\link[=tuiOutputText]{tuiOutputText()}}, \code{\link[=tuiOutputNumeric]{tuiOutputNumeric()}},
+\code{\link[=tuiBox]{tuiBox()}}, \code{\link[=tuiOutputText]{tuiOutputText()}}, \code{\link[=tuiOutputNumeric]{tuiOutputNumeric()}}, \code{\link[=tuiOutputTable]{tuiOutputTable()}},
 \code{\link[=tuiInputButton]{tuiInputButton()}}, \code{\link[=tuiInputText]{tuiInputText()}}, or \code{tuiInputCheckbox()}.}
 
 \item{server}{A function called as \code{server(input, output)}. Both \code{input}
@@ -18,7 +18,8 @@ and \code{output} are environments:
 \item \code{input$terminalWidth} and \code{input$terminalHeight} are automatically
 managed read-only reactive inputs reflecting the current terminal size.
 \item assign rendered outputs with \verb{output$<name> <- tuiRenderText(...)} or
-\verb{output$<name> <- tuiRenderNumeric(...)}.
+\verb{output$<name> <- tuiRenderNumeric(...)} /
+\verb{output$<name> <- tuiRenderTable(...)}.
 \item use \code{\link[=tuiObserve]{tuiObserve()}} / \code{\link[=tuiObserveEvent]{tuiObserveEvent()}} for reactive side effects.
 }}
 }

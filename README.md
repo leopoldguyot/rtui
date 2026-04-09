@@ -80,11 +80,11 @@ tuiRun(app, overflow = "clip")  # press Escape or Ctrl+Q to quit
 | `tuiRow(...)` | Place components side by side |
 | `tuiShowIf(child, ...)` | Conditionally show a subtree based on terminal-size breakpoints |
 | `tuiBox(child, title = NULL, color = NULL, style = "rounded", titleStyle = "header", titleAlign = "left", margin = 0)` | Wrap a component in a configurable border with title/layout options |
-| `tuiOutputText("id", overflow = "clip")` / `tuiOutputNumeric("id")` | Display `output$id` in the UI with text overflow policies (`"clip"`, `"wrap"`, `"ellipsis"`) |
+| `tuiOutputText("id", overflow = "clip")` / `tuiOutputNumeric("id")` / `tuiOutputTable("id")` | Display `output$id` in the UI as text/numeric/table output |
 | `tuiInputButton(label, id, color = NULL)` | Button that triggers a handler (optional text color) |
 | `tuiInputCheckbox(label, id, value = FALSE)` | Checkbox that toggles a logical `input$id` value |
 | `tuiInputText(id, placeholder, value, multiline = FALSE)` | One-line text input by default (`multiline = TRUE` allows newlines) |
-| `tuiRenderText(expr)` / `tuiRenderNumeric(expr, digits = NULL)` | Build renderers assigned to `output$...` |
+| `tuiRenderText(expr)` / `tuiRenderNumeric(expr, digits = NULL)` / `tuiRenderTable(expr)` | Build renderers assigned to `output$...` |
 | `tuiReactive(expr)` / `tuiReactiveVal(value)` | Define graph-tracked reactive expressions and mutable values (auto invalidation of dependents) |
 | `tuiReactiveEvent(event, expr, runAtInit = FALSE)` | Event-scoped reactive expression that re-runs when its event source invalidates |
 | `tuiReq(...)` | Stop current reactive/render evaluation when required values are falsy |
@@ -95,5 +95,7 @@ tuiRun(app, overflow = "clip")  # press Escape or Ctrl+Q to quit
 All exported UI builders (`tuiRow`, `tuiColumn`, `tuiBox`, outputs, and inputs) accept optional sizing arguments: `width`, `height`, `minHeight`, `maxHeight`, `widthPercent`, and `heightPercent`.
 
 `tuiRow()`, `tuiColumn()`, and `tuiBox()` also accept per-axis overflow policies with `overflowX`/`overflowY` (`"visible"`, `"clip"`, `"scroll"`). Scroll containers expose in-place scrollbars and support keyboard/mouse scrolling. During runtime, `input$terminalWidth` and `input$terminalHeight` are available as reactive inputs so server logic can react to terminal resizing.
+
+`tuiOutputTable()` defaults to `overflowX = "scroll"` and `overflowY = "scroll"` so wide or tall data frames stay navigable inside constrained layouts.
 
 Navigate with **Tab** / **arrow keys**, activate buttons with **Enter**.

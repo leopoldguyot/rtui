@@ -68,7 +68,85 @@
     return(as.character(scalar))
   }
 
+  if (identical(value$kind, "table")) {
+    if (inherits(rendered, "rtuiReqDefault")) {
+      return(.rtuiSerializeTableOutput(NULL))
+    }
+    return(.rtuiSerializeTableOutput(rendered, rowNames = isTRUE(value$rowNames)))
+  }
+
   value
+}
+
+#' Internal helper `.rtuiSerializeTableOutput`.
+#'
+#' Converts a data frame-like value into the serialized structure consumed by
+#' the C++ table renderer.
+#'
+#' @param value Value returned by a `tuiRenderTable()` expression.
+#' @param rowNames Whether row names should be prepended as a first column.
+#'
+#' @return A list with `columns` and `rows` fields.
+#'
+#' @keywords internal
+#' @noRd
+.rtuiSerializeTableOutput <- function(value, rowNames = FALSE) {
+  empty <- list(columns = character(), rows = list())
+
+  if (is.null(value) || length(value) == 0L) {
+    return(empty)
+  }
+  if (!is.data.frame(value)) {
+    stop("`tuiRenderTable()` expression must return a data.frame.")
+  }
+
+  tableData <- value
+  if (isTRUE(rowNames)) {
+    rn <- rownames(tableData)
+    if (is.null(rn)) {
+      rn <- as.character(seq_len(nrow(tableData)))
+    }
+    tableData <- data.frame(
+      `(row)` = as.character(rn),
+      tableData,
+      check.names = FALSE,
+      stringsAsFactors = FALSE
+    )
+  }
+
+  columns <- names(tableData)
+  if (is.null(columns)) {
+    columns <- rep("", ncol(tableData))
+  }
+  columns <- as.character(columns)
+
+  rowCount <- nrow(tableData)
+  if (rowCount == 0L) {
+    return(list(columns = columns, rows = list()))
+  }
+
+  if (ncol(tableData) == 0L) {
+    return(list(columns = columns, rows = rep(list(character()), rowCount)))
+  }
+
+  columnValues <- lapply(tableData, function(column) {
+    values <- as.character(column)
+    values[is.na(values)] <- "NA"
+    values
+  })
+
+  rows <- vector("list", rowCount)
+  for (rowIndex in seq_len(rowCount)) {
+    rows[[rowIndex]] <- unname(
+      vapply(
+        columnValues,
+        function(column) column[[rowIndex]],
+        character(1)
+      )
+    )
+  }
+
+  list(columns = columns, rows = rows)
 }
 
 #' Create a text renderer for `output$...`
@@ -124,6 +202,37 @@ tuiRenderNumeric <- function(expr, digits = NULL) {
       expr = substitute(expr),
       env = parent.frame(),
       digits = digits
+    ),
+    class = "rtuiRenderer"
+  )
+}
+
+#' Create a data-frame table renderer for `output$...`
+#'
+#' @param expr An expression returning a data frame (or tibble).
+#' @param rowNames A single logical value. If `TRUE`, row names are added as
+#'   the first column.
+#'
+#' @details
+#' Renderer expressions should ideally be side-effect free. If a `tuiRender*`
+#' expression mutates reactive state (for example via `tuiReactiveVal()`), the
+#' output can invalidate itself during its own evaluation. In that case, `rtui`
+#' emits a warning (once per output id) and still completes the render pass.
+#'
+#' @return A table renderer object for assignment in `output$...`.
+#'
+#' @export
+tuiRenderTable <- function(expr, rowNames = FALSE) {
+  if (!is.logical(rowNames) || length(rowNames) != 1L || is.na(rowNames)) {
+    stop("`rowNames` must be TRUE or FALSE.")
+  }
+
+  structure(
+    list(
+      kind = "table",
+      expr = substitute(expr),
+      env = parent.frame(),
+      rowNames = isTRUE(rowNames)
     ),
     class = "rtuiRenderer"
   )
