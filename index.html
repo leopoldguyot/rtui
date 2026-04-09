@@ -150,9 +150,9 @@
 </tr>
 <tr class="odd">
 <td>
-<code>tuiOutputText("id", overflow = "clip")</code> / <code>tuiOutputNumeric("id")</code>
+<code>tuiOutputText("id", overflow = "clip")</code> / <code>tuiOutputNumeric("id")</code> / <code>tuiOutputTable("id")</code>
 </td>
-<td>Display <code>output$id</code> in the UI with text overflow policies (<code>"clip"</code>, <code>"wrap"</code>, <code>"ellipsis"</code>)</td>
+<td>Display <code>output$id</code> in the UI as text/numeric/table output</td>
 </tr>
 <tr class="even">
 <td><code>tuiInputButton(label, id, color = NULL)</code></td>
@@ -168,7 +168,7 @@
 </tr>
 <tr class="odd">
 <td>
-<code>tuiRenderText(expr)</code> / <code>tuiRenderNumeric(expr, digits = NULL)</code>
+<code>tuiRenderText(expr)</code> / <code>tuiRenderNumeric(expr, digits = NULL)</code> / <code>tuiRenderTable(expr)</code>
 </td>
 <td>Build renderers assigned to <code>output$...</code>
 </td>
@@ -203,6 +203,7 @@
 </table>
 <p>All exported UI builders (<code>tuiRow</code>, <code>tuiColumn</code>, <code>tuiBox</code>, outputs, and inputs) accept optional sizing arguments: <code>width</code>, <code>height</code>, <code>minHeight</code>, <code>maxHeight</code>, <code>widthPercent</code>, and <code>heightPercent</code>.</p>
 <p><code><a href="reference/tuiRow.html">tuiRow()</a></code>, <code><a href="reference/tuiColumn.html">tuiColumn()</a></code>, and <code><a href="reference/tuiBox.html">tuiBox()</a></code> also accept per-axis overflow policies with <code>overflowX</code>/<code>overflowY</code> (<code>"visible"</code>, <code>"clip"</code>, <code>"scroll"</code>). Scroll containers expose in-place scrollbars and support keyboard/mouse scrolling. During runtime, <code>input$terminalWidth</code> and <code>input$terminalHeight</code> are available as reactive inputs so server logic can react to terminal resizing.</p>
+<p><code><a href="reference/tuiOutputTable.html">tuiOutputTable()</a></code> defaults to <code>overflowX = "scroll"</code> and <code>overflowY = "scroll"</code> so wide or tall data frames stay navigable inside constrained layouts.</p>
 <p>Navigate with <strong>Tab</strong> / <strong>arrow keys</strong>, activate buttons with <strong>Enter</strong>.</p>
 </div>
 </div>

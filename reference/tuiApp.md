@@ -21,6 +21,7 @@ tuiApp(ui, server)
   [`tuiBox()`](https://leopoldguyot.github.io/rtui/reference/tuiBox.md),
   [`tuiOutputText()`](https://leopoldguyot.github.io/rtui/reference/tuiOutputText.md),
   [`tuiOutputNumeric()`](https://leopoldguyot.github.io/rtui/reference/tuiOutputNumeric.md),
+  [`tuiOutputTable()`](https://leopoldguyot.github.io/rtui/reference/tuiOutputTable.md),
   [`tuiInputButton()`](https://leopoldguyot.github.io/rtui/reference/tuiInputButton.md),
   [`tuiInputText()`](https://leopoldguyot.github.io/rtui/reference/tuiInputText.md),
   or
@@ -38,7 +39,8 @@ tuiApp(ui, server)
     size.
 
   - assign rendered outputs with `output$<name> <- tuiRenderText(...)`
-    or `output$<name> <- tuiRenderNumeric(...)`.
+    or `output$<name> <- tuiRenderNumeric(...)` /
+    `output$<name> <- tuiRenderTable(...)`.
 
   - use
     [`tuiObserve()`](https://leopoldguyot.github.io/rtui/reference/tuiObserve.md)

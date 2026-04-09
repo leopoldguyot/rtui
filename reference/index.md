@@ -32,6 +32,9 @@
 - [`tuiOutputNumeric()`](https://leopoldguyot.github.io/rtui/reference/tuiOutputNumeric.md)
   : Numeric output component
 
+- [`tuiOutputTable()`](https://leopoldguyot.github.io/rtui/reference/tuiOutputTable.md)
+  : Table output component
+
 - [`tuiOutputText()`](https://leopoldguyot.github.io/rtui/reference/tuiOutputText.md)
   : Text output component
 
@@ -48,6 +51,11 @@
   :
 
   Create a numeric renderer for `output$...`
+
+- [`tuiRenderTable()`](https://leopoldguyot.github.io/rtui/reference/tuiRenderTable.md)
+  :
+
+  Create a data-frame table renderer for `output$...`
 
 - [`tuiRenderText()`](https://leopoldguyot.github.io/rtui/reference/tuiRenderText.md)
   :

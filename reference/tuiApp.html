@@ -55,7 +55,7 @@ graph nodes for each input event.</p>
 
 <dl><dt id="arg-ui">ui<a class="anchor" aria-label="anchor" href="#arg-ui"></a></dt>
 <dd><p>A UI component tree built with <code><a href="tuiColumn.html">tuiColumn()</a></code>, <code><a href="tuiRow.html">tuiRow()</a></code>,
-<code><a href="tuiBox.html">tuiBox()</a></code>, <code><a href="tuiOutputText.html">tuiOutputText()</a></code>, <code><a href="tuiOutputNumeric.html">tuiOutputNumeric()</a></code>,
+<code><a href="tuiBox.html">tuiBox()</a></code>, <code><a href="tuiOutputText.html">tuiOutputText()</a></code>, <code><a href="tuiOutputNumeric.html">tuiOutputNumeric()</a></code>, <code><a href="tuiOutputTable.html">tuiOutputTable()</a></code>,
 <code><a href="tuiInputButton.html">tuiInputButton()</a></code>, <code><a href="tuiInputText.html">tuiInputText()</a></code>, or <code><a href="tuiInputCheckbox.html">tuiInputCheckbox()</a></code>.</p></dd>
 
 
@@ -65,7 +65,8 @@ and <code>output</code> are environments:</p><ul><li><p><code>input$&lt;id&gt;</
 <li><p><code>input$terminalWidth</code> and <code>input$terminalHeight</code> are automatically
 managed read-only reactive inputs reflecting the current terminal size.</p></li>
 <li><p>assign rendered outputs with <code>output$&lt;name&gt; &lt;- tuiRenderText(...)</code> or
-<code>output$&lt;name&gt; &lt;- tuiRenderNumeric(...)</code>.</p></li>
+<code>output$&lt;name&gt; &lt;- tuiRenderNumeric(...)</code> /
+<code>output$&lt;name&gt; &lt;- tuiRenderTable(...)</code>.</p></li>
 <li><p>use <code><a href="tuiObserve.html">tuiObserve()</a></code> / <code><a href="tuiObserveEvent.html">tuiObserveEvent()</a></code> for reactive side effects.</p></li>
 </ul></dd>
 
