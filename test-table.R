@@ -24,7 +24,10 @@ app <- tuiApp(
     tuiRow(
       tuiInputButton("Toggle row border", id = "toggleRowBorder", widthPercent = 0.34),
       tuiInputButton("Toggle col border", id = "toggleColBorder", widthPercent = 0.33),
-      tuiInputButton("Toggle header border", id = "toggleHeaderBorder", widthPercent = 0.33)
+      tuiInputButton("Toggle header row border", id = "toggleHeaderRowBorder", widthPercent = 0.33)
+    ),
+    tuiRow(
+      tuiInputButton("Toggle header col border", id = "toggleHeaderColBorder")
     ),
     tuiRow(
       tuiInputButton("Next border style", id = "nextBorderStyle", widthPercent = 0.34),
@@ -78,8 +81,11 @@ app <- tuiApp(
     col_border <- tuiReactive({
       (click_count(input$toggleColBorder) %% 2L) == 0L
     })
-    header_border <- tuiReactive({
-      (click_count(input$toggleHeaderBorder) %% 2L) == 0L
+    header_row_border <- tuiReactive({
+      (click_count(input$toggleHeaderRowBorder) %% 2L) == 0L
+    })
+    header_col_border <- tuiReactive({
+      (click_count(input$toggleHeaderColBorder) %% 2L) == 0L
     })
 
     border_style <- tuiReactive({
@@ -132,7 +138,8 @@ app <- tuiApp(
       zebra_rows_value <- zebra_rows()
       row_border_value <- row_border()
       col_border_value <- col_border()
-      header_border_value <- header_border()
+      header_row_border_value <- header_row_border()
+      header_col_border_value <- header_col_border()
       border_style_value <- border_style()
       cell_overflow_value <- cell_overflow()
       notes_align_value <- notes_align()
@@ -152,9 +159,11 @@ app <- tuiApp(
           paste0(
             "rowBorder=", row_border_value,
             ", colBorder=", col_border_value,
-            ", headerBorder=", header_border_value,
+            ", headerRowBorder=", header_row_border_value,
+            ", headerColBorder=", header_col_border_value,
             ", borderStyle=", border_style_value, "."
           ),
+          "headerRowBorder/headerColBorder add only missing header separators.",
           paste0(
             "cellOverflow=", cell_overflow_value,
             ", notesAlign=", notes_align_value,
@@ -171,7 +180,8 @@ app <- tuiApp(
         showHeader = show_header_value,
         rowBorder = row_border_value,
         colBorder = col_border_value,
-        headerBorder = header_border_value,
+        headerRowBorder = header_row_border_value,
+        headerColBorder = header_col_border_value,
         borderStyle = border_style_value,
         headerBold = TRUE,
         headerColor = "yellowlight",

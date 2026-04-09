@@ -78,7 +78,16 @@
     outerBorder <- if (is.null(value$outerBorder)) TRUE else isTRUE(value$outerBorder)
     rowBorder <- if (is.null(value$rowBorder)) FALSE else isTRUE(value$rowBorder)
     colBorder <- if (is.null(value$colBorder)) TRUE else isTRUE(value$colBorder)
-    headerBorder <- if (is.null(value$headerBorder)) TRUE else isTRUE(value$headerBorder)
+    headerRowBorder <- if (is.null(value$headerRowBorder)) {
+      if (is.null(value$headerBorder)) TRUE else isTRUE(value$headerBorder)
+    } else {
+      isTRUE(value$headerRowBorder)
+    }
+    headerColBorder <- if (is.null(value$headerColBorder)) {
+      if (is.null(value$headerBorder)) TRUE else isTRUE(value$headerBorder)
+    } else {
+      isTRUE(value$headerColBorder)
+    }
     borderStyle <- if (is.null(value$borderStyle)) "light" else value$borderStyle
     headerBold <- if (is.null(value$headerBold)) TRUE else isTRUE(value$headerBold)
     zebraRows <- if (is.null(value$zebraRows)) FALSE else isTRUE(value$zebraRows)
@@ -95,7 +104,8 @@
         outerBorder = outerBorder,
         rowBorder = rowBorder,
         colBorder = colBorder,
-        headerBorder = headerBorder,
+        headerRowBorder = headerRowBorder,
+        headerColBorder = headerColBorder,
         borderStyle = borderStyle,
         borderColor = value$borderColor,
         headerBorderColor = value$headerBorderColor,
@@ -121,7 +131,8 @@
       outerBorder = outerBorder,
       rowBorder = rowBorder,
       colBorder = colBorder,
-      headerBorder = headerBorder,
+      headerRowBorder = headerRowBorder,
+      headerColBorder = headerColBorder,
       borderStyle = borderStyle,
       borderColor = value$borderColor,
       headerBorderColor = value$headerBorderColor,
@@ -153,8 +164,10 @@
 #' @param showRowNames Whether row names should be prepended as a first column.
 #' @param showHeader Whether the table header row should be rendered.
 #' @param outerBorder Whether to draw the outer table border.
-#' @param rowBorder,colBorder,headerBorder Border toggles for row separators,
-#'   column separators, and header separator.
+#' @param rowBorder,colBorder Border toggles for row and column separators.
+#' @param headerRowBorder,headerColBorder Header-only separator toggles that are
+#'   applied only when the corresponding global separator is disabled
+#'   (`rowBorder = FALSE` and `colBorder = FALSE` respectively).
 #' @param borderStyle Border style name.
 #' @param borderColor,headerBorderColor Optional border colors.
 #' @param headerBold Whether to render header cells in bold.
@@ -245,7 +258,8 @@
     outerBorder = TRUE,
     rowBorder = FALSE,
     colBorder = TRUE,
-    headerBorder = TRUE,
+    headerRowBorder = TRUE,
+    headerColBorder = TRUE,
     borderStyle = "light",
     borderColor = NULL,
     headerBorderColor = NULL,
@@ -268,7 +282,8 @@
   outerBorder <- .rtuiNormalizeTableLogical(outerBorder, "outerBorder")
   rowBorder <- .rtuiNormalizeTableLogical(rowBorder, "rowBorder")
   colBorder <- .rtuiNormalizeTableLogical(colBorder, "colBorder")
-  headerBorder <- .rtuiNormalizeTableLogical(headerBorder, "headerBorder")
+  headerRowBorder <- .rtuiNormalizeTableLogical(headerRowBorder, "headerRowBorder")
+  headerColBorder <- .rtuiNormalizeTableLogical(headerColBorder, "headerColBorder")
   headerBold <- .rtuiNormalizeTableLogical(headerBold, "headerBold")
   zebraRows <- .rtuiNormalizeTableLogical(zebraRows, "zebraRows")
 
@@ -360,7 +375,8 @@
     outerBorder = outerBorder,
     rowBorder = rowBorder,
     colBorder = colBorder,
-    headerBorder = headerBorder,
+    headerRowBorder = headerRowBorder,
+    headerColBorder = headerColBorder,
     borderStyle = borderStyle,
     borderColor = borderColor,
     headerBorderColor = headerBorderColor,
@@ -446,8 +462,11 @@ tuiRenderNumeric <- function(expr, digits = NULL) {
 #' @param showRowNames Whether to prepend row names as the first column.
 #' @param showHeader Whether the header row should be shown.
 #' @param outerBorder Whether to draw the table outer border.
-#' @param rowBorder,colBorder,headerBorder Whether to draw row separators,
-#'   column separators, and the header separator.
+#' @param rowBorder,colBorder Whether to draw row and column separators.
+#' @param headerRowBorder,headerColBorder Header-only separators. They are
+#'   applied only when the corresponding global separator is disabled:
+#'   `headerRowBorder` only when `rowBorder = FALSE`, and `headerColBorder`
+#'   only when `colBorder = FALSE`.
 #' @param borderStyle Border style (`"light"`, `"dashed"`, `"heavy"`,
 #'   `"double"`, `"rounded"`, `"empty"`).
 #' @param borderColor,headerBorderColor Optional border colors.
@@ -479,7 +498,8 @@ tuiRenderTable <- function(
     outerBorder = TRUE,
     rowBorder = FALSE,
     colBorder = TRUE,
-    headerBorder = TRUE,
+    headerRowBorder = TRUE,
+    headerColBorder = TRUE,
     borderStyle = "light",
     borderColor = NULL,
     headerBorderColor = NULL,
@@ -502,7 +522,8 @@ tuiRenderTable <- function(
   outerBorder <- .rtuiNormalizeTableLogical(outerBorder, "outerBorder")
   rowBorder <- .rtuiNormalizeTableLogical(rowBorder, "rowBorder")
   colBorder <- .rtuiNormalizeTableLogical(colBorder, "colBorder")
-  headerBorder <- .rtuiNormalizeTableLogical(headerBorder, "headerBorder")
+  headerRowBorder <- .rtuiNormalizeTableLogical(headerRowBorder, "headerRowBorder")
+  headerColBorder <- .rtuiNormalizeTableLogical(headerColBorder, "headerColBorder")
   headerBold <- .rtuiNormalizeTableLogical(headerBold, "headerBold")
   zebraRows <- .rtuiNormalizeTableLogical(zebraRows, "zebraRows")
 
@@ -553,7 +574,8 @@ tuiRenderTable <- function(
       outerBorder = outerBorder,
       rowBorder = rowBorder,
       colBorder = colBorder,
-      headerBorder = headerBorder,
+      headerRowBorder = headerRowBorder,
+      headerColBorder = headerColBorder,
       borderStyle = borderStyle,
       borderColor = borderColor,
       headerBorderColor = headerBorderColor,

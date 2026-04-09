@@ -11,7 +11,8 @@ tuiRenderTable(
   outerBorder = TRUE,
   rowBorder = FALSE,
   colBorder = TRUE,
-  headerBorder = TRUE,
+  headerRowBorder = TRUE,
+  headerColBorder = TRUE,
   borderStyle = "light",
   borderColor = NULL,
   headerBorderColor = NULL,
@@ -39,8 +40,12 @@ tuiRenderTable(
 
 \item{outerBorder}{Whether to draw the table outer border.}
 
-\item{rowBorder, colBorder, headerBorder}{Whether to draw row separators,
-column separators, and the header separator.}
+\item{rowBorder, colBorder}{Whether to draw row and column separators.}
+
+\item{headerRowBorder, headerColBorder}{Header-only separators. They are
+applied only when the corresponding global separator is disabled:
+\code{headerRowBorder} only when \code{rowBorder = FALSE}, and \code{headerColBorder}
+only when \code{colBorder = FALSE}.}
 
 \item{borderStyle}{Border style (\code{"light"}, \code{"dashed"}, \code{"heavy"},
 \code{"double"}, \code{"rounded"}, \code{"empty"}).}

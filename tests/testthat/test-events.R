@@ -52,7 +52,8 @@ test_that("tuiRenderTable stores serialized table output and updates on events",
         ),
         rowBorder = TRUE,
         colBorder = TRUE,
-        headerBorder = FALSE,
+        headerRowBorder = FALSE,
+        headerColBorder = FALSE,
         borderStyle = "double",
         cellOverflow = "ellipsis",
         minColWidth = 4,
@@ -66,7 +67,8 @@ test_that("tuiRenderTable stores serialized table output and updates on events",
   expect_identical(app$state$output$tableOut$columns, c("value", "label"))
   expect_identical(app$state$output$tableOut$options$rowBorder, TRUE)
   expect_identical(app$state$output$tableOut$options$colBorder, TRUE)
-  expect_identical(app$state$output$tableOut$options$headerBorder, FALSE)
+  expect_identical(app$state$output$tableOut$options$headerRowBorder, FALSE)
+  expect_identical(app$state$output$tableOut$options$headerColBorder, FALSE)
   expect_identical(app$state$output$tableOut$options$borderStyle, "double")
   expect_identical(app$state$output$tableOut$options$cellOverflow, "ellipsis")
   expect_identical(app$state$output$tableOut$options$columnAlign, c("right", "left"))

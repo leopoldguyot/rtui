@@ -97,6 +97,6 @@ All exported UI builders (`tuiRow`, `tuiColumn`, `tuiBox`, outputs, and inputs) 
 `tuiRow()`, `tuiColumn()`, and `tuiBox()` also accept per-axis overflow policies with `overflowX`/`overflowY` (`"visible"`, `"clip"`, `"scroll"`). Scroll containers expose in-place scrollbars and support keyboard/mouse scrolling. During runtime, `input$terminalWidth` and `input$terminalHeight` are available as reactive inputs so server logic can react to terminal resizing.
 
 `tuiOutputTable()` defaults to `overflowX = "scroll"` and `overflowY = "scroll"` so wide or tall data frames stay navigable inside constrained layouts.
-Use `tuiRenderTable()` options (for example `rowBorder`, `colBorder`, `headerBorder`, `borderStyle`, `columnAlign`, and `cellOverflow`) to control table styling server-side.
+Use `tuiRenderTable()` options (for example `rowBorder`, `colBorder`, `headerRowBorder`, `headerColBorder`, `borderStyle`, `columnAlign`, and `cellOverflow`) to control table styling server-side.
 
 Navigate with **Tab** / **arrow keys**, activate buttons with **Enter**.

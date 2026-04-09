@@ -73,7 +73,8 @@ test_that("tuiRenderTable stores and validates table customization options", {
     outerBorder = TRUE,
     rowBorder = TRUE,
     colBorder = FALSE,
-    headerBorder = TRUE,
+    headerRowBorder = TRUE,
+    headerColBorder = FALSE,
     borderStyle = "double",
     borderColor = "green",
     headerBorderColor = "yellow",
@@ -94,6 +95,8 @@ test_that("tuiRenderTable stores and validates table customization options", {
   expect_identical(renderer$showRowNames, TRUE)
   expect_identical(renderer$rowBorder, TRUE)
   expect_identical(renderer$colBorder, FALSE)
+  expect_identical(renderer$headerRowBorder, TRUE)
+  expect_identical(renderer$headerColBorder, FALSE)
   expect_identical(renderer$borderStyle, "double")
   expect_identical(renderer$cellOverflow, "ellipsis")
   expect_identical(renderer$naText, "-")
@@ -105,6 +108,14 @@ test_that("tuiRenderTable stores and validates table customization options", {
   expect_error(
     tuiRenderTable(data.frame(x = 1), rowBorder = NA),
     "`rowBorder` must be TRUE or FALSE."
+  )
+  expect_error(
+    tuiRenderTable(data.frame(x = 1), headerRowBorder = "yes"),
+    "`headerRowBorder` must be TRUE or FALSE."
+  )
+  expect_error(
+    tuiRenderTable(data.frame(x = 1), headerColBorder = NA),
+    "`headerColBorder` must be TRUE or FALSE."
   )
   expect_error(
     tuiRenderTable(data.frame(x = 1), borderStyle = "unknown"),

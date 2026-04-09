@@ -97,7 +97,8 @@ struct TableRenderSpec {
   bool outer_border = true;
   bool row_border = false;
   bool col_border = true;
-  bool header_border = true;
+  bool header_row_border = true;
+  bool header_col_border = true;
   BorderStyle border_style = LIGHT;
   std::optional<Color> border_color;
   std::optional<Color> header_border_color;
@@ -301,24 +302,36 @@ Element render_serialized_table_output(
   }
   const bool has_header = spec.show_header && !table_data.columns.empty();
   if (spec.row_border) {
-    if (has_header) {
-      const int data_rows = static_cast<int>(table_data.rows.size());
-      if (data_rows > 1) {
-        table.SelectRows(1, data_rows).SeparatorHorizontal(spec.border_style);
-      }
-    } else {
-      table.SelectAll().SeparatorHorizontal(spec.border_style);
-    }
+    table.SelectAll().SeparatorHorizontal(spec.border_style);
   }
-  if (has_header && !table_data.rows.empty() && spec.header_border) {
-    table.SelectRow(0).BorderBottom(spec.border_style);
+
+  const bool draw_header_bottom_separator =
+      has_header &&
+      !table_data.rows.empty() &&
+      spec.header_row_border &&
+      !spec.row_border;
+  const bool draw_header_vertical_separator =
+      has_header &&
+      spec.header_col_border &&
+      !spec.col_border;
+
+  if (draw_header_bottom_separator) {
+    // Draw only the internal header/data separator so it does not protrude
+    // past the table bounds on either side.
+    table.SelectRows(0, 1).SeparatorHorizontal(spec.border_style);
   }
+  if (draw_header_vertical_separator) {
+    table.SelectRow(0).SeparatorVertical(spec.border_style);
+  }
+
+  const bool draw_header_separator =
+      draw_header_bottom_separator || draw_header_vertical_separator;
 
   if (spec.border_color.has_value()) {
     table.SelectAll().Decorate(color(*spec.border_color));
   }
   if (has_header &&
-      spec.header_border &&
+      draw_header_separator &&
       spec.header_border_color.has_value()) {
     table.SelectRow(0).Decorate(color(*spec.header_border_color));
   }
@@ -2132,11 +2145,23 @@ TableRenderSpec parse_output_table_render_spec(
     "colBorder",
     true
   );
-  spec.header_border = parse_optional_flag_with_default(
+  const bool legacy_header_border = parse_optional_flag_with_default(
     options,
     "headerBorder",
     "headerBorder",
     true
+  );
+  spec.header_row_border = parse_optional_flag_with_default(
+    options,
+    "headerRowBorder",
+    "headerRowBorder",
+    legacy_header_border
+  );
+  spec.header_col_border = parse_optional_flag_with_default(
+    options,
+    "headerColBorder",
+    "headerColBorder",
+    legacy_header_border
   );
   spec.header_bold = parse_optional_flag_with_default(
     options,
