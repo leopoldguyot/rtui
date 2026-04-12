@@ -463,6 +463,80 @@ test_that("tuiShowIf stores constraints and validates inputs", {
   )
 })
 
+test_that("tuiModal stores configuration and validates inputs", {
+  wrapped <- tuiModal(
+    child = tuiOutputText("mainOut"),
+    modal = tuiBox(tuiOutputText("modalOut"), title = "Popup"),
+    show = TRUE,
+    showInputId = "showModal",
+    closeOnEscape = FALSE
+  )
+
+  expect_identical(wrapped$type, "modal")
+  expect_s3_class(wrapped$child, "rtuiComponent")
+  expect_s3_class(wrapped$modal, "rtuiComponent")
+  expect_identical(wrapped$show, TRUE)
+  expect_identical(wrapped$showInputId, "showModal")
+  expect_identical(wrapped$closeOnEscape, FALSE)
+
+  default_modal <- tuiModal(
+    child = tuiOutputText("mainOut"),
+    modal = tuiOutputText("modalOut")
+  )
+  expect_identical(default_modal$show, FALSE)
+  expect_identical(default_modal$closeOnEscape, TRUE)
+  expect_null(default_modal$showInputId)
+
+  expect_error(
+    tuiModal(child = "not-a-component", modal = tuiOutputText("modalOut")),
+    "`child` must be a rtuiComponent object."
+  )
+  expect_error(
+    tuiModal(child = tuiOutputText("mainOut"), modal = "not-a-component"),
+    "`modal` must be a rtuiComponent object."
+  )
+  expect_error(
+    tuiModal(child = tuiOutputText("mainOut"), modal = tuiOutputText("modalOut"), show = "yes"),
+    "`show` must be TRUE or FALSE."
+  )
+  expect_error(
+    tuiModal(
+      child = tuiOutputText("mainOut"),
+      modal = tuiOutputText("modalOut"),
+      showInputId = NA_character_
+    ),
+    "`showInputId` must be NULL or a single character string."
+  )
+  expect_error(
+    tuiModal(
+      child = tuiOutputText("mainOut"),
+      modal = tuiOutputText("modalOut"),
+      closeOnEscape = 1
+    ),
+    "`closeOnEscape` must be TRUE or FALSE."
+  )
+})
+
+test_that("tuiModal collects ids from both branches", {
+  app <- tuiApp(
+    ui = tuiModal(
+      child = tuiOutputText("mainOut"),
+      modal = tuiColumn(
+        tuiOutputText("modalOut"),
+        tuiInputButton("Close", id = "closeModal")
+      ),
+      showInputId = "modalVisible"
+    ),
+    server = function(input, output) {
+      output$mainOut <- tuiRenderText("Main")
+      output$modalOut <- tuiRenderText("Modal")
+    }
+  )
+
+  expect_true(all(c("mainOut", "modalOut") %in% names(app$state$output)))
+  expect_true("closeModal" %in% names(app$state$input))
+})
+
 test_that("tuiRun validates overflow argument", {
   app <- tuiApp(
     ui = tuiOutputText("out"),

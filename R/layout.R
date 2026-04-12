@@ -241,6 +241,65 @@ tuiShowIf <- function(
   structure(component, class = "rtuiComponent")
 }
 
+#' Modal layout wrapper
+#'
+#' Overlays a popup component above a background child component.
+#'
+#' The modal content is centered and rendered on top of the base child using an
+#' overlay layer. This is useful for dialogs, confirmations, or temporary
+#' popups while keeping the underlying UI structure declarative.
+#'
+#' @param child Base `rtuiComponent` rendered underneath the modal.
+#' @param modal `rtuiComponent` rendered as the popup overlay.
+#' @param show Static fallback visibility (`FALSE` by default).
+#' @param showInputId Optional input id controlling modal visibility at runtime.
+#'   When set, visibility is driven by `input$<showInputId>` (truthy values show
+#'   the modal) and `show` is used only as a fallback when the input is absent.
+#' @param closeOnEscape Whether pressing Escape should close the modal by writing
+#'   `FALSE` into `input$<showInputId>` and triggering its event handler.
+#'   Ignored when `showInputId` is `NULL`.
+#'
+#' @return A `rtuiComponent` list node of type `"modal"`.
+#'
+#' @export
+tuiModal <- function(
+    child,
+    modal,
+    show = FALSE,
+    showInputId = NULL,
+    closeOnEscape = TRUE
+) {
+  if (!inherits(child, "rtuiComponent")) {
+    stop("`child` must be a rtuiComponent object.")
+  }
+  if (!inherits(modal, "rtuiComponent")) {
+    stop("`modal` must be a rtuiComponent object.")
+  }
+  if (!is.logical(show) || length(show) != 1L || is.na(show)) {
+    stop("`show` must be TRUE or FALSE.")
+  }
+  if (!is.null(showInputId) &&
+      (!is.character(showInputId) || length(showInputId) != 1L || is.na(showInputId))) {
+    stop("`showInputId` must be NULL or a single character string.")
+  }
+  if (!is.logical(closeOnEscape) || length(closeOnEscape) != 1L || is.na(closeOnEscape)) {
+    stop("`closeOnEscape` must be TRUE or FALSE.")
+  }
+
+  component <- list(
+    type = "modal",
+    child = child,
+    modal = modal,
+    show = isTRUE(show),
+    closeOnEscape = isTRUE(closeOnEscape)
+  )
+  if (!is.null(showInputId)) {
+    component$showInputId <- showInputId
+  }
+
+  structure(component, class = "rtuiComponent")
+}
+
 #' Box layout wrapper
 #'
 #' Draws a border around a child component, with optional title and style.

@@ -8,6 +8,7 @@
 #include <ftxui/dom/node_decorator.hpp>
 #include <ftxui/util/autoreset.hpp>
 
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -171,6 +172,31 @@ void clamp_scroll(std::shared_ptr<int> value, std::shared_ptr<int> max_value) {
   *value = std::clamp(*value, 0, *max_value);
 }
 
+class CatchEventAfterChildBase : public ComponentBase {
+ public:
+  explicit CatchEventAfterChildBase(std::function<bool(Event)> on_event)
+      : on_event_(std::move(on_event)) {}
+
+  bool OnEvent(Event event) override {
+    if (ComponentBase::OnEvent(event)) {
+      return true;
+    }
+    return on_event_(std::move(event));
+  }
+
+ private:
+  std::function<bool(Event)> on_event_;
+};
+
+Component CatchEventAfterChild(
+    Component child,
+    std::function<bool(Event)> on_event
+) {
+  auto out = Make<CatchEventAfterChildBase>(std::move(on_event));
+  out->Add(std::move(child));
+  return out;
+}
+
 }  // namespace
 
 // [[Rcpp::export]]
@@ -287,19 +313,13 @@ void runTuiApp(
     Rcpp::stop("`overflow` must be one of 'clip', 'scroll', or 'block'.");
   }
 
-  // Wrap root in a CatchEvent component that handles Ctrl+Q / Escape to quit.
+  // Wrap root in a CatchEvent component for global overflow controls.
   auto screen = ScreenInteractive::Fullscreen();
 
   Component app = CatchEvent(
     root,
-    [&screen, overflow, scroll_x, scroll_y, max_scroll_x, max_scroll_y, block_active, state, handlers](Event event) -> bool {
+    [overflow, scroll_x, scroll_y, max_scroll_x, max_scroll_y, block_active, state, handlers](Event event) -> bool {
     sync_terminal_size(state, handlers, false);
-
-    if (event == Event::Escape ||
-        event == Event::CtrlQ) {
-      screen.ExitLoopClosure()();
-      return true;
-    }
 
     if (overflow == "block" && *block_active) {
       return true;
@@ -368,6 +388,13 @@ void runTuiApp(
           return true;
         }
       }
+    }
+    return false;
+  });
+  app = CatchEventAfterChild(app, [&screen](Event event) -> bool {
+    if (event == Event::Escape || event == Event::CtrlQ) {
+      screen.ExitLoopClosure()();
+      return true;
     }
     return false;
   });

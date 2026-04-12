@@ -2038,6 +2038,25 @@ bool parse_optional_flag_with_default(
   return parse_optional_flag(node, field_name, arg_name);
 }
 
+std::optional<std::string> parse_optional_string_field(
+    const Rcpp::List& node,
+    const char* field_name,
+    const char* arg_name
+) {
+  if (!node.containsElementNamed(field_name)) {
+    return std::nullopt;
+  }
+
+  SEXP candidate = node[field_name];
+  if (Rf_isNull(candidate)) {
+    return std::nullopt;
+  }
+  if (!is_single_string(candidate)) {
+    Rcpp::stop("`%s` must be a single character string.", arg_name);
+  }
+  return Rcpp::as<std::string>(candidate);
+}
+
 BorderStyle parse_table_border_style(const Rcpp::List& options) {
   if (!options.containsElementNamed("borderStyle")) {
     return LIGHT;
@@ -2333,20 +2352,87 @@ ftxui::Component build_component(
     return apply_node_overflow_spec(std::move(with_size), node);
   }
 
+  if (type == "modal") {
+    if (!node.containsElementNamed("child")) {
+      Rcpp::stop("`modal` component requires a `child` field.");
+    }
+    if (!node.containsElementNamed("modal")) {
+      Rcpp::stop("`modal` component requires a `modal` field.");
+    }
+
+    const bool show_default = parse_optional_flag_with_default(node, "show", "show", false);
+    const bool close_on_escape = parse_optional_flag_with_default(
+      node,
+      "closeOnEscape",
+      "closeOnEscape",
+      true
+    );
+    const std::optional<std::string> show_input_id = parse_optional_string_field(
+      node,
+      "showInputId",
+      "showInputId"
+    );
+
+    Component background_component = build_component(
+      Rcpp::as<Rcpp::List>(node["child"]),
+      state,
+      handlers
+    );
+    Component modal_content_component = build_component(
+      Rcpp::as<Rcpp::List>(node["modal"]),
+      state,
+      handlers
+    );
+
+    auto show_modal = std::make_shared<bool>(show_default);
+    Component modal_component = Modal(
+      background_component,
+      modal_content_component,
+      show_modal.get()
+    );
+    Component synced = Renderer(
+      modal_component,
+      [modal_component, state, show_modal, show_input_id, show_default] {
+        if (show_input_id.has_value()) {
+          *show_modal = get_input_bool(state, *show_input_id);
+        } else {
+          *show_modal = show_default;
+        }
+        return modal_component->Render();
+      }
+    );
+
+    if (show_input_id.has_value() && close_on_escape) {
+      const std::string close_id = *show_input_id;
+      synced = CatchEvent(
+        synced,
+        [state, handlers, close_id](Event event) {
+          if (event != Event::Escape) {
+            return false;
+          }
+          if (!get_input_bool(state, close_id)) {
+            return false;
+          }
+          set_input_value(state, close_id, Rcpp::wrap(false));
+          run_handler_if_present(handlers, close_id, state);
+          return true;
+        }
+      );
+    }
+
+    Component with_size = apply_node_size_spec(std::move(synced), node);
+    return apply_node_overflow_spec(std::move(with_size), node);
+  }
+
   // ── Output table (reads from state$output) ───────────────────────────────
 
   if (type == "outputTable") {
     std::string output_id = Rcpp::as<std::string>(node["outputId"]);
-    std::optional<std::string> header_click_id;
-    if (node.containsElementNamed("headerClickId")) {
-      SEXP candidate = node["headerClickId"];
-      if (!Rf_isNull(candidate)) {
-        if (!is_single_string(candidate)) {
-          Rcpp::stop("`headerClickId` must be a single character string.");
-        }
-        header_click_id = Rcpp::as<std::string>(candidate);
-      }
-    }
+    const std::optional<std::string> header_click_id = parse_optional_string_field(
+      node,
+      "headerClickId",
+      "headerClickId"
+    );
 
     auto header_cell_boxes = std::make_shared<std::vector<std::shared_ptr<Box>>>();
     auto header_columns = std::make_shared<std::vector<std::string>>();
@@ -2481,7 +2567,14 @@ ftxui::Component build_component(
       run_handler_if_present(handlers, id, state);
     };
 
-    Component component = Checkbox(label, checked.get(), option);
+    Component checkbox = Checkbox(label, checked.get(), option);
+    Component component = Renderer(
+      checkbox,
+      [checkbox, checked, state, id] {
+        *checked = get_input_bool(state, id);
+        return checkbox->Render();
+      }
+    );
     Component with_size = apply_node_size_spec(std::move(component), node);
     return apply_node_overflow_spec(std::move(with_size), node);
   }

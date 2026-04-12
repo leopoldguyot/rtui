@@ -10,8 +10,9 @@
 #' graph nodes for each input event.
 #'
 #' @param ui A UI component tree built with [tuiColumn()], [tuiRow()],
-#'   [tuiBox()], [tuiOutputText()], [tuiOutputNumeric()], [tuiOutputTable()],
-#'   [tuiInputButton()], [tuiInputText()], or `tuiInputCheckbox()`.
+#'   [tuiShowIf()], [tuiModal()], [tuiBox()], [tuiOutputText()],
+#'   [tuiOutputNumeric()], [tuiOutputTable()], [tuiInputButton()],
+#'   [tuiInputText()], or [tuiInputCheckbox()].
 #' @param server A function called as `server(input, output)`. Both `input`
 #'   and `output` are environments:
 #'   - `input$<id>` is updated automatically from buttons, text inputs,
@@ -106,6 +107,7 @@ tuiApp <- function(ui, server) {
         .rtuiWithRuntime(runtime, {
           .rtuiFlushRuntime(runtime, eventId = currentEventId, forceAll = FALSE)
         })
+        state$input <- runtime$currentInputState
         state$output <- runtime$currentOutputState
         state
       }
@@ -125,6 +127,7 @@ tuiApp <- function(ui, server) {
       )
       .rtuiFlushRuntime(runtime, eventId = NULL, forceAll = FALSE)
     })
+    state$input <- runtime$currentInputState
     state$output <- runtime$currentOutputState
     state
   }
@@ -187,6 +190,10 @@ tuiApp <- function(ui, server) {
     child <- x[["child", exact = TRUE]]
     if (!is.null(child)) {
       walk(child)
+    }
+    modal <- x[["modal", exact = TRUE]]
+    if (!is.null(modal)) {
+      walk(modal)
     }
   }
 

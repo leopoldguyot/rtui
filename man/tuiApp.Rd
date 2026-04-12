@@ -8,8 +8,9 @@ tuiApp(ui, server)
 }
 \arguments{
 \item{ui}{A UI component tree built with \code{\link[=tuiColumn]{tuiColumn()}}, \code{\link[=tuiRow]{tuiRow()}},
-\code{\link[=tuiBox]{tuiBox()}}, \code{\link[=tuiOutputText]{tuiOutputText()}}, \code{\link[=tuiOutputNumeric]{tuiOutputNumeric()}}, \code{\link[=tuiOutputTable]{tuiOutputTable()}},
-\code{\link[=tuiInputButton]{tuiInputButton()}}, \code{\link[=tuiInputText]{tuiInputText()}}, or \code{tuiInputCheckbox()}.}
+\code{\link[=tuiShowIf]{tuiShowIf()}}, \code{\link[=tuiModal]{tuiModal()}}, \code{\link[=tuiBox]{tuiBox()}}, \code{\link[=tuiOutputText]{tuiOutputText()}},
+\code{\link[=tuiOutputNumeric]{tuiOutputNumeric()}}, \code{\link[=tuiOutputTable]{tuiOutputTable()}}, \code{\link[=tuiInputButton]{tuiInputButton()}},
+\code{\link[=tuiInputText]{tuiInputText()}}, or \code{\link[=tuiInputCheckbox]{tuiInputCheckbox()}}.}
 
 \item{server}{A function called as \code{server(input, output)}. Both \code{input}
 and \code{output} are environments:
