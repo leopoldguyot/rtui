@@ -23,6 +23,9 @@
 - [`tuiIsolate()`](https://leopoldguyot.github.io/rtui/reference/tuiIsolate.md)
   : Evaluate an expression in isolation
 
+- [`tuiModal()`](https://leopoldguyot.github.io/rtui/reference/tuiModal.md)
+  : Modal layout wrapper
+
 - [`tuiObserve()`](https://leopoldguyot.github.io/rtui/reference/tuiObserve.md)
   : Observe reactive values
 

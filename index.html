@@ -145,57 +145,61 @@
 <td>Conditionally show a subtree based on terminal-size breakpoints</td>
 </tr>
 <tr class="even">
+<td><code>tuiModal(child, modal, show = FALSE, showInputId = NULL, closeOnEscape = TRUE)</code></td>
+<td>Overlay popup content above a background component</td>
+</tr>
+<tr class="odd">
 <td><code>tuiBox(child, title = NULL, color = NULL, style = "rounded", titleStyle = "header", titleAlign = "left", margin = 0)</code></td>
 <td>Wrap a component in a configurable border with title/layout options</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>
 <code>tuiOutputText("id", overflow = "clip")</code> / <code>tuiOutputNumeric("id")</code> / <code>tuiOutputTable("id", headerClickId = NULL)</code>
 </td>
 <td>Display <code>output$id</code> in the UI as text/numeric/table output (table headers can emit click events)</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>tuiInputButton(label, id, color = NULL)</code></td>
 <td>Button that triggers a handler (optional text color)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>tuiInputCheckbox(label, id, value = FALSE)</code></td>
 <td>Checkbox that toggles a logical <code>input$id</code> value</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>tuiInputText(id, placeholder, value, multiline = FALSE)</code></td>
 <td>One-line text input by default (<code>multiline = TRUE</code> allows newlines)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>
 <code>tuiRenderText(expr)</code> / <code>tuiRenderNumeric(expr, digits = NULL)</code> / <code>tuiRenderTable(expr)</code>
 </td>
 <td>Build renderers assigned to <code>output$...</code>
 </td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>
 <code>tuiReactive(expr)</code> / <code>tuiReactiveVal(value)</code>
 </td>
 <td>Define graph-tracked reactive expressions and mutable values (auto invalidation of dependents)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>tuiReactiveEvent(event, expr, runAtInit = FALSE)</code></td>
 <td>Event-scoped reactive expression that re-runs when its event source invalidates</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>tuiReq(...)</code></td>
 <td>Stop current reactive/render evaluation when required values are falsy</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>tuiIsolate(expr)</code></td>
 <td>Read reactive values without registering graph dependencies</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>tuiObserve(expr)</code></td>
 <td>Register an observer that runs when its dependencies invalidate</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>tuiObserveEvent(event, expr, runAtInit = FALSE)</code></td>
 <td>Register an observer that runs only when the event source invalidates</td>
 </tr>
@@ -203,7 +207,7 @@
 </table>
 <p>All exported UI builders (<code>tuiRow</code>, <code>tuiColumn</code>, <code>tuiBox</code>, outputs, and inputs) accept optional sizing arguments: <code>width</code>, <code>height</code>, <code>minHeight</code>, <code>maxHeight</code>, <code>widthPercent</code>, and <code>heightPercent</code>.</p>
 <p><code><a href="reference/tuiRow.html">tuiRow()</a></code>, <code><a href="reference/tuiColumn.html">tuiColumn()</a></code>, and <code><a href="reference/tuiBox.html">tuiBox()</a></code> also accept per-axis overflow policies with <code>overflowX</code>/<code>overflowY</code> (<code>"visible"</code>, <code>"clip"</code>, <code>"scroll"</code>). Scroll containers expose in-place scrollbars and support keyboard/mouse scrolling. During runtime, <code>input$terminalWidth</code> and <code>input$terminalHeight</code> are available as reactive inputs so server logic can react to terminal resizing.</p>
-<p><code><a href="reference/tuiOutputTable.html">tuiOutputTable()</a></code> defaults to <code>overflowX = "scroll"</code> and <code>overflowY = "scroll"</code> so wide or tall data frames stay navigable inside constrained layouts. Set <code>headerClickId</code> on <code><a href="reference/tuiOutputTable.html">tuiOutputTable()</a></code> to receive header click payloads in <code>input$...</code> (<code>column</code>, <code>columnIndex</code>) for behaviors like server-side sorting. Use <code><a href="reference/tuiRenderTable.html">tuiRenderTable()</a></code> options (for example <code>rowBorder</code>, <code>colBorder</code>, <code>headerRowBorder</code>, <code>headerColBorder</code>, <code>borderStyle</code>, <code>columnAlign</code>, and <code>cellOverflow</code>) to control table styling server-side.</p>
+<p><code><a href="reference/tuiOutputTable.html">tuiOutputTable()</a></code> defaults to <code>overflowX = "scroll"</code> and <code>overflowY = "scroll"</code> so wide or tall data frames stay navigable inside constrained layouts. Set <code>headerClickId</code> on <code><a href="reference/tuiOutputTable.html">tuiOutputTable()</a></code> to receive header click payloads in <code>input$...</code> (<code>column</code>, <code>columnIndex</code>) for behaviors like server-side sorting. tuiModal visibility can be controlled statically with <code>show</code> or reactively with <code>showInputId</code> (using Escape to close when <code>closeOnEscape = TRUE</code>). Use <code><a href="reference/tuiRenderTable.html">tuiRenderTable()</a></code> options (for example <code>rowBorder</code>, <code>colBorder</code>, <code>headerRowBorder</code>, <code>headerColBorder</code>, <code>borderStyle</code>, <code>columnAlign</code>, and <code>cellOverflow</code>) to control table styling server-side.</p>
 <p>Navigate with <strong>Tab</strong> / <strong>arrow keys</strong>, activate buttons with <strong>Enter</strong>.</p>
 </div>
 </div>

@@ -79,6 +79,7 @@ tuiRun(app, overflow = "clip")  # press Escape or Ctrl+Q to quit
 | `tuiColumn(...)`                                                                                                       | Stack components vertically                                                                      |
 | `tuiRow(...)`                                                                                                          | Place components side by side                                                                    |
 | `tuiShowIf(child, ...)`                                                                                                | Conditionally show a subtree based on terminal-size breakpoints                                  |
+| `tuiModal(child, modal, show = FALSE, showInputId = NULL, closeOnEscape = TRUE)`                                       | Overlay popup content above a background component                                               |
 | `tuiBox(child, title = NULL, color = NULL, style = "rounded", titleStyle = "header", titleAlign = "left", margin = 0)` | Wrap a component in a configurable border with title/layout options                              |
 | `tuiOutputText("id", overflow = "clip")` / `tuiOutputNumeric("id")` / `tuiOutputTable("id", headerClickId = NULL)`     | Display `output$id` in the UI as text/numeric/table output (table headers can emit click events) |
 | `tuiInputButton(label, id, color = NULL)`                                                                              | Button that triggers a handler (optional text color)                                             |
@@ -112,7 +113,9 @@ tall data frames stay navigable inside constrained layouts. Set
 `headerClickId` on
 [`tuiOutputTable()`](https://leopoldguyot.github.io/rtui/reference/tuiOutputTable.md)
 to receive header click payloads in `input$...` (`column`,
-`columnIndex`) for behaviors like server-side sorting. Use
+`columnIndex`) for behaviors like server-side sorting. tuiModal
+visibility can be controlled statically with `show` or reactively with
+`showInputId` (using Escape to close when `closeOnEscape = TRUE`). Use
 [`tuiRenderTable()`](https://leopoldguyot.github.io/rtui/reference/tuiRenderTable.md)
 options (for example `rowBorder`, `colBorder`, `headerRowBorder`,
 `headerColBorder`, `borderStyle`, `columnAlign`, and `cellOverflow`) to
