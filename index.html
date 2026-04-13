@@ -167,8 +167,18 @@
 <td>Checkbox that toggles a logical <code>input$id</code> value</td>
 </tr>
 <tr class="odd">
+<td><code>tuiInputDropdown(id, choices, selected = NULL, maxMenuHeight = NULL)</code></td>
+<td>Dropdown/select input storing selected value in <code>input$id</code> (long lists can scroll with a scrollbar)</td>
+</tr>
+<tr class="even">
 <td><code>tuiInputText(id, placeholder, value, multiline = FALSE)</code></td>
 <td>One-line text input by default (<code>multiline = TRUE</code> allows newlines)</td>
+</tr>
+<tr class="odd">
+<td>
+<code>tuiUpdateTextInput(id, value)</code> / <code>tuiUpdateCheckboxInput(id, value)</code> / <code>tuiUpdateDropdownInput(id, selected = NULL, choices = NULL)</code>
+</td>
+<td>Update input values from server-side observers/reactive logic</td>
 </tr>
 <tr class="even">
 <td>
@@ -184,22 +194,26 @@
 <td>Define graph-tracked reactive expressions and mutable values (auto invalidation of dependents)</td>
 </tr>
 <tr class="even">
+<td><code>tuiReactiveTimer(intervalMs = 1000)</code></td>
+<td>Create a timer-driven reactive value that increments at a fixed interval</td>
+</tr>
+<tr class="odd">
 <td><code>tuiReactiveEvent(event, expr, runAtInit = FALSE)</code></td>
 <td>Event-scoped reactive expression that re-runs when its event source invalidates</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>tuiReq(...)</code></td>
 <td>Stop current reactive/render evaluation when required values are falsy</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>tuiIsolate(expr)</code></td>
 <td>Read reactive values without registering graph dependencies</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>tuiObserve(expr)</code></td>
 <td>Register an observer that runs when its dependencies invalidate</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>tuiObserveEvent(event, expr, runAtInit = FALSE)</code></td>
 <td>Register an observer that runs only when the event source invalidates</td>
 </tr>

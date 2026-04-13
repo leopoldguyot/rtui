@@ -9,6 +9,7 @@
 <url><loc>https://leopoldguyot.github.io/rtui/reference/tuiColumn.html</loc></url>
 <url><loc>https://leopoldguyot.github.io/rtui/reference/tuiInputButton.html</loc></url>
 <url><loc>https://leopoldguyot.github.io/rtui/reference/tuiInputCheckbox.html</loc></url>
+<url><loc>https://leopoldguyot.github.io/rtui/reference/tuiInputDropdown.html</loc></url>
 <url><loc>https://leopoldguyot.github.io/rtui/reference/tuiInputText.html</loc></url>
 <url><loc>https://leopoldguyot.github.io/rtui/reference/tuiIsolate.html</loc></url>
 <url><loc>https://leopoldguyot.github.io/rtui/reference/tuiModal.html</loc></url>
@@ -19,6 +20,7 @@
 <url><loc>https://leopoldguyot.github.io/rtui/reference/tuiOutputText.html</loc></url>
 <url><loc>https://leopoldguyot.github.io/rtui/reference/tuiReactive.html</loc></url>
 <url><loc>https://leopoldguyot.github.io/rtui/reference/tuiReactiveEvent.html</loc></url>
+<url><loc>https://leopoldguyot.github.io/rtui/reference/tuiReactiveTimer.html</loc></url>
 <url><loc>https://leopoldguyot.github.io/rtui/reference/tuiReactiveVal.html</loc></url>
 <url><loc>https://leopoldguyot.github.io/rtui/reference/tuiRenderNumeric.html</loc></url>
 <url><loc>https://leopoldguyot.github.io/rtui/reference/tuiRenderTable.html</loc></url>
@@ -27,5 +29,8 @@
 <url><loc>https://leopoldguyot.github.io/rtui/reference/tuiRow.html</loc></url>
 <url><loc>https://leopoldguyot.github.io/rtui/reference/tuiRun.html</loc></url>
 <url><loc>https://leopoldguyot.github.io/rtui/reference/tuiShowIf.html</loc></url>
+<url><loc>https://leopoldguyot.github.io/rtui/reference/tuiUpdateCheckboxInput.html</loc></url>
+<url><loc>https://leopoldguyot.github.io/rtui/reference/tuiUpdateDropdownInput.html</loc></url>
+<url><loc>https://leopoldguyot.github.io/rtui/reference/tuiUpdateTextInput.html</loc></url>
 </urlset>
 

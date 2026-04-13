@@ -26,8 +26,9 @@ tuiApp(ui, server)
   [`tuiOutputTable()`](https://leopoldguyot.github.io/rtui/reference/tuiOutputTable.md),
   [`tuiInputButton()`](https://leopoldguyot.github.io/rtui/reference/tuiInputButton.md),
   [`tuiInputText()`](https://leopoldguyot.github.io/rtui/reference/tuiInputText.md),
+  [`tuiInputCheckbox()`](https://leopoldguyot.github.io/rtui/reference/tuiInputCheckbox.md),
   or
-  [`tuiInputCheckbox()`](https://leopoldguyot.github.io/rtui/reference/tuiInputCheckbox.md).
+  [`tuiInputDropdown()`](https://leopoldguyot.github.io/rtui/reference/tuiInputDropdown.md).
 
 - server:
 
@@ -35,7 +36,7 @@ tuiApp(ui, server)
   `output` are environments:
 
   - `input$<id>` is updated automatically from buttons, text inputs,
-    checkboxes, and table header click events.
+    checkboxes, dropdowns, and table header click events.
 
   - `input$terminalWidth` and `input$terminalHeight` are automatically
     managed read-only reactive inputs reflecting the current terminal

@@ -17,6 +17,10 @@
 - [`tuiInputCheckbox()`](https://leopoldguyot.github.io/rtui/reference/tuiInputCheckbox.md)
   : Checkbox input component
 
+- [`tuiInputDropdown()`](https://leopoldguyot.github.io/rtui/reference/tuiInputDropdown.md)
+  [`tuiDropDownInput()`](https://leopoldguyot.github.io/rtui/reference/tuiInputDropdown.md)
+  : Dropdown input component
+
 - [`tuiInputText()`](https://leopoldguyot.github.io/rtui/reference/tuiInputText.md)
   : Text input component
 
@@ -47,6 +51,9 @@
 - [`tuiReactiveEvent()`](https://leopoldguyot.github.io/rtui/reference/tuiReactiveEvent.md)
   : Create an event-driven reactive expression
 
+- [`tuiReactiveTimer()`](https://leopoldguyot.github.io/rtui/reference/tuiReactiveTimer.md)
+  : Create a timer-driven reactive value
+
 - [`tuiReactiveVal()`](https://leopoldguyot.github.io/rtui/reference/tuiReactiveVal.md)
   : Create a mutable reactive value
 
@@ -76,3 +83,13 @@
 
 - [`tuiShowIf()`](https://leopoldguyot.github.io/rtui/reference/tuiShowIf.md)
   : Conditionally render a child component by terminal size
+
+- [`tuiUpdateCheckboxInput()`](https://leopoldguyot.github.io/rtui/reference/tuiUpdateCheckboxInput.md)
+  : Update a checkbox input value from server logic
+
+- [`tuiUpdateDropdownInput()`](https://leopoldguyot.github.io/rtui/reference/tuiUpdateDropdownInput.md)
+  : Update a dropdown input value (and optional choices) from server
+  logic
+
+- [`tuiUpdateTextInput()`](https://leopoldguyot.github.io/rtui/reference/tuiUpdateTextInput.md)
+  : Update a text input value from server logic

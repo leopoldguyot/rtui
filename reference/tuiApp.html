@@ -57,13 +57,13 @@ graph nodes for each input event.</p>
 <dd><p>A UI component tree built with <code><a href="tuiColumn.html">tuiColumn()</a></code>, <code><a href="tuiRow.html">tuiRow()</a></code>,
 <code><a href="tuiShowIf.html">tuiShowIf()</a></code>, <code><a href="tuiModal.html">tuiModal()</a></code>, <code><a href="tuiBox.html">tuiBox()</a></code>, <code><a href="tuiOutputText.html">tuiOutputText()</a></code>,
 <code><a href="tuiOutputNumeric.html">tuiOutputNumeric()</a></code>, <code><a href="tuiOutputTable.html">tuiOutputTable()</a></code>, <code><a href="tuiInputButton.html">tuiInputButton()</a></code>,
-<code><a href="tuiInputText.html">tuiInputText()</a></code>, or <code><a href="tuiInputCheckbox.html">tuiInputCheckbox()</a></code>.</p></dd>
+<code><a href="tuiInputText.html">tuiInputText()</a></code>, <code><a href="tuiInputCheckbox.html">tuiInputCheckbox()</a></code>, or <code><a href="tuiInputDropdown.html">tuiInputDropdown()</a></code>.</p></dd>
 
 
 <dt id="arg-server">server<a class="anchor" aria-label="anchor" href="#arg-server"></a></dt>
 <dd><p>A function called as <code>server(input, output)</code>. Both <code>input</code>
 and <code>output</code> are environments:</p><ul><li><p><code>input$&lt;id&gt;</code> is updated automatically from buttons, text inputs,
-checkboxes, and table header click events.</p></li>
+checkboxes, dropdowns, and table header click events.</p></li>
 <li><p><code>input$terminalWidth</code> and <code>input$terminalHeight</code> are automatically
 managed read-only reactive inputs reflecting the current terminal size.</p></li>
 <li><p>assign rendered outputs with <code>output$&lt;name&gt; &lt;- tuiRenderText(...)</code> or
