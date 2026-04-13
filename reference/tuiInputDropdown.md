@@ -59,6 +59,10 @@ tuiDropDownInput(...)
   [`tuiColumn()`](https://leopoldguyot.github.io/rtui/reference/tuiColumn.md)
   for strict main-axis percentages.
 
+- ...:
+
+  Passed through to `tuiInputDropdown()`.
+
 ## Value
 
 A `rtuiComponent` list node of type `"dropdown"`.
