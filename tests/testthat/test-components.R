@@ -228,6 +228,65 @@ test_that("tuiInputCheckbox stores value and validates inputs", {
   )
 })
 
+test_that("tuiInputDropdown stores values and validates inputs", {
+  dropdown <- tuiInputDropdown(
+    id = "owner",
+    choices = c("ui", "api", "core"),
+    selected = "api"
+  )
+  expect_identical(dropdown$type, "dropdown")
+  expect_identical(dropdown$id, "owner")
+  expect_identical(dropdown$choices, c("ui", "api", "core"))
+  expect_identical(dropdown$value, "api")
+  expect_null(dropdown$maxMenuHeight)
+
+  default_selected <- tuiInputDropdown(
+    id = "status",
+    choices = c("pending", "active")
+  )
+  expect_identical(default_selected$value, "pending")
+
+  custom_menu_height <- tuiInputDropdown(
+    id = "queue",
+    choices = c("new", "running", "done"),
+    maxMenuHeight = 8
+  )
+  expect_identical(custom_menu_height$maxMenuHeight, 8L)
+
+  alias_dropdown <- tuiDropDownInput(
+    id = "alias",
+    choices = c("a", "b"),
+    selected = "b"
+  )
+  expect_identical(alias_dropdown$type, "dropdown")
+  expect_identical(alias_dropdown$value, "b")
+
+  expect_error(
+    tuiInputDropdown(id = NA_character_, choices = c("a")),
+    "`id` must be a single character string."
+  )
+  expect_error(
+    tuiInputDropdown(id = "x", choices = c()),
+    "`choices` must be a non-empty character vector without NA values."
+  )
+  expect_error(
+    tuiInputDropdown(id = "x", choices = c("a", NA_character_)),
+    "`choices` must be a non-empty character vector without NA values."
+  )
+  expect_error(
+    tuiInputDropdown(id = "x", choices = c("a", "b"), selected = 1),
+    "`selected` must be NULL or a single character string."
+  )
+  expect_error(
+    tuiInputDropdown(id = "x", choices = c("a", "b"), selected = "z"),
+    "`selected` must match one of `choices`."
+  )
+  expect_error(
+    tuiInputDropdown(id = "x", choices = c("a"), maxMenuHeight = 0),
+    "`maxMenuHeight` must be NULL or a single positive integer."
+  )
+})
+
 test_that("tuiBox stores configuration and validates inputs", {
   wrapped <- tuiBox(
     child = tuiOutputText("out"),
@@ -338,6 +397,13 @@ test_that("size arguments are stored on components and layouts", {
     widthPercent = 0.2
   )
   expect_identical(sized_button$widthPercent, 0.2)
+
+  sized_dropdown <- tuiInputDropdown(
+    id = "owner",
+    choices = c("ui", "api"),
+    widthPercent = 0.3
+  )
+  expect_identical(sized_dropdown$widthPercent, 0.3)
 
   sized_box <- tuiBox(
     child = tuiOutputText("panel"),

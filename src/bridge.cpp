@@ -2,6 +2,8 @@
 #include "ui_tree.h"
 
 #include <algorithm>
+#include <atomic>
+#include <chrono>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/screen_interactive.hpp>
 #include <ftxui/dom/elements.hpp>
@@ -11,6 +13,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <thread>
 
 using namespace ftxui;
 
@@ -19,6 +22,7 @@ namespace {
 constexpr const char* kTerminalWidthId = "terminalWidth";
 constexpr const char* kTerminalHeightId = "terminalHeight";
 constexpr const char* kTerminalResizeHandlerId = ".rtui_terminal_resize";
+constexpr const char* kTimerTickId = ".rtui_timer_tick";
 
 Rcpp::List get_sublist_or_empty(const Rcpp::List& values, const char* name) {
   if (values.containsElementNamed(name)) {
@@ -321,6 +325,32 @@ void runTuiApp(
     [overflow, scroll_x, scroll_y, max_scroll_x, max_scroll_y, block_active, state, handlers](Event event) -> bool {
     sync_terminal_size(state, handlers, false);
 
+    if (event == Event::Custom) {
+      bool timers_active = false;
+      if (state->values.containsElementNamed("timersActive")) {
+        SEXP active_candidate = state->values["timersActive"];
+        if (TYPEOF(active_candidate) == LGLSXP &&
+            Rf_length(active_candidate) == 1 &&
+            LOGICAL(active_candidate)[0] != NA_LOGICAL) {
+          timers_active = LOGICAL(active_candidate)[0] == TRUE;
+        } else if (TYPEOF(active_candidate) == INTSXP &&
+                   Rf_length(active_candidate) == 1 &&
+                   INTEGER(active_candidate)[0] != NA_INTEGER) {
+          timers_active = INTEGER(active_candidate)[0] != 0;
+        }
+      }
+      if (!timers_active) {
+        return false;
+      }
+
+      Rcpp::List input_values = get_sublist_or_empty(state->values, "input");
+      const int current_tick = get_input_integer(input_values, kTimerTickId, 0);
+      input_values[kTimerTickId] = current_tick + 1;
+      state->values["input"] = input_values;
+      run_handler_if_present(handlers, kTimerTickId, state);
+      return true;
+    }
+
     if (overflow == "block" && *block_active) {
       return true;
     }
@@ -399,6 +429,21 @@ void runTuiApp(
     return false;
   });
 
+  std::atomic<bool> timer_active{true};
+  std::thread timer_thread([&screen, &timer_active] {
+    while (timer_active.load()) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(50));
+      if (!timer_active.load()) {
+        break;
+      }
+      screen.PostEvent(Event::Custom);
+    }
+  });
+
   // Blocking: takes over the terminal until the user quits.
   screen.Loop(app);
+  timer_active.store(false);
+  if (timer_thread.joinable()) {
+    timer_thread.join();
+  }
 }

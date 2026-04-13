@@ -1,6 +1,7 @@
 .rtuiTerminalWidthId <- "terminalWidth"
 .rtuiTerminalHeightId <- "terminalHeight"
 .rtuiTerminalResizeHandlerId <- ".rtui_terminal_resize"
+.rtuiTimerTickId <- ".rtui_timer_tick"
 
 #' Create a TUI application
 #'
@@ -12,11 +13,11 @@
 #' @param ui A UI component tree built with [tuiColumn()], [tuiRow()],
 #'   [tuiShowIf()], [tuiModal()], [tuiBox()], [tuiOutputText()],
 #'   [tuiOutputNumeric()], [tuiOutputTable()], [tuiInputButton()],
-#'   [tuiInputText()], or [tuiInputCheckbox()].
+#'   [tuiInputText()], [tuiInputCheckbox()], or [tuiInputDropdown()].
 #' @param server A function called as `server(input, output)`. Both `input`
 #'   and `output` are environments:
 #'   - `input$<id>` is updated automatically from buttons, text inputs,
-#'     checkboxes, and table header click events.
+#'     checkboxes, dropdowns, and table header click events.
 #'   - `input$terminalWidth` and `input$terminalHeight` are automatically
 #'     managed read-only reactive inputs reflecting the current terminal size.
 #'   - assign rendered outputs with `output$<name> <- tuiRenderText(...)` or
@@ -51,16 +52,17 @@ tuiApp <- function(ui, server) {
     meta$buttonIds,
     meta$textInputIds,
     meta$checkboxIds,
+    meta$dropdownIds,
     meta$tableHeaderClickIds
   )
   duplicatedIds <- unique(inputIds[duplicated(inputIds)])
   if (length(duplicatedIds) > 0L) {
     stop(
-      "Component ids must be unique across buttons, text inputs, checkboxes, and table header click ids. Duplicates: ",
+      "Component ids must be unique across buttons, text inputs, checkboxes, dropdowns, and table header click ids. Duplicates: ",
       paste(duplicatedIds, collapse = ", ")
     )
   }
-  reservedInputIds <- c(.rtuiTerminalWidthId, .rtuiTerminalHeightId)
+  reservedInputIds <- c(.rtuiTerminalWidthId, .rtuiTerminalHeightId, .rtuiTimerTickId)
   conflictingReservedIds <- intersect(inputIds, reservedInputIds)
   if (length(conflictingReservedIds) > 0L) {
     stop(
@@ -71,6 +73,15 @@ tuiApp <- function(ui, server) {
   }
 
   runtime <- .rtuiCreateRuntime(meta$outputIds)
+  runtime$currentDropdownChoices <- meta$dropdownChoices
+  runtime$currentInputTypes <- c(
+    stats::setNames(rep("button", length(meta$buttonIds)), meta$buttonIds),
+    stats::setNames(rep("text", length(meta$textInputIds)), meta$textInputIds),
+    stats::setNames(rep("checkbox", length(meta$checkboxIds)), meta$checkboxIds),
+    stats::setNames(rep("dropdown", length(meta$dropdownIds)), meta$dropdownIds),
+    stats::setNames(rep("tableHeaderClick", length(meta$tableHeaderClickIds)), meta$tableHeaderClickIds),
+    stats::setNames(rep("runtime", 3L), c(.rtuiTerminalWidthId, .rtuiTerminalHeightId, .rtuiTimerTickId))
+  )
   inputState <- .rtuiInitialInput(meta)
   outputState <- .rtuiInitialOutput(meta)
   runtime$currentInputState <- inputState
@@ -89,14 +100,18 @@ tuiApp <- function(ui, server) {
 
   state <- list(
     input = runtime$currentInputState,
-    output = runtime$currentOutputState
+    output = runtime$currentOutputState,
+    dropdownChoices = runtime$currentDropdownChoices,
+    timersActive = length(runtime$timers) > 0L
   )
 
   handlerIds <- unique(c(
     meta$buttonIds,
     meta$textInputIds,
     meta$checkboxIds,
-    meta$tableHeaderClickIds
+    meta$dropdownIds,
+    meta$tableHeaderClickIds,
+    .rtuiTimerTickId
   ))
   handlers <- stats::setNames(vector("list", length(handlerIds)), handlerIds)
   for (id in handlerIds) {
@@ -104,11 +119,18 @@ tuiApp <- function(ui, server) {
       currentEventId <- id
       function(state) {
         runtime$currentInputState <- state$input
+        runtime$currentDropdownChoices <- if (!is.null(state$dropdownChoices)) {
+          state$dropdownChoices
+        } else {
+          runtime$currentDropdownChoices
+        }
         .rtuiWithRuntime(runtime, {
           .rtuiFlushRuntime(runtime, eventId = currentEventId, forceAll = FALSE)
         })
         state$input <- runtime$currentInputState
         state$output <- runtime$currentOutputState
+        state$dropdownChoices <- runtime$currentDropdownChoices
+        state$timersActive <- length(runtime$timers) > 0L
         state
       }
     })
@@ -116,6 +138,11 @@ tuiApp <- function(ui, server) {
 
   handlers[[.rtuiTerminalResizeHandlerId]] <- function(state) {
     runtime$currentInputState <- state$input
+    runtime$currentDropdownChoices <- if (!is.null(state$dropdownChoices)) {
+      state$dropdownChoices
+    } else {
+      runtime$currentDropdownChoices
+    }
     .rtuiWithRuntime(runtime, {
       .rtuiGraphInvalidateDependents(
         runtime,
@@ -129,6 +156,33 @@ tuiApp <- function(ui, server) {
     })
     state$input <- runtime$currentInputState
     state$output <- runtime$currentOutputState
+    state$dropdownChoices <- runtime$currentDropdownChoices
+    state$timersActive <- length(runtime$timers) > 0L
+    state
+  }
+
+  handlers[[.rtuiTimerTickId]] <- function(state) {
+    runtime$currentInputState <- state$input
+    runtime$currentDropdownChoices <- if (!is.null(state$dropdownChoices)) {
+      state$dropdownChoices
+    } else {
+      runtime$currentDropdownChoices
+    }
+    if (is.null(runtime$timers) || length(runtime$timers) == 0L) {
+      state$input <- runtime$currentInputState
+      state$output <- runtime$currentOutputState
+      state$dropdownChoices <- runtime$currentDropdownChoices
+      state$timersActive <- FALSE
+      return(state)
+    }
+    .rtuiWithRuntime(runtime, {
+      .rtuiProcessTimers(runtime)
+      .rtuiFlushRuntime(runtime, eventId = .rtuiTimerTickId, forceAll = FALSE)
+    })
+    state$input <- runtime$currentInputState
+    state$output <- runtime$currentOutputState
+    state$dropdownChoices <- runtime$currentDropdownChoices
+    state$timersActive <- length(runtime$timers) > 0L
     state
   }
 
@@ -155,6 +209,9 @@ tuiApp <- function(ui, server) {
   textInputDefaults <- list()
   checkboxIds <- character()
   checkboxDefaults <- list()
+  dropdownIds <- character()
+  dropdownDefaults <- list()
+  dropdownChoices <- list()
   tableHeaderClickIds <- character()
 
   walk <- function(x) {
@@ -180,6 +237,13 @@ tuiApp <- function(ui, server) {
       checkboxIds <<- c(checkboxIds, inputId)
       checkboxDefaults[[inputId]] <<- isTRUE(x[["value"]])
     }
+    if (identical(type, "dropdown")) {
+      inputId <- x[["id"]]
+      dropdownIds <<- c(dropdownIds, inputId)
+      dropdownChoices[[inputId]] <<- as.character(x[["choices"]])
+      defaultValue <- if (is.null(x[["value"]])) dropdownChoices[[inputId]][[1L]] else x[["value"]]
+      dropdownDefaults[[inputId]] <<- defaultValue
+    }
 
     children <- x[["children", exact = TRUE]]
     if (!is.null(children)) {
@@ -201,6 +265,7 @@ tuiApp <- function(ui, server) {
 
   textInputIds <- unique(textInputIds)
   checkboxIds <- unique(checkboxIds)
+  dropdownIds <- unique(dropdownIds)
   tableHeaderClickIds <- unique(tableHeaderClickIds)
 
   list(
@@ -210,6 +275,9 @@ tuiApp <- function(ui, server) {
     textInputDefaults = textInputDefaults[textInputIds],
     checkboxIds = checkboxIds,
     checkboxDefaults = checkboxDefaults[checkboxIds],
+    dropdownIds = dropdownIds,
+    dropdownDefaults = dropdownDefaults[dropdownIds],
+    dropdownChoices = dropdownChoices[dropdownIds],
     tableHeaderClickIds = tableHeaderClickIds
   )
 }
@@ -229,9 +297,10 @@ tuiApp <- function(ui, server) {
     meta$buttonIds,
     meta$textInputIds,
     meta$checkboxIds,
+    meta$dropdownIds,
     meta$tableHeaderClickIds
   )
-  ids <- c(ids, .rtuiTerminalWidthId, .rtuiTerminalHeightId)
+  ids <- c(ids, .rtuiTerminalWidthId, .rtuiTerminalHeightId, .rtuiTimerTickId)
   input <- stats::setNames(vector("list", length(ids)), ids)
 
   for (id in meta$buttonIds) {
@@ -247,12 +316,21 @@ tuiApp <- function(ui, server) {
   for (id in meta$checkboxIds) {
     input[[id]] <- if (!is.null(checkboxDefaults[[id]])) isTRUE(checkboxDefaults[[id]]) else FALSE
   }
+
+  dropdownDefaults <- if (is.null(meta$dropdownDefaults)) list() else meta$dropdownDefaults
+  dropdownChoices <- if (is.null(meta$dropdownChoices)) list() else meta$dropdownChoices
+  for (id in meta$dropdownIds) {
+    fallback <- dropdownChoices[[id]]
+    fallback <- if (is.null(fallback) || length(fallback) == 0L) "" else as.character(fallback[[1L]])
+    input[[id]] <- if (!is.null(dropdownDefaults[[id]])) as.character(dropdownDefaults[[id]]) else fallback
+  }
   for (id in meta$tableHeaderClickIds) {
     input[id] <- list(NULL)
   }
 
   input[[.rtuiTerminalWidthId]] <- 0L
   input[[.rtuiTerminalHeightId]] <- 0L
+  input[[.rtuiTimerTickId]] <- 0L
 
   input
 }
@@ -315,6 +393,12 @@ tuiApp <- function(ui, server) {
   runtime$observers <- new.env(parent = emptyenv())
   runtime$observerOrder <- character()
   runtime$selfInvalidationWarnings <- new.env(parent = emptyenv())
+  runtime$currentDropdownChoices <- list()
+  runtime$currentInputTypes <- character()
+  runtime$currentUpdatedInputIds <- character()
+  runtime$timers <- list()
+  runtime$timerIndex <- 0L
+  runtime$timerTickMs <- 50L
   runtime
 }
 
@@ -722,6 +806,7 @@ tuiApp <- function(ui, server) {
   runtime$currentEventId <- eventId
   runtime$currentIsolateDepth <- 0L
   runtime$currentCaptureDepth <- 0L
+  runtime$currentUpdatedInputIds <- character()
   runtime$graphEvalStack <- character()
   runtime$currentEvalDeps <- new.env(parent = emptyenv())
 

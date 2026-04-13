@@ -388,6 +388,32 @@ std::string get_input_string(
   return value_to_string(input_values[id]);
 }
 
+std::vector<std::string> get_dropdown_choices(
+    const std::shared_ptr<AppState>& state,
+    const std::string& id,
+    const std::vector<std::string>& fallback
+) {
+  if (!state->values.containsElementNamed("dropdownChoices")) {
+    return fallback;
+  }
+
+  SEXP choices_candidate = state->values["dropdownChoices"];
+  if (TYPEOF(choices_candidate) != VECSXP) {
+    return fallback;
+  }
+
+  Rcpp::List dropdown_choices = Rcpp::as<Rcpp::List>(choices_candidate);
+  if (!dropdown_choices.containsElementNamed(id.c_str())) {
+    return fallback;
+  }
+
+  std::vector<std::string> choices = parse_string_cells(dropdown_choices[id]);
+  if (choices.empty()) {
+    return fallback;
+  }
+  return choices;
+}
+
 void run_handler_if_present(
     const Rcpp::List& handlers,
     const std::string& id,
@@ -2579,6 +2605,100 @@ ftxui::Component build_component(
     return apply_node_overflow_spec(std::move(with_size), node);
   }
 
+  // ── Dropdown ───────────────────────────────────────────────────────────────
+
+  if (type == "dropdown") {
+    std::string id = Rcpp::as<std::string>(node["id"]);
+    if (!node.containsElementNamed("choices")) {
+      Rcpp::stop("`dropdown` component requires a `choices` field.");
+    }
+
+    std::vector<std::string> initial_choices = parse_string_cells(node["choices"]);
+    if (initial_choices.empty()) {
+      Rcpp::stop("`choices` must contain at least one entry.");
+    }
+
+    auto choices = std::make_shared<std::vector<std::string>>(initial_choices);
+    auto selected_index = std::make_shared<int>(0);
+
+    auto sync_dropdown_state = [state, id, choices, selected_index, initial_choices] {
+      *choices = get_dropdown_choices(state, id, initial_choices);
+      if (choices->empty()) {
+        *choices = initial_choices;
+      }
+      if (choices->empty()) {
+        *selected_index = 0;
+        return;
+      }
+
+      const std::string selected_value = get_input_string(state, id);
+      auto it = std::find(choices->begin(), choices->end(), selected_value);
+      if (it == choices->end()) {
+        *selected_index = 0;
+        if (selected_value != (*choices)[0]) {
+          set_input_value(state, id, Rcpp::wrap((*choices)[0]));
+        }
+      } else {
+        *selected_index = static_cast<int>(std::distance(choices->begin(), it));
+      }
+    };
+
+    sync_dropdown_state();
+
+    int max_menu_height = 12;
+    if (auto parsed_max_menu_height = parse_optional_non_negative_integer(
+        node,
+        "maxMenuHeight",
+        "maxMenuHeight"
+    )) {
+      if (*parsed_max_menu_height < 1) {
+        Rcpp::stop("`maxMenuHeight` must be a single positive integer.");
+      }
+      max_menu_height = *parsed_max_menu_height;
+    }
+
+    DropdownOption option;
+    option.radiobox.entries = choices.get();
+    option.radiobox.selected = selected_index.get();
+    option.radiobox.on_change = [state, handlers, id, choices, selected_index] {
+      const int index = *selected_index;
+      if (index < 0 || index >= static_cast<int>(choices->size())) {
+        return;
+      }
+      set_input_value(state, id, Rcpp::wrap((*choices)[static_cast<size_t>(index)]));
+      run_handler_if_present(handlers, id, state);
+    };
+    option.transform = [max_menu_height](
+        bool is_open,
+        Element checkbox_element,
+        Element radiobox_element
+    ) {
+      if (is_open) {
+        return vbox({
+          std::move(checkbox_element),
+          separator(),
+          std::move(radiobox_element) | vscroll_indicator | frame |
+            size(HEIGHT, LESS_THAN, max_menu_height)
+        }) | border;
+      }
+      const NodeSizeSpec closed_spec{
+        std::nullopt,
+        std::nullopt,
+        std::nullopt,
+        3
+      };
+      return apply_size_constraints(std::move(checkbox_element) | border, closed_spec);
+    };
+
+    Component dropdown = Dropdown(option);
+    Component component = Renderer(dropdown, [dropdown, sync_dropdown_state] {
+      sync_dropdown_state();
+      return dropdown->Render();
+    });
+    Component with_size = apply_node_size_spec(std::move(component), node);
+    return apply_node_overflow_spec(std::move(with_size), node);
+  }
+
   // ── Box wrapper ───────────────────────────────────────────────────────────
 
   if (type == "box") {
@@ -2665,7 +2785,17 @@ ftxui::Component build_component(
       run_handler_if_present(handlers, id, state);
     };
 
-    Component component = Input(content.get(), opts);
+    Component input_component = Input(content.get(), opts);
+    Component component = Renderer(
+      input_component,
+      [input_component, content, state, id] {
+        const std::string current_value = get_input_string(state, id);
+        if (*content != current_value) {
+          *content = current_value;
+        }
+        return input_component->Render();
+      }
+    );
     Component with_size = apply_node_size_spec(std::move(component), node);
     return apply_node_overflow_spec(std::move(with_size), node);
   }

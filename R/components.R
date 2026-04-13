@@ -442,6 +442,104 @@ tuiInputButton <- function(
   )
 }
 
+#' Internal helper `.rtuiNormalizeChoices`.
+#'
+#' Validates and normalizes dropdown/select choices.
+#'
+#' @param choices Candidate choices vector.
+#' @param arg Argument name (for error messages).
+#'
+#' @return Character vector of validated choices.
+#'
+#' @keywords internal
+#' @noRd
+.rtuiNormalizeChoices <- function(choices, arg = "choices") {
+  if (!is.character(choices) || length(choices) == 0L || anyNA(choices)) {
+    stop("`", arg, "` must be a non-empty character vector without NA values.")
+  }
+  as.character(choices)
+}
+
+#' Dropdown input component
+#'
+#' A focusable dropdown/select input. Selecting an item updates `input$<id>` and
+#' triggers a server update.
+#'
+#' @param id A character string used as the input key (`input$<id>`).
+#' @param choices Non-empty character vector of selectable values.
+#' @param selected Optional selected value. Must be one of `choices`. Defaults to
+#'   the first element of `choices`.
+#' @param maxMenuHeight Optional maximum visible dropdown menu height (in
+#'   terminal rows) before enabling internal scrolling with a scrollbar.
+#' @param width,height Optional fixed width/height in terminal cells.
+#' @param minHeight,maxHeight Optional min/max height in terminal cells.
+#' @param widthPercent,heightPercent Optional relative size between `0` and `1`.
+#'   `widthPercent` is interpreted by [tuiRow()] and `heightPercent` by
+#'   [tuiColumn()] for strict main-axis percentages.
+#'
+#' @return A `rtuiComponent` list node of type `"dropdown"`.
+#'
+#' @export
+tuiInputDropdown <- function(
+    id,
+    choices,
+    selected = NULL,
+    maxMenuHeight = NULL,
+    width = NULL,
+    height = NULL,
+    minHeight = NULL,
+    maxHeight = NULL,
+    widthPercent = NULL,
+    heightPercent = NULL
+) {
+  if (!is.character(id) || length(id) != 1L || is.na(id))
+    stop("`id` must be a single character string.")
+
+  choices <- .rtuiNormalizeChoices(choices, "choices")
+
+  if (is.null(selected)) {
+    selected <- choices[[1L]]
+  } else {
+    if (!is.character(selected) || length(selected) != 1L || is.na(selected)) {
+      stop("`selected` must be NULL or a single character string.")
+    }
+    if (!selected %in% choices) {
+      stop("`selected` must match one of `choices`.")
+    }
+  }
+
+  maxMenuHeight <- .rtuiNormalizeSizeInteger(maxMenuHeight, "maxMenuHeight")
+  if (!is.null(maxMenuHeight) && maxMenuHeight < 1L) {
+    stop("`maxMenuHeight` must be NULL or a single positive integer.")
+  }
+
+  component <- .rtuiApplySizeSpec(
+    list(
+      type = "dropdown",
+      id = id,
+      choices = choices,
+      value = selected
+    ),
+    width = width,
+    height = height,
+    minHeight = minHeight,
+    maxHeight = maxHeight,
+    widthPercent = widthPercent,
+    heightPercent = heightPercent
+  )
+  if (!is.null(maxMenuHeight)) {
+    component$maxMenuHeight <- maxMenuHeight
+  }
+
+  structure(component, class = "rtuiComponent")
+}
+
+#' @rdname tuiInputDropdown
+#' @export
+tuiDropDownInput <- function(...) {
+  tuiInputDropdown(...)
+}
+
 #' Text input component
 #'
 #' A focusable text input. The typed value is stored automatically in

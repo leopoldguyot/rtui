@@ -136,7 +136,8 @@
   if (identical(eventSpec$type, "input")) {
     matchesInput <- !is.null(runtime$currentEventId) &&
       identical(runtime$currentEventId, eventSpec$inputId)
-    return(matchesInput || (isInitRun && isTRUE(runAtInit)))
+    syntheticMatches <- eventSpec$inputId %in% runtime$currentUpdatedInputIds
+    return(matchesInput || syntheticMatches || (isInitRun && isTRUE(runAtInit)))
   }
 
   if (identical(eventSpec$type, "reactive")) {

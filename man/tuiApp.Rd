@@ -10,13 +10,13 @@ tuiApp(ui, server)
 \item{ui}{A UI component tree built with \code{\link[=tuiColumn]{tuiColumn()}}, \code{\link[=tuiRow]{tuiRow()}},
 \code{\link[=tuiShowIf]{tuiShowIf()}}, \code{\link[=tuiModal]{tuiModal()}}, \code{\link[=tuiBox]{tuiBox()}}, \code{\link[=tuiOutputText]{tuiOutputText()}},
 \code{\link[=tuiOutputNumeric]{tuiOutputNumeric()}}, \code{\link[=tuiOutputTable]{tuiOutputTable()}}, \code{\link[=tuiInputButton]{tuiInputButton()}},
-\code{\link[=tuiInputText]{tuiInputText()}}, or \code{\link[=tuiInputCheckbox]{tuiInputCheckbox()}}.}
+\code{\link[=tuiInputText]{tuiInputText()}}, \code{\link[=tuiInputCheckbox]{tuiInputCheckbox()}}, or \code{\link[=tuiInputDropdown]{tuiInputDropdown()}}.}
 
 \item{server}{A function called as \code{server(input, output)}. Both \code{input}
 and \code{output} are environments:
 \itemize{
 \item \verb{input$<id>} is updated automatically from buttons, text inputs,
-checkboxes, and table header click events.
+checkboxes, dropdowns, and table header click events.
 \item \code{input$terminalWidth} and \code{input$terminalHeight} are automatically
 managed read-only reactive inputs reflecting the current terminal size.
 \item assign rendered outputs with \verb{output$<name> <- tuiRenderText(...)} or

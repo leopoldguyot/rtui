@@ -84,9 +84,12 @@ tuiRun(app, overflow = "clip")  # press Escape or Ctrl+Q to quit
 | `tuiOutputText("id", overflow = "clip")` / `tuiOutputNumeric("id")` / `tuiOutputTable("id", headerClickId = NULL)` | Display `output$id` in the UI as text/numeric/table output (table headers can emit click events) |
 | `tuiInputButton(label, id, color = NULL)` | Button that triggers a handler (optional text color) |
 | `tuiInputCheckbox(label, id, value = FALSE)` | Checkbox that toggles a logical `input$id` value |
+| `tuiInputDropdown(id, choices, selected = NULL, maxMenuHeight = NULL)` | Dropdown/select input storing selected value in `input$id` (long lists can scroll with a scrollbar) |
 | `tuiInputText(id, placeholder, value, multiline = FALSE)` | One-line text input by default (`multiline = TRUE` allows newlines) |
+| `tuiUpdateTextInput(id, value)` / `tuiUpdateCheckboxInput(id, value)` / `tuiUpdateDropdownInput(id, selected = NULL, choices = NULL)` | Update input values from server-side observers/reactive logic |
 | `tuiRenderText(expr)` / `tuiRenderNumeric(expr, digits = NULL)` / `tuiRenderTable(expr)` | Build renderers assigned to `output$...` |
 | `tuiReactive(expr)` / `tuiReactiveVal(value)` | Define graph-tracked reactive expressions and mutable values (auto invalidation of dependents) |
+| `tuiReactiveTimer(intervalMs = 1000)` | Create a timer-driven reactive value that increments at a fixed interval |
 | `tuiReactiveEvent(event, expr, runAtInit = FALSE)` | Event-scoped reactive expression that re-runs when its event source invalidates |
 | `tuiReq(...)` | Stop current reactive/render evaluation when required values are falsy |
 | `tuiIsolate(expr)` | Read reactive values without registering graph dependencies |
