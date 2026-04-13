@@ -476,6 +476,7 @@ tuiInputButton <- function(
 #' @param widthPercent,heightPercent Optional relative size between `0` and `1`.
 #'   `widthPercent` is interpreted by [tuiRow()] and `heightPercent` by
 #'   [tuiColumn()] for strict main-axis percentages.
+#' @param ... Passed through to [tuiInputDropdown()].
 #'
 #' @return A `rtuiComponent` list node of type `"dropdown"`.
 #'

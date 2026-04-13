@@ -38,6 +38,8 @@ terminal rows) before enabling internal scrolling with a scrollbar.}
 \item{widthPercent, heightPercent}{Optional relative size between \code{0} and \code{1}.
 \code{widthPercent} is interpreted by \code{\link[=tuiRow]{tuiRow()}} and \code{heightPercent} by
 \code{\link[=tuiColumn]{tuiColumn()}} for strict main-axis percentages.}
+
+\item{...}{Passed through to \code{\link[=tuiInputDropdown]{tuiInputDropdown()}}.}
 }
 \value{
 A \code{rtuiComponent} list node of type \code{"dropdown"}.
