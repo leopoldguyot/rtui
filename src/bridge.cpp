@@ -66,12 +66,15 @@ void run_handler_if_present(
 bool sync_terminal_size(
     const std::shared_ptr<AppState>& state,
     const Rcpp::List& handlers,
-    bool force = false
+    bool force = false,
+    bool use_active_screen_dimensions = true
 ) {
   Dimensions terminal = Terminal::Size();
-  if (auto* active = ScreenInteractive::Active()) {
-    if (active->dimx() > 0 && active->dimy() > 0) {
-      terminal = Dimensions{active->dimx(), active->dimy()};
+  if (use_active_screen_dimensions) {
+    if (auto* active = ScreenInteractive::Active()) {
+      if (active->dimx() > 0 && active->dimy() > 0) {
+        terminal = Dimensions{active->dimx(), active->dimy()};
+      }
     }
   }
   const int width = std::max(0, terminal.dimx);
@@ -208,17 +211,23 @@ void runTuiApp(
     Rcpp::List uiList,
     Rcpp::List stateList,
     Rcpp::List handlers,
-    std::string overflow
+    std::string overflow,
+    std::string screenMode
 ) {
+  if (screenMode != "fullscreen" && screenMode != "terminal") {
+    Rcpp::stop("`screen` must be one of 'fullscreen' or 'terminal'.");
+  }
+  const bool use_active_screen_dimensions = screenMode == "fullscreen";
+
   // Shared state — all component lambdas capture this by shared_ptr.
   auto state = std::make_shared<AppState>();
   state->values = stateList;
-  sync_terminal_size(state, handlers, true);
+  sync_terminal_size(state, handlers, true, use_active_screen_dimensions);
 
   // Build the FTXUI component tree from the R UI list tree.
   Component root = build_component(uiList, state, handlers);
-  root = Renderer(root, [root, state, handlers] {
-    sync_terminal_size(state, handlers, false);
+  root = Renderer(root, [root, state, handlers, use_active_screen_dimensions] {
+    sync_terminal_size(state, handlers, false, use_active_screen_dimensions);
     return root->Render();
   });
   auto scroll_x = std::make_shared<int>(0);
@@ -318,12 +327,27 @@ void runTuiApp(
   }
 
   // Wrap root in a CatchEvent component for global overflow controls.
-  auto screen = ScreenInteractive::Fullscreen();
+  auto screen = [&screenMode] {
+    if (screenMode == "terminal") {
+      return ScreenInteractive::TerminalOutput();
+    }
+    return ScreenInteractive::Fullscreen();
+  }();
 
   Component app = CatchEvent(
     root,
-    [overflow, scroll_x, scroll_y, max_scroll_x, max_scroll_y, block_active, state, handlers](Event event) -> bool {
-    sync_terminal_size(state, handlers, false);
+    [
+      overflow,
+      scroll_x,
+      scroll_y,
+      max_scroll_x,
+      max_scroll_y,
+      block_active,
+      state,
+      handlers,
+      use_active_screen_dimensions
+    ](Event event) -> bool {
+    sync_terminal_size(state, handlers, false, use_active_screen_dimensions);
 
     if (event == Event::Custom) {
       bool timers_active = false;

@@ -75,7 +75,7 @@ tuiRun(app, overflow = "clip")  # press Escape or Ctrl+Q to quit
 | Function | Description |
 |---|---|
 | `tuiApp(ui, server)` | Define a TUI application |
-| `tuiRun(app, overflow = "clip")` | Start the app (blocking), with terminal overflow policy (`"clip"`, `"scroll"`, or `"block"`) |
+| `tuiRun(app, overflow = "clip", screen = "auto")` | Start the app (blocking), with global overflow policy and screen backend (`"auto"`, `"fullscreen"`, `"terminal"`) |
 | `tuiColumn(...)` | Stack components vertically |
 | `tuiRow(...)` | Place components side by side |
 | `tuiShowIf(child, ...)` | Conditionally show a subtree based on terminal-size breakpoints |
@@ -104,5 +104,6 @@ All exported UI builders (`tuiRow`, `tuiColumn`, `tuiBox`, outputs, and inputs) 
 Set `headerClickId` on `tuiOutputTable()` to receive header click payloads in `input$...` (`column`, `columnIndex`) for behaviors like server-side sorting.
 tuiModal visibility can be controlled statically with `show` or reactively with `showInputId` (using Escape to close when `closeOnEscape = TRUE`).
 Use `tuiRenderTable()` options (for example `rowBorder`, `colBorder`, `headerRowBorder`, `headerColBorder`, `borderStyle`, `columnAlign`, and `cellOverflow`) to control table styling server-side.
+Running rtui apps still requires a real interactive terminal TTY (stdin/stdout), so run from a terminal session (including RStudio Terminal), not the RStudio Console.
 
 Navigate with **Tab** / **arrow keys**, activate buttons with **Enter**.

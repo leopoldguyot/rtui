@@ -11,21 +11,22 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // runTuiApp
-void runTuiApp(Rcpp::List uiList, Rcpp::List stateList, Rcpp::List handlers, std::string overflow);
-RcppExport SEXP _rtui_runTuiApp(SEXP uiListSEXP, SEXP stateListSEXP, SEXP handlersSEXP, SEXP overflowSEXP) {
+void runTuiApp(Rcpp::List uiList, Rcpp::List stateList, Rcpp::List handlers, std::string overflow, std::string screenMode);
+RcppExport SEXP _rtui_runTuiApp(SEXP uiListSEXP, SEXP stateListSEXP, SEXP handlersSEXP, SEXP overflowSEXP, SEXP screenModeSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::List >::type uiList(uiListSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type stateList(stateListSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type handlers(handlersSEXP);
     Rcpp::traits::input_parameter< std::string >::type overflow(overflowSEXP);
-    runTuiApp(uiList, stateList, handlers, overflow);
+    Rcpp::traits::input_parameter< std::string >::type screenMode(screenModeSEXP);
+    runTuiApp(uiList, stateList, handlers, overflow, screenMode);
     return R_NilValue;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_rtui_runTuiApp", (DL_FUNC) &_rtui_runTuiApp, 4},
+    {"_rtui_runTuiApp", (DL_FUNC) &_rtui_runTuiApp, 5},
     {NULL, NULL, 0}
 };
 

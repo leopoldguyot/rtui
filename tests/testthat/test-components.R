@@ -603,7 +603,7 @@ test_that("tuiModal collects ids from both branches", {
   expect_true("closeModal" %in% names(app$state$input))
 })
 
-test_that("tuiRun validates overflow argument", {
+test_that("tuiRun validates overflow and screen arguments", {
   app <- tuiApp(
     ui = tuiOutputText("out"),
     server = function(input, output) {
@@ -623,5 +623,36 @@ test_that("tuiRun validates overflow argument", {
   expect_error(
     tuiRun(app, overflow = "invalid"),
     "block"
+  )
+
+  expect_error(
+    tuiRun(app, screen = 1),
+    "`screen` must be a single character string."
+  )
+  expect_error(
+    tuiRun(app, screen = "invalid"),
+    "`screen` must be one of"
+  )
+  expect_error(
+    tuiRun(app, screen = "invalid"),
+    "terminal"
+  )
+})
+
+test_that("tuiRun requires an interactive TTY", {
+  app <- tuiApp(
+    ui = tuiOutputText("out"),
+    server = function(input, output) {
+      output$out <- tuiRenderText("ok")
+    }
+  )
+
+  if (isTRUE(isatty(stdin())) && isTRUE(isatty(stdout()))) {
+    skip("TTY is available in this environment; non-TTY guard not exercised.")
+  }
+
+  expect_error(
+    tuiRun(app),
+    "requires an interactive TTY"
   )
 })

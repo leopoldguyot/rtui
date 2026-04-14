@@ -4,7 +4,7 @@
 \alias{tuiRun}
 \title{Run a TUI application}
 \usage{
-tuiRun(app, overflow = "clip")
+tuiRun(app, overflow = "clip", screen = "auto")
 }
 \arguments{
 \item{app}{An \code{rtuiApp} object created by \code{\link[=tuiApp]{tuiApp()}}.}
@@ -18,6 +18,14 @@ message while the terminal is smaller than the app's minimum required size.
 This setting is global to the whole app. Per-container overflow can be
 configured independently with \code{overflowX} / \code{overflowY} on \code{\link[=tuiRow]{tuiRow()}},
 \code{\link[=tuiColumn]{tuiColumn()}}, and \code{\link[=tuiBox]{tuiBox()}}.}
+
+\item{screen}{Screen backend strategy. Use \code{"fullscreen"} for full-screen
+alternate-buffer rendering, \code{"terminal"} for inline terminal output mode, or
+\code{"auto"} (default) to choose automatically for supported terminal sessions.
+
+\code{tuiRun()} requires an interactive TTY for both input and output. The RStudio
+Console is not a real terminal TTY and is therefore not supported for running
+rtui apps directly.}
 }
 \value{
 Invisibly returns \code{NULL}.
