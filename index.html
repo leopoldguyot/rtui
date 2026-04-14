@@ -129,8 +129,8 @@
 <td>Define a TUI application</td>
 </tr>
 <tr class="even">
-<td><code>tuiRun(app, overflow = "clip")</code></td>
-<td>Start the app (blocking), with terminal overflow policy (<code>"clip"</code>, <code>"scroll"</code>, or <code>"block"</code>)</td>
+<td><code>tuiRun(app, overflow = "clip", screen = "auto")</code></td>
+<td>Start the app (blocking), with global overflow policy and screen backend (<code>"auto"</code>, <code>"fullscreen"</code>, <code>"terminal"</code>)</td>
 </tr>
 <tr class="odd">
 <td><code>tuiColumn(...)</code></td>
@@ -221,7 +221,7 @@
 </table>
 <p>All exported UI builders (<code>tuiRow</code>, <code>tuiColumn</code>, <code>tuiBox</code>, outputs, and inputs) accept optional sizing arguments: <code>width</code>, <code>height</code>, <code>minHeight</code>, <code>maxHeight</code>, <code>widthPercent</code>, and <code>heightPercent</code>.</p>
 <p><code><a href="reference/tuiRow.html">tuiRow()</a></code>, <code><a href="reference/tuiColumn.html">tuiColumn()</a></code>, and <code><a href="reference/tuiBox.html">tuiBox()</a></code> also accept per-axis overflow policies with <code>overflowX</code>/<code>overflowY</code> (<code>"visible"</code>, <code>"clip"</code>, <code>"scroll"</code>). Scroll containers expose in-place scrollbars and support keyboard/mouse scrolling. During runtime, <code>input$terminalWidth</code> and <code>input$terminalHeight</code> are available as reactive inputs so server logic can react to terminal resizing.</p>
-<p><code><a href="reference/tuiOutputTable.html">tuiOutputTable()</a></code> defaults to <code>overflowX = "scroll"</code> and <code>overflowY = "scroll"</code> so wide or tall data frames stay navigable inside constrained layouts. Set <code>headerClickId</code> on <code><a href="reference/tuiOutputTable.html">tuiOutputTable()</a></code> to receive header click payloads in <code>input$...</code> (<code>column</code>, <code>columnIndex</code>) for behaviors like server-side sorting. tuiModal visibility can be controlled statically with <code>show</code> or reactively with <code>showInputId</code> (using Escape to close when <code>closeOnEscape = TRUE</code>). Use <code><a href="reference/tuiRenderTable.html">tuiRenderTable()</a></code> options (for example <code>rowBorder</code>, <code>colBorder</code>, <code>headerRowBorder</code>, <code>headerColBorder</code>, <code>borderStyle</code>, <code>columnAlign</code>, and <code>cellOverflow</code>) to control table styling server-side.</p>
+<p><code><a href="reference/tuiOutputTable.html">tuiOutputTable()</a></code> defaults to <code>overflowX = "scroll"</code> and <code>overflowY = "scroll"</code> so wide or tall data frames stay navigable inside constrained layouts. Set <code>headerClickId</code> on <code><a href="reference/tuiOutputTable.html">tuiOutputTable()</a></code> to receive header click payloads in <code>input$...</code> (<code>column</code>, <code>columnIndex</code>) for behaviors like server-side sorting. tuiModal visibility can be controlled statically with <code>show</code> or reactively with <code>showInputId</code> (using Escape to close when <code>closeOnEscape = TRUE</code>). Use <code><a href="reference/tuiRenderTable.html">tuiRenderTable()</a></code> options (for example <code>rowBorder</code>, <code>colBorder</code>, <code>headerRowBorder</code>, <code>headerColBorder</code>, <code>borderStyle</code>, <code>columnAlign</code>, and <code>cellOverflow</code>) to control table styling server-side. Running rtui apps still requires a real interactive terminal TTY (stdin/stdout), so run from a terminal session (including RStudio Terminal), not the RStudio Console.</p>
 <p>Navigate with <strong>Tab</strong> / <strong>arrow keys</strong>, activate buttons with <strong>Enter</strong>.</p>
 </div>
 </div>

@@ -7,7 +7,7 @@ or `Ctrl+Q`.
 ## Usage
 
 ``` r
-tuiRun(app, overflow = "clip")
+tuiRun(app, overflow = "clip", screen = "auto")
 ```
 
 ## Arguments
@@ -32,6 +32,17 @@ tuiRun(app, overflow = "clip")
   [`tuiColumn()`](https://leopoldguyot.github.io/rtui/reference/tuiColumn.md),
   and
   [`tuiBox()`](https://leopoldguyot.github.io/rtui/reference/tuiBox.md).
+
+- screen:
+
+  Screen backend strategy. Use `"fullscreen"` for full-screen
+  alternate-buffer rendering, `"terminal"` for inline terminal output
+  mode, or `"auto"` (default) to choose automatically for supported
+  terminal sessions.
+
+  `tuiRun()` requires an interactive TTY for both input and output. The
+  RStudio Console is not a real terminal TTY and is therefore not
+  supported for running rtui apps directly.
 
 ## Value
 
